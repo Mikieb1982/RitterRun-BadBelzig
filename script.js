@@ -10,20 +10,20 @@ const continueButton = document.getElementById('continueButton');
 const gameOverScreen = document.getElementById('gameOverScreen'); // Used again
 const winScreen = document.getElementById('winScreen');
 
-// --- Game Configuration (MODIFIED Speed Values) ---
+// --- Game Configuration (Includes Speed Adjustments) ---
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
     gravity: 0.5,
     jumpStrength: -10,
     playerSpeed: 0,
-    obstacleSpeed: 2.5, // <<< SLOWED DOWN: Starting speed (was 3)
+    obstacleSpeed: 2.5, // SLOWED DOWN: Starting speed
     groundHeight: 50,
-    spawnRate: 150, // Maybe increase this slightly (e.g., 180) if obstacles feel too dense with slower speed
+    spawnRate: 150,
     jumpHoldGravityMultiplier: 0.5,
     jumpCutGravityMultiplier: 2.0,
     stompJumpStrength: -8,
-    maxGameSpeed: 6, // <<< REDUCED: Max speed limit (was 8)
+    maxGameSpeed: 6, // REDUCED: Max speed limit
     // Stumble config removed
     // Bad Belzig Color Palette
     colors: {
@@ -55,7 +55,7 @@ const assets = {
     tractorObstacle: null, backgroundImage: null, signImage: null,
     // Loading Progress Tracking
     loaded: 0, total: 0,
-    sources: { /* ... asset paths ... */
+    sources: { // Asset paths
         knightPlaceholder: 'assets/knight_placeholder.png', stoneObstacle: 'assets/stones.png',
         familyObstacle: 'assets/family.png', tractorObstacle: 'assets/tractor.png',
         backgroundImage: 'assets/background.png', signImage: 'assets/sign.png'
@@ -76,7 +76,7 @@ function loadAllAssets() { /* ... starts loading ... */
 // --- END Asset Loading ---
 
 
-// --- Landmark Data (RESTORED Longer Descriptions) ---
+// --- Landmark Data (CORRECTED - Longer Descriptions) ---
 const landmarkConfig = [
     {
         name: "SteinTherme", worldX: 1500, width: 60, height: 90,
@@ -127,7 +127,7 @@ function initializeLandmarks() { /* ... initializes landmarks array ... */
 // --- END Landmark Data ---
 
 
-// --- Player State Initialization ---
+// --- Player State Initialization (Bigger Knight) ---
 function resetPlayer() { /* ... resets player properties ... */
     playerState = { x: 50, y: config.canvasHeight - config.groundHeight - 75, width: 60, height: 75, vy: 0, isGrounded: true };
 }
@@ -137,7 +137,7 @@ function resetPlayer() { /* ... resets player properties ... */
 function resetGame() {
     console.log("Resetting game...");
     resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0;
-    gameSpeed = config.obstacleSpeed; // Reset to STARTING speed
+    gameSpeed = config.obstacleSpeed; // Reset speed
     isJumpKeyDown = false; isPointerDownJump = false;
     scoreDisplay.textContent = `Punkte / Score: 0`;
     gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; landmarkPopup.style.display = 'none';
@@ -182,7 +182,6 @@ function spawnObstacle() { /* ... spawn logic with larger sizes ... */
     obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
 }
 function updateObstacles() { /* ... update obstacle positions ... */
-    // Consider adjusting spawnRate based on gameSpeed if obstacles become too frequent/sparse
     if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
     for (let i = obstacles.length - 1; i >= 0; i--) { obstacles[i].x -= gameSpeed; if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); } }
 }
@@ -212,9 +211,9 @@ function update() {
     if (playerState.y >= groundLevel) { playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true; } else { playerState.isGrounded = false; }
 
     // Obstacles
-    updateObstacles();
+    updateObstacles(); // Uses current gameSpeed
 
-    // Collision Checks (Stomp=Bounce, Vulnerable Hit=GameOver, Rising Hit=Safe, Includes Score Penalty on Game Over)
+    // Collision Checks (Stomp=Bounce, Vulnerable Hit=GameOver, Rising Hit=Safe, Score Penalty on GameOver)
     for (let i = obstacles.length - 1; i >= 0; i--) { /* Collision loop */
         const obstacle = obstacles[i]; if (checkCollision(playerState, obstacle)) {
             const isFalling = playerState.vy > 0; const previousPlayerBottom = playerState.y + playerState.height - playerState.vy; const obstacleTop = obstacle.y;
@@ -233,10 +232,10 @@ function update() {
     // Score
     score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 
-    // Gradual Speed Increase (MODIFIED Increment)
+    // Gradual Speed Increase (Slowed Increment)
     if (frameCount > 0 && frameCount % 300 === 0) { // Check every ~5 seconds
         if (gameSpeed < config.maxGameSpeed) {
-            gameSpeed += 0.05; // <<< SLOWED DOWN: Increment speed slower (was 0.1)
+            gameSpeed += 0.05; // <<< SLOWED DOWN: Increment speed slower
             gameSpeed = parseFloat(gameSpeed.toFixed(2));
             console.log("Speed Increased:", gameSpeed);
         }
@@ -249,7 +248,8 @@ function draw() {
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
     // Draw Background
-    if (assets.backgroundImage) { ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight); } else { /* Fallback colors */ }
+    if (assets.backgroundImage) { ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight); }
+    else { /* Fallback colors */ }
 
     // Draw Player
     if (assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
