@@ -7,10 +7,10 @@ const landmarkName = document.getElementById('landmarkName');
 const landmarkDescription = document.getElementById('landmarkDescription');
 // const landmarkImage = document.getElementById('landmarkImage');
 const continueButton = document.getElementById('continueButton');
-const gameOverScreen = document.getElementById('gameOverScreen'); // May be unused
+const gameOverScreen = document.getElementById('gameOverScreen'); // Game Over screen is used again
 const winScreen = document.getElementById('winScreen');
 
-// --- Game Configuration ---
+// --- Game Configuration (Stumble config removed) ---
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
@@ -23,8 +23,8 @@ const config = {
     jumpHoldGravityMultiplier: 0.5,
     jumpCutGravityMultiplier: 2.0,
     stompJumpStrength: -8,
-    stumbleDuration: 60,
-    stumbleSpeedMultiplier: 0.5,
+    // stumbleDuration: 60,          // <<< REMOVED
+    // stumbleSpeedMultiplier: 0.5, // <<< REMOVED
     // Bad Belzig Color Palette
     colors: {
         green: '#0ca644',
@@ -35,18 +35,18 @@ const config = {
     }
 };
 
-// --- Game State Variables ---
+// --- Game State Variables (Stumble variables removed) ---
 let gameState = 'loading';
 let playerState = {};
 let obstacles = [];
 let landmarks = []; // Populated by initializeLandmarks
 let score = 0;
 let frameCount = 0;
-let gameSpeed = config.obstacleSpeed; // Current speed
+let gameSpeed = config.obstacleSpeed; // Current speed (now only changes if you add speed-up logic)
 let isJumpKeyDown = false;      // Tracks Spacebar hold
 let isPointerDownJump = false; // Tracks Mouse/Touch hold for jump
-let isStumbling = false;
-let stumbleTimer = 0;
+// let isStumbling = false;     // <<< REMOVED
+// let stumbleTimer = 0;        // <<< REMOVED
 
 // --- Asset Loading ---
 const assets = {
@@ -65,28 +65,21 @@ const assets = {
 
 // loadImage function
 function loadImage(key, src) {
-    console.log(`Attempting to load: ${key} from ${src}`);
-    assets.total++; const img = new Image(); img.src = src;
-    img.onload = () => {
-        console.log(`Successfully loaded: ${key}`); assets.loaded++; assets[key] = img;
-        console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`);
-        if (assets.loaded === assets.total) { console.log("All assets loaded. Starting game..."); resetGame(); }
-    };
+    /* ... loads images, calls resetGame on completion ... */
+    console.log(`Attempting to load: ${key} from ${src}`); assets.total++; const img = new Image(); img.src = src;
+    img.onload = () => { console.log(`Successfully loaded: ${key}`); assets.loaded++; assets[key] = img; console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`); if (assets.loaded === assets.total) { console.log("All assets loaded. Starting game..."); resetGame(); } };
     img.onerror = () => { console.error(`Failed to load asset: ${key} from ${src}`); };
 }
 
 // loadAllAssets function
-function loadAllAssets() {
-    console.log("Starting asset loading..."); gameState = 'loading';
-    assets.loaded = 0; assets.total = 0;
-    for (const key in assets.sources) { loadImage(key, assets.sources[key]); }
-    if (assets.total === 0) { console.warn("No assets defined..."); resetGame(); }
+function loadAllAssets() { /* ... starts loading all assets ... */
+    console.log("Starting asset loading..."); gameState = 'loading'; assets.loaded = 0; assets.total = 0; for (const key in assets.sources) { loadImage(key, assets.sources[key]); } if (assets.total === 0) { console.warn("No assets defined..."); resetGame(); }
 }
 // --- END Asset Loading ---
 
 
-// --- Landmark Data (Longer Descriptions, Position Based) ---
-const landmarkConfig = [
+// --- Landmark Data ---
+const landmarkConfig = [ /* ... landmark definitions with longer descriptions ... */
     { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.", isFinal: false },
     { name: "Freibad", worldX: 3000, width: 60, height: 90, descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.", isFinal: false },
     { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This building at Weitzgrunder Str. 4 houses the town library and the KleinKunstWerk cultural center. Check their schedule for concerts, theatre, readings, and cabaret. The library offers books, media, and internet access.", descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das KleinKunstWerk Kulturzentrum. Informieren Sie sich über Konzerte, Theater, Lesungen und Kabarett. Die Bibliothek bietet Bücher, Medien und Internetzugang.", isFinal: false },
@@ -107,47 +100,65 @@ function resetPlayer() { /* ... resets player properties ... */
 }
 
 
-// --- Game Reset Function (Includes Pointer Reset) ---
+// --- Game Reset Function (Stumble resets removed) ---
 function resetGame() {
     console.log("Resetting game...");
     resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0;
-    gameSpeed = config.obstacleSpeed;
+    gameSpeed = config.obstacleSpeed; // Reset speed
     isJumpKeyDown = false;
-    isPointerDownJump = false; // <<< Reset pointer flag
-    isStumbling = false; stumbleTimer = 0;
+    isPointerDownJump = false;
+    // isStumbling = false;     // <<< REMOVED
+    // stumbleTimer = 0;        // <<< REMOVED
     scoreDisplay.textContent = `Punkte / Score: 0`;
-    gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; landmarkPopup.style.display = 'none';
+    gameOverScreen.style.display = 'none'; // Hide Game Over screen
+    winScreen.style.display = 'none'; landmarkPopup.style.display = 'none';
     gameState = 'running';
     requestAnimationFrame(gameLoop);
 }
 
-// --- Input Handling (Includes Pointer Tracking) ---
-function handleJump() { /* ... applies initial jump force ... */
+// --- Input Handling (Handles reset from Game Over / Win) ---
+function handleJump() {
     if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; }
+    // Allow jump button to reset from Game Over or Win screen
+    else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); }
     else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 }
 function hideLandmarkPopup() { /* ... hides landmark popup ... */
     if (gameState === 'paused') { landmarkPopup.style.display = 'none'; gameState = 'running'; requestAnimationFrame(gameLoop); }
 }
 // Keyboard listeners
-window.addEventListener('keydown', (e) => { /* ... handles keydown ... */
+window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') { e.preventDefault(); if (!isJumpKeyDown) { handleJump(); } isJumpKeyDown = true; }
-    else if (e.key === 'Enter' || e.code === 'Enter') { /* ... handles Enter ... */ }
+    // Allow Enter to reset from Game Over or Win screen
+    else if (e.key === 'Enter' || e.code === 'Enter') {
+        e.preventDefault();
+        if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); }
+        else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); }
+        else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+    }
 });
 window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
 
-// Touch / Mouse listeners (Sets pointer flag)
+// Touch / Mouse listeners
 canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault(); if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; } // Set flag
+    e.preventDefault();
+    if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; }
+    // Allow tap to reset from Game Over or Win screen
+    else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); }
     else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 });
-canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); isPointerDownJump = true; } }); // Set flag
+canvas.addEventListener('mousedown', (e) => {
+    if (gameState === 'running') { handleJump(); isPointerDownJump = true; }
+    // Allow click to reset from Game Over or Win screen (delegated to overlay listeners)
+});
 // Global listeners to clear pointer flag
-window.addEventListener('touchend', (e) => { isPointerDownJump = false; }); // Clear flag
-window.addEventListener('mouseup', (e) => { isPointerDownJump = false; }); // Clear flag
+window.addEventListener('touchend', (e) => { isPointerDownJump = false; });
+window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
 
-// Overlay/Button listeners
-gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
+// Overlay/Button listeners (Ensure Game Over reset works)
+gameOverScreen.addEventListener('click', resetGame); // Click overlay to reset
+winScreen.addEventListener('click', resetGame);
+continueButton.addEventListener('click', hideLandmarkPopup);
 // --- END Input Handling ---
 
 
@@ -156,12 +167,12 @@ function checkCollision(rect1, rect2) { /* ... AABB check ... */
     return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y);
 }
 
-// --- Obstacle Handling (Larger Sizes, Random Types) ---
+// --- Obstacle Handling ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
 function spawnObstacle() { /* ... spawn logic with larger sizes ... */
     const typeIndex = Math.floor(Math.random() * obstacleTypes.length); const selectedTypeKey = obstacleTypes[typeIndex]; let obstacleHeight, obstacleWidth;
     switch (selectedTypeKey) { /* size variations */ case 'familyObstacle': obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break; case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break; case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break; }
-    console.log(`Spawning ${selectedTypeKey} - Calculated Size: ${obstacleWidth.toFixed(0)}x${obstacleHeight.toFixed(0)}`); // Keep log for size check
+    console.log(`Spawning ${selectedTypeKey} - Calculated Size: ${obstacleWidth.toFixed(0)}x${obstacleHeight.toFixed(0)}`);
     obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
 }
 function updateObstacles() { /* ... update obstacle positions ... */
@@ -177,57 +188,77 @@ function showLandmarkPopup(landmark) { /* ... show popup logic ... */
 }
 
 
-// --- Update Game State (Includes Pointer Variable Jump Check) ---
+// --- Update Game State (MODIFIED Collision Logic) ---
 function update() {
-    if (gameState !== 'running') return;
+    if (gameState !== 'running') return; // Check if running at the start
     frameCount++;
 
-    // Manage Stumble State
-    if (isStumbling) { /* ... stumble timer logic ... */
-        stumbleTimer--; if (stumbleTimer <= 0) { isStumbling = false; gameSpeed = config.obstacleSpeed; console.log("Stumble finished."); }
-    }
+    // --- Stumble Management REMOVED ---
 
-    // -- Player Physics (MODIFIED Variable Jump Check) --
+    // -- Player Physics -- (Variable Jump Logic included)
     let currentGravity = config.gravity;
-    if (!playerState.isGrounded && playerState.vy < 0) { // If rising
-        // Apply reduced gravity if EITHER space OR mouse/touch is held
-        if (isJumpKeyDown || isPointerDownJump) { // <<< CHECK BOTH FLAGS
-            currentGravity *= config.jumpHoldGravityMultiplier;
-        } else { // Apply increased gravity if jump released
-            currentGravity *= config.jumpCutGravityMultiplier;
-        }
+    if (!playerState.isGrounded && playerState.vy < 0) { /* Variable jump gravity */
+        if (isJumpKeyDown || isPointerDownJump) { currentGravity *= config.jumpHoldGravityMultiplier; } else { currentGravity *= config.jumpCutGravityMultiplier; }
     }
-    playerState.vy += currentGravity; // Apply gravity
-    playerState.y += playerState.vy;  // Update position
-    // --- END Player Physics Modification ---
+    playerState.vy += currentGravity; playerState.y += playerState.vy;
 
-    // Ground Collision
-    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height; /* ... ground check ... */
-    if (playerState.y >= groundLevel) { playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true; } else { playerState.isGrounded = false; }
+    // -- Ground Collision --
+    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
+    if (playerState.y >= groundLevel) { playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true; }
+    else { playerState.isGrounded = false; }
 
-    // Obstacles
-    updateObstacles();
+    // -- Obstacles --
+    updateObstacles(); // Move/spawn using normal gameSpeed
 
-    // Collision Checks (Stomp or Stumble + Score Penalty)
-    let didStompThisFrame = false; /* ... collision logic ... */
+    // -- Collision Checks (MODIFIED: Stomp=Bounce, Vulnerable Hit=GameOver, Rising Hit=Safe) --
     for (let i = obstacles.length - 1; i >= 0; i--) {
-        const obstacle = obstacles[i]; if (checkCollision(playerState, obstacle)) {
-            const isFalling = playerState.vy > 0; const previousPlayerBottom = playerState.y + playerState.height - playerState.vy; const obstacleTop = obstacle.y;
-            if (isFalling && previousPlayerBottom <= obstacleTop + 1) { /* Stomp */ console.log("Stomp detected!"); playerState.vy = config.stompJumpStrength; playerState.y = obstacle.y - playerState.height; playerState.isGrounded = false; didStompThisFrame = true; break; }
-            else if (!isStumbling && !didStompThisFrame) { /* Stumble */ console.log("Stumble Triggered! Score Penalty applied."); score -= 100; if (score < 0) { score = 0; } isStumbling = true; stumbleTimer = config.stumbleDuration; gameSpeed = config.obstacleSpeed * config.stumbleSpeedMultiplier; }
+        const obstacle = obstacles[i];
+        if (checkCollision(playerState, obstacle)) {
+            const isFalling = playerState.vy > 0;
+            const previousPlayerBottom = playerState.y + playerState.height - playerState.vy;
+            const obstacleTop = obstacle.y;
+
+            // Stomp Condition (Safe bounce)
+            if (isFalling && previousPlayerBottom <= obstacleTop + 1) {
+                console.log("Stomp detected!");
+                playerState.vy = config.stompJumpStrength;
+                playerState.y = obstacle.y - playerState.height;
+                playerState.isGrounded = false; // Ensure not grounded after bounce
+                // Optional: obstacles.splice(i, 1); // Remove stomped obstacle
+                // Optional: score += 50;
+                continue; // Skip other checks for this obstacle
+            } else {
+                 // Not a Stomp - Check if player is vulnerable (Grounded or Falling)
+                 if (playerState.isGrounded || playerState.vy >= 0) {
+                    // --- Vulnerable Collision -> Game Over ---
+                    console.log("Game Over Collision Detected (Grounded or Falling)!");
+                    gameState = 'gameOver';
+                    showGameOverScreen(); // Show Game Over overlay
+                    return; // STOP the update loop immediately
+                 } else {
+                    // --- Collision while Rising (vy < 0) ---
+                    // Rule: Survive if jumping upwards. Do nothing.
+                    console.log("Collision ignored (Player rising).");
+                    // Optional: Add spark/sound effect without changing state
+                 }
+            }
         }
     }
+    // --- END Collision Checks ---
 
-    // Update Landmarks and Check Triggers (Position Based)
-    for (let landmark of landmarks) { /* ... landmark movement and trigger logic ... */
-        landmark.worldX -= gameSpeed;
+
+    // -- Update Landmarks and Check Triggers -- (Position Based)
+    for (let landmark of landmarks) {
+        landmark.worldX -= gameSpeed; // Move sign
+        // Check trigger condition
         if (!landmark.hasBeenTriggered && landmark.worldX < playerState.x + playerState.width && landmark.worldX + landmark.width > playerState.x) {
             console.log(`Triggering landmark: ${landmark.name}`); landmark.hasBeenTriggered = true; showLandmarkPopup(landmark);
             if (landmark.isFinal) { gameState = 'win'; showWinScreen(); } else { gameState = 'paused'; }
+            // State change will pause/stop the update loop in the next frame check
         }
     }
 
-    // Score
+    // -- Score --
     score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 }
 
@@ -245,8 +276,7 @@ function draw() {
 
     // Draw Obstacles
     obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */
-        const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
-        else { /* Fallback rect */ }
+        const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); } else { /* Fallback rect */ }
     });
 
     // Draw Landmark Signs
@@ -258,17 +288,27 @@ function draw() {
 
 
 // --- UI Updates ---
-function showGameOverScreen() { gameOverScreen.style.display = 'flex'; } // May be unused
+function showGameOverScreen() { gameOverScreen.style.display = 'flex'; } // Shows Game Over overlay
 function showWinScreen() { winScreen.style.display = 'flex'; }
 
 
 // --- Main Game Loop ---
 function gameLoop() {
-    if (gameState !== 'running') { return; } // Stop loop if paused/won
-    update(); draw(); requestAnimationFrame(gameLoop);
+    // Check state at the very beginning of the loop
+    if (gameState === 'paused' || gameState === 'gameOver' || gameState === 'win') {
+        // console.log(`Game loop stopping/paused. State: ${gameState}`); // Optional debug
+        return; // Stop loop if paused, game over, or won
+    }
+    // Only run update and draw if gameState is 'running' (or 'loading' initially handled by asset loader)
+    if (gameState === 'running') {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop); // Continue loop
+    }
 }
 
 
 // --- Start Game ---
-loadAllAssets();
+loadAllAssets(); // Initiates asset loading, which calls resetGame on completion
 // --- END Start Game ---
+
