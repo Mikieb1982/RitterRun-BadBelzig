@@ -13,7 +13,8 @@ body {
     height: 100vh;     /* Full viewport height */
     overflow: hidden;  /* Prevent scrollbars on mobile */
     background-color: #151513; /* Near-black page background */
-    font-family: Arial, sans-serif;
+    font-family: Arial, sans-serif; /* Simple, readable font */
+    touch-action: manipulation; /* Prevent some default browser touch actions */
 }
 
 /* Game Container - Scaled Responsively */
@@ -82,19 +83,21 @@ body {
 }
 
 
-/* Text Styling within Overlays - Responsive Font */
-.popup h3, .overlay h2 {
+/* Text Styling within Overlays (MODIFIED font sizes) */
+.popup h3, .overlay h2 { /* Applies to landmark title & win screen title */
     color: #f5d306;
-    margin-bottom: 2vh; /* Relative margin */
-    font-size: max(1.5em, 4vw); /* Responsive heading */
+    margin-bottom: 2vh;
+    font-size: max(1.3em, 3.5vw); /* <<< Reduced heading size */
 }
 
-.popup p, .overlay p {
-    margin-bottom: 1.5vh; /* Relative margin */
+.popup p, .overlay p { /* Applies to landmark description & win screen text */
+    margin-bottom: 1.5vh;
     line-height: 1.4;
-    font-size: max(1em, 2.2vw); /* Responsive text */
-    max-width: 90%; /* Ensure text doesn't stretch too wide */
+    font-size: max(0.9em, 2vw); /* <<< Reduced paragraph size */
+    max-width: 90%;
 }
+/* --- END Text Styling Modification --- */
+
 
 /* Button Styling - Responsive Padding/Font */
 #continueButton {
