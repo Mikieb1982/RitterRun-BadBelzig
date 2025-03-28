@@ -14,12 +14,12 @@ const winScreen = document.getElementById('winScreen');
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
-    gravity: 0.5, // Adjust for desired jump feel
-    jumpStrength: -10, // Negative value for upward velocity
-    playerSpeed: 0, // Knight doesn't move horizontally relative to screen
-    obstacleSpeed: 3, // How fast obstacles move towards the player
-    groundHeight: 50, // Height of the ground area from the bottom
-    spawnRate: 150, // Lower number = more frequent obstacles (frames)
+    gravity: 0.5,
+    jumpStrength: -10,
+    playerSpeed: 0,
+    obstacleSpeed: 3,
+    groundHeight: 50,
+    spawnRate: 150,
     // Bad Belzig Color Palette
     colors: {
         green: '#0ca644',
@@ -31,21 +31,21 @@ const config = {
 };
 
 // --- Game State Variables ---
-let gameState = 'loading'; // 'loading', 'running', 'paused', 'gameOver', 'win'
+let gameState = 'loading';
 let playerState = {};
 let obstacles = [];
-let landmarks = []; // Will hold landmark data
+let landmarks = [];
 let currentLandmarkIndex = 0;
 let score = 0;
 let frameCount = 0;
-let gameSpeed = config.obstacleSpeed; // Can increase over time if desired
+let gameSpeed = config.obstacleSpeed;
 
-// --- Asset Loading (Includes background image) ---
+// --- Asset Loading ---
 const assets = {
     // Asset keys
     knightPlaceholder: null,
     stonePlaceholder: null,
-    backgroundImage: null, // <<< Added for background image
+    backgroundImage: null,
 
     // Loading Progress Tracking
     loaded: 0,
@@ -53,7 +53,7 @@ const assets = {
     sources: { // Asset paths
         knightPlaceholder: 'assets/knight_placeholder.png',
         stonePlaceholder: 'assets/stone_placeholder.png',
-        backgroundImage: 'assets/background.png' // <<< Added background image path
+        backgroundImage: 'assets/background.png'
         // ... add paths for landmark images etc. here later
     }
 };
@@ -68,6 +68,7 @@ function loadImage(key, src) {
         console.log(`Successfully loaded: ${key}`);
         assets.loaded++;
         assets[key] = img; // Store loaded image
+        console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`); // Log progress
         // Check if all assets are loaded
         if (assets.loaded === assets.total) {
             console.log("All assets loaded. Starting game...");
@@ -96,39 +97,43 @@ function loadAllAssets() {
 // --- END Asset Loading ---
 
 
-// --- Landmark Data ---
+// --- Landmark Data (MODIFIED xTrigger values) ---
 const landmarkDefinitions = [
-    // Adjust xTrigger values based on score/distance goals
-    { name: "SteinTherme", xTrigger: 1000, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole).", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole).", imgKey: 'steinThermeImg' },
-    { name: "Freibad", xTrigger: 2000, descEN: "Cool off at the Freibad! This outdoor swimming pool is a popular spot in summer.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer ein beliebter Treffpunkt.", imgKey: 'freibadImg' },
-    { name: "Kulturzentrum & Bibliothek", xTrigger: 3000, descEN: "This is the Kulturzentrum & Library on Weitzgrunder Str. 4, a hub for reading and local culture.", descDE: "Hier sind das Kulturzentrum & die Bibliothek in der Weitzgrunder Str. 4 – ein Zentrum für Lesen und lokale Kultur.", imgKey: 'kulturzentrumImg'},
-    { name: "Fläming Bahnhof", xTrigger: 4000, descEN: "All aboard at Fläming Bahnhof! This station connects Bad Belzig to Berlin and the region.", descDE: "Einsteigen bitte am Fläming Bahnhof! Dieser Bahnhof verbindet Bad Belzig mit Berlin und der Region.", imgKey: 'bahnhofImg'},
-    { name: "Postmeilensäule (1725)", xTrigger: 5000, descEN: "See how far? This Postal Milestone (Postmeilensäule) from 1725 shows historic travel distances.", descDE: "Schon gesehen? Diese Postmeilensäule von 1725 zeigt historische Reisedistanzen.", imgKey: 'postsaeuleImg'},
-    { name: "Rathaus & Tourist-Information", xTrigger: 6000, descEN: "This is the Rathaus (Town Hall), also home to the Tourist Information centre for Bad Belzig.", descDE: "Das ist das Rathaus, hier befindet sich auch die Tourist-Information von Bad Belzig.", imgKey: 'rathausImg'},
-    { name: "Burg Eisenhardt", xTrigger: 7000, descEN: "You made it to Burg Eisenhardt! This medieval castle overlooks the town and holds a museum.", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese mittelalterliche Burg überblickt die Stadt und beherbergt ein Museum.", imgKey: 'burgImg', isFinal: true },
+    // xTrigger values now relate to the displayed score (score / 10)
+    { name: "SteinTherme", xTrigger: 100, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole).", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole).", imgKey: 'steinThermeImg' },
+    { name: "Freibad", xTrigger: 200, descEN: "Cool off at the Freibad! This outdoor swimming pool is a popular spot in summer.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer ein beliebter Treffpunkt.", imgKey: 'freibadImg' },
+    { name: "Kulturzentrum & Bibliothek", xTrigger: 300, descEN: "This is the Kulturzentrum & Library on Weitzgrunder Str. 4, a hub for reading and local culture.", descDE: "Hier sind das Kulturzentrum & die Bibliothek in der Weitzgrunder Str. 4 – ein Zentrum für Lesen und lokale Kultur.", imgKey: 'kulturzentrumImg'},
+    { name: "Fläming Bahnhof", xTrigger: 400, descEN: "All aboard at Fläming Bahnhof! This station connects Bad Belzig to Berlin and the region.", descDE: "Einsteigen bitte am Fläming Bahnhof! Dieser Bahnhof verbindet Bad Belzig mit Berlin und der Region.", imgKey: 'bahnhofImg'},
+    { name: "Postmeilensäule (1725)", xTrigger: 500, descEN: "See how far? This Postal Milestone (Postmeilensäule) from 1725 shows historic travel distances.", descDE: "Schon gesehen? Diese Postmeilensäule von 1725 zeigt historische Reisedistanzen.", imgKey: 'postsaeuleImg'},
+    { name: "Rathaus & Tourist-Information", xTrigger: 600, descEN: "This is the Rathaus (Town Hall), also home to the Tourist Information centre for Bad Belzig.", descDE: "Das ist das Rathaus, hier befindet sich auch die Tourist-Information von Bad Belzig.", imgKey: 'rathausImg'},
+    { name: "Burg Eisenhardt", xTrigger: 700, descEN: "You made it to Burg Eisenhardt! This medieval castle overlooks the town and holds a museum.", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese mittelalterliche Burg überblickt die Stadt und beherbergt ein Museum.", imgKey: 'burgImg', isFinal: true },
 ];
+// --- END Landmark Data ---
 
 
-// --- Player State Initialization ---
+// --- Player State Initialization (MODIFIED size/position) ---
 function resetPlayer() {
     playerState = {
         x: 50,
-        y: config.canvasHeight - config.groundHeight - 50, // Start above ground
-        width: 40, // Adjust to your knight sprite size
-        height: 50, // Adjust to your knight sprite size
-        vy: 0, // Vertical velocity
+        // Adjust y slightly based on the new height
+        y: config.canvasHeight - config.groundHeight - 75, // <<< Adjusted for height 75
+        width: 60,  // <<< Increased width
+        height: 75, // <<< Increased height
+        vy: 0,
         isGrounded: true
-        // currentFrame: 0, // For animation later
+        // currentFrame: 0,
         // frameTimer: 0
     };
 }
+// --- END Player State ---
+
 
 // --- Game Reset Function ---
 function resetGame() {
     console.log("Resetting game...");
     resetPlayer();
     obstacles = [];
-    landmarks = [...landmarkDefinitions]; // Reset landmark triggers
+    landmarks = [...landmarkDefinitions]; // Use fresh copy of landmarks
     currentLandmarkIndex = 0;
     score = 0;
     frameCount = 0;
@@ -137,8 +142,8 @@ function resetGame() {
     gameOverScreen.style.display = 'none';
     winScreen.style.display = 'none';
     landmarkPopup.style.display = 'none';
-    gameState = 'running'; // Set state AFTER reset
-    requestAnimationFrame(gameLoop); // Start the game loop
+    gameState = 'running';
+    requestAnimationFrame(gameLoop);
 }
 
 // --- Input Handling ---
@@ -157,11 +162,11 @@ function hideLandmarkPopup() {
     if (gameState === 'paused') {
         landmarkPopup.style.display = 'none';
         gameState = 'running';
-        requestAnimationFrame(gameLoop); // Resume game loop
+        requestAnimationFrame(gameLoop);
     }
 }
 
-// Event listeners (Keyboard, Touch, Mouse, Button, Overlays)
+// Event listeners
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') { e.preventDefault(); handleJump(); }
     else if (e.key === 'Enter' || e.code === 'Enter') {
@@ -193,25 +198,22 @@ function checkCollision(rect1, rect2) {
 
 // --- Obstacle Handling (Spawns smaller stones) ---
 function spawnObstacle() {
-    // --- Smaller stone dimensions --- (MODIFIED)
-    const obstacleHeight = 15 + Math.random() * 10; // e.g., height 15-25px
-    const obstacleWidth = 10 + Math.random() * 8;  // e.g., width 10-18px
-    // --- END modification ---
+    // Smaller stone dimensions
+    const obstacleHeight = 15 + Math.random() * 10;
+    const obstacleWidth = 10 + Math.random() * 8;
 
     obstacles.push({
         x: config.canvasWidth,
-        y: config.canvasHeight - config.groundHeight - obstacleHeight, // Position based on height
+        y: config.canvasHeight - config.groundHeight - obstacleHeight,
         width: obstacleWidth,
         height: obstacleHeight
     });
 }
 
 function updateObstacles() {
-    // Spawn new obstacles periodically
-    if (frameCount > 100 && frameCount % config.spawnRate === 0) { // Start spawning after ~1.5s
+    if (frameCount > 100 && frameCount % config.spawnRate === 0) {
         spawnObstacle();
     }
-    // Move and remove off-screen obstacles
     for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= gameSpeed;
         if (obstacles[i].x + obstacles[i].width < 0) {
@@ -226,7 +228,8 @@ function updateObstacles() {
 function checkLandmarks() {
     if (currentLandmarkIndex < landmarks.length) {
         const nextLandmark = landmarks[currentLandmarkIndex];
-        const currentScore = Math.floor(score / 10); // Use displayed score
+        // Compare DISPLAYED score to trigger
+        const currentScore = Math.floor(score / 10);
         if (currentScore >= nextLandmark.xTrigger) {
             showLandmarkPopup(nextLandmark);
             if (nextLandmark.isFinal) {
@@ -243,20 +246,20 @@ function checkLandmarks() {
 function showLandmarkPopup(landmark) {
     landmarkName.textContent = landmark.name;
     landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`;
-    // Add logic here later to display landmark image if loaded via assets[landmark.imgKey]
+    // Add image display logic here later if needed
     landmarkPopup.style.display = 'flex';
 }
 
 
 // --- Update Game State ---
 function update() {
-    if (gameState !== 'running') return; // Only run updates if game is 'running'
+    if (gameState !== 'running') return;
     frameCount++;
 
-    // Player Physics (Gravity, Ground Check)
+    // Player Physics
     playerState.vy += config.gravity;
     playerState.y += playerState.vy;
-    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
+    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height; // Use updated height
     if (playerState.y >= groundLevel) {
         playerState.y = groundLevel;
         playerState.vy = 0;
@@ -264,7 +267,6 @@ function update() {
     } else {
         playerState.isGrounded = false;
     }
-    // Add animation updates later
 
     // Obstacles
     updateObstacles();
@@ -274,7 +276,7 @@ function update() {
         if (checkCollision(playerState, obstacle)) {
             gameState = 'gameOver';
             showGameOverScreen();
-            return; // Stop update loop
+            return;
         }
     }
 
@@ -282,40 +284,36 @@ function update() {
     score++;
     scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 
-    // Landmarks (Check last, as it can pause/end the game)
+    // Landmarks
     checkLandmarks();
 }
 
 
-// --- Draw Game (Draws background image) ---
+// --- Draw Game ---
 function draw() {
-    // Clear canvas
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
-    // --- Draw Background Image --- (MODIFIED)
-    if (assets.backgroundImage) { // Draw image if loaded
+    // Draw Background Image
+    if (assets.backgroundImage) {
         ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight);
-    } else { // Fallback colors if image not loaded
-        ctx.fillStyle = config.colors.blue; // Sky
+    } else { // Fallback colors
+        ctx.fillStyle = config.colors.blue;
         ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight);
-        ctx.fillStyle = config.colors.green; // Ground
+        ctx.fillStyle = config.colors.green;
         ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight);
     }
-    // --- END Background Image Drawing ---
 
-    // --- Draw Player --- (Using placeholder)
+    // Draw Player (Using placeholder)
     if (assets.knightPlaceholder) {
-        ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
-    } // ... (optional fallback rect)
+        ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); // Uses updated width/height
+    } // (optional fallback rect)
 
-    // --- Draw Obstacles --- (Using placeholder)
+    // Draw Obstacles (Using placeholder)
     obstacles.forEach(obstacle => {
         if (assets.stonePlaceholder) {
-             ctx.drawImage(assets.stonePlaceholder, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-        } // ... (optional fallback rect)
+             ctx.drawImage(assets.stonePlaceholder, obstacle.x, obstacle.y, obstacle.width, obstacle.height); // Uses updated width/height from spawn
+        } // (optional fallback rect)
     });
-
-    // Draw Landmarks visually (Optional advanced feature)
 }
 // --- END Draw Game ---
 
@@ -331,17 +329,16 @@ function showWinScreen() {
 
 // --- Main Game Loop ---
 function gameLoop() {
-    if (gameState !== 'running') { // Stop loop if not running
-        // console.log(`Game loop stopping. State: ${gameState}`); // Optional debug
+    if (gameState !== 'running') {
         return;
     }
-    update(); // Update logic
-    draw();   // Draw frame
-    requestAnimationFrame(gameLoop); // Request next frame
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
 
 // --- Start Game ---
-// Call loadAllAssets() to initiate loading. resetGame() is called by the loader.
+// Calls asset loader, which calls resetGame when done.
 loadAllAssets();
 // --- END Start Game ---
