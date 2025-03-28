@@ -56,7 +56,6 @@ const assets = {
     familyObstacle: null,
     tractorObstacle: null,
     backgroundImage: null,
-
     // Loading Progress Tracking
     loaded: 0,
     total: 0,
@@ -206,46 +205,38 @@ function checkCollision(rect1, rect2) {
     );
 }
 
-// --- Obstacle Handling (MODIFIED for bigger sizes) ---
+// --- Obstacle Handling (Larger Sizes) ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle']; // Array of asset keys
-
 function spawnObstacle() {
-    // 1. Randomly choose an obstacle type
     const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
     const selectedTypeKey = obstacleTypes[typeIndex];
-
     let obstacleHeight, obstacleWidth;
 
-    // 2. Set size based on type (Ranges roughly doubled - ADJUST AS NEEDED!)
+    // Set size based on type (Larger ranges)
     switch (selectedTypeKey) {
         case 'familyObstacle':
-            // Was: H=40-55, W=30-40
-            obstacleHeight = 80 + Math.random() * 30; // Example: ~80-110px tall
-            obstacleWidth = 60 + Math.random() * 20;  // Example: ~60-80px wide
+            obstacleHeight = 80 + Math.random() * 30; // ~80-110px tall
+            obstacleWidth = 60 + Math.random() * 20;  // ~60-80px wide
             break;
         case 'tractorObstacle':
-            // Was: H=35-45, W=50-65
-            obstacleHeight = 70 + Math.random() * 20; // Example: ~70-90px tall
-            obstacleWidth = 100 + Math.random() * 30; // Example: ~100-130px wide
+            obstacleHeight = 70 + Math.random() * 20; // ~70-90px tall
+            obstacleWidth = 100 + Math.random() * 30; // ~100-130px wide
             break;
         case 'stoneObstacle':
-        default: // Default to stone size
-            // Was: H=15-25, W=10-18
-            obstacleHeight = 30 + Math.random() * 20; // Example: ~30-50px tall
-            obstacleWidth = 20 + Math.random() * 16;  // Example: ~20-36px wide
+        default: // Stones larger too
+            obstacleHeight = 30 + Math.random() * 20; // ~30-50px tall
+            obstacleWidth = 20 + Math.random() * 16;  // ~20-36px wide
             break;
     }
 
-    // 3. Create obstacle object (position calculation uses new height)
     obstacles.push({
         x: config.canvasWidth,
-        y: config.canvasHeight - config.groundHeight - obstacleHeight, // Position correctly
+        y: config.canvasHeight - config.groundHeight - obstacleHeight,
         width: obstacleWidth,
         height: obstacleHeight,
         typeKey: selectedTypeKey
     });
 }
-// updateObstacles function remains the same
 function updateObstacles() {
     if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
     for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -269,7 +260,6 @@ function checkLandmarks() {
         }
     }
 }
-
 function showLandmarkPopup(landmark) {
     landmarkName.textContent = landmark.name;
     landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`;
@@ -277,7 +267,7 @@ function showLandmarkPopup(landmark) {
 }
 
 
-// --- Update Game State ---
+// --- Update Game State (Includes Score Penalty) ---
 function update() {
     if (gameState !== 'running') return;
     frameCount++;
@@ -304,17 +294,13 @@ function update() {
     // Ground Collision
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
     if (playerState.y >= groundLevel) {
-        playerState.y = groundLevel;
-        playerState.vy = 0;
-        playerState.isGrounded = true;
-    } else {
-        playerState.isGrounded = false;
-    }
+        playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true;
+    } else { playerState.isGrounded = false; }
 
     // Obstacles
     updateObstacles();
 
-    // Collision Checks (Stomp or Stumble)
+    // Collision Checks (Stomp or Stumble + Score Penalty)
     let didStompThisFrame = false;
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
@@ -331,24 +317,37 @@ function update() {
                 playerState.isGrounded = false;
                 // Optional: obstacles.splice(i, 1); score += 50;
                 didStompThisFrame = true;
-                break;
+                break; // Stomp one per frame
 
             } else if (!isStumbling && !didStompThisFrame) { // Side/Bottom hit, not already stumbling
-                // Trigger Stumble
-                console.log("Stumble Triggered!");
-                isStumbling = true;
-                stumbleTimer = config.stumbleDuration;
-                gameSpeed = config.obstacleSpeed * config.stumbleSpeedMultiplier;
+                // --- Trigger Stumble ---
+                console.log("Stumble Triggered! Score Penalty applied.");
+
+                // --- Subtract Score --- <<< MODIFIED SECTION >>>
+                score -= 100; // Subtract 100 raw points (equals 10 displayed points)
+                if (score < 0) { // Prevent score going below zero
+                    score = 0;
+                }
+                // Score display updates later in update()
+                // --- END Score Subtraction ---
+
+                isStumbling = true; // Set stumbling flag
+                stumbleTimer = config.stumbleDuration; // Start stumble timer
+                gameSpeed = config.obstacleSpeed * config.stumbleSpeedMultiplier; // Slow down game
+                // Optional: Visual/audio cues, small bounce
             }
+            // Collision ignored if already stumbling
         }
     }
+    // --- END Collision Checks ---
 
-    // Score
-    score++;
-    scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
+
+    // Score (Continuous increase + display update)
+    score++; // Increment raw score every frame
+    scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`; // Update display
 
     // Landmarks
-    checkLandmarks();
+    checkLandmarks(); // Check last
 }
 
 
@@ -365,14 +364,14 @@ function draw() {
     }
 
     // Draw Player
-    // Optional: Add visual effect if stumbling
-    // if (isStumbling && frameCount % 10 < 5) { ctx.globalAlpha = 0.5; } // Flash
+    // Optional: Visual stumble effect
+    // if (isStumbling && frameCount % 10 < 5) { ctx.globalAlpha = 0.5; }
     if (assets.knightPlaceholder) {
         ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
     }
     // ctx.globalAlpha = 1.0; // Reset alpha
 
-    // Draw Obstacles (Uses typeKey and bigger sizes)
+    // Draw Obstacles (Uses typeKey and larger sizes)
     obstacles.forEach(obstacle => {
         const obstacleImage = assets[obstacle.typeKey];
         if (obstacleImage) {
