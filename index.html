@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad Belzig Knight Run</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="gameContainer">
+
+        <canvas id="gameCanvas" width="800" height="400">
+            Your browser does not support the HTML5 canvas tag.
+        </canvas>
+
+        <div id="scoreDisplay">Punkte / Score: 0</div>
+
+        <div id="landmarkPopup" class="popup">
+            <h3 id="landmarkName">Placeholder Landmark</h3>
+            <p id="landmarkDescription">
+                Placeholder English description.<br><br>
+                Placeholder Deutsche Beschreibung.
+            </p>
+            <button id="continueButton">Weiter / Continue</button>
+        </div>
+
+        <div id="gameOverScreen" class="overlay">
+            <h2>Spielende / Game Over</h2>
+            <p>Zum Neustarten klicken oder Leertaste/Enter drücken.</p>
+            <p>(Click or press Space/Enter to restart.)</p>
+            </div>
+
+        <div id="winScreen" class="overlay">
+            <h2>Geschafft! / You Reached the Castle!</h2>
+            <p>Zum Neustarten klicken oder Leertaste/Enter drücken.</p>
+            <p>(Click or press Space/Enter to restart.)</p>
+            </div>
+
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
