@@ -9,98 +9,138 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background-color: #151513; /* Near-black page background from palette */
-    font-family: Arial, sans-serif; /* Simple, readable font */
+    width: 100%;      /* Full viewport width */
+    height: 100vh;     /* Full viewport height */
+    overflow: hidden;  /* Prevent scrollbars on mobile */
+    background-color: #151513; /* Near-black page background */
+    font-family: Arial, sans-serif;
 }
 
-/* Game Container - Positions overlays */
+/* Game Container - Scaled Responsively */
 #gameContainer {
-    position: relative; /* Allows absolute positioning of children */
-    width: 800px;      /* Matches canvas width */
-    height: 400px;     /* Matches canvas height */
-    overflow: hidden;  /* Keeps elements contained */
+    position: relative;
+    /* Scale based on viewport, maintain 2:1 ratio */
+    width: 95vw; /* Use 95% of viewport width */
+    height: calc(95vw / 2); /* Calculate height based on width (for 2:1 ratio) */
+    max-height: 95vh; /* Don't exceed 95% of viewport height */
+    max-width: calc(95vh * 2); /* Don't exceed width based on max-height (for 2:1 ratio) */
+
+    overflow: hidden;
+    margin: auto; /* Helps with centering within flex body */
+    background: #000; /* Optional: container background */
 }
 
-/* Canvas Styling */
+/* Canvas Styling - Fills the scaled container */
 #gameCanvas {
-    display: block; /* Removes potential extra space below */
-    background-color: #0296c6; /* Blue sky background - JS will draw over this */
-    width: 100%;
-    height: 100%;
+    display: block;
+    width: 100%; /* Fill container width */
+    height: 100%; /* Fill container height */
+    background-color: #0296c6; /* Default blue sky - drawn over by JS */
 }
 
-/* Score Display Styling */
+/* Score Display Styling - Responsive Units */
 #scoreDisplay {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    color: #ffffff; /* White text */
-    background-color: rgba(21, 21, 19, 0.7); /* Semi-transparent near-black bg */
-    padding: 5px 10px;
+    top: 1.5vh; /* Use viewport height for vertical positioning */
+    left: 2vw;  /* Use viewport width for horizontal positioning */
+    color: #ffffff;
+    background-color: rgba(21, 21, 19, 0.7);
+    padding: 0.8vh 1.5vw; /* Use relative padding */
     border-radius: 3px;
-    font-size: 1.2em;
-    z-index: 10; /* Places score above canvas */
+    font-size: max(1.2em, 2.5vw); /* Responsive font size, minimum 1.2em */
+    z-index: 10;
+    white-space: nowrap; /* Prevent score text wrapping */
 }
 
-/* Common Styles for Overlays (Hidden by Default) */
+/* Common Styles for Overlays - Responsive Padding/Font */
 .popup,
 .overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none; /* Crucial: Hide overlays initially */
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: none; /* Hidden by default */
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: #ffffff; /* White text for overlays */
-    padding: 20px;
-    z-index: 20; /* Places overlays above score/canvas */
+    color: #ffffff;
+    padding: 3vw; /* Responsive padding */
+    z-index: 20;
 }
 
-/* Specific Backgrounds for Overlays */
-.overlay { /* Game Over / Win */
-    background-color: rgba(21, 21, 19, 0.85); /* Near-black, semi-transparent */
+/* Specific Overlay Backgrounds */
+.overlay { /* Win Screen */
+    background-color: rgba(21, 21, 19, 0.85);
 }
 
 .popup { /* Landmark Info */
-     background-color: rgba(21, 21, 19, 0.95); /* Near-black, mostly opaque */
-     border: 3px solid #f5d306; /* Yellow border */
-     max-width: 90%; /* Limit width */
+     background-color: rgba(21, 21, 19, 0.95);
+     border: max(2px, 0.5vmin) solid #f5d306; /* Responsive border */
+     max-width: 85%; /* Limit width */
+     max-height: 85%; /* Limit height */
      border-radius: 8px;
+     overflow-y: auto; /* Allow scrolling if content overflows */
 }
 
-/* Text Styling within Overlays */
+
+/* Text Styling within Overlays - Responsive Font */
 .popup h3, .overlay h2 {
-    color: #f5d306; /* Yellow headings */
-    margin-bottom: 15px;
+    color: #f5d306;
+    margin-bottom: 2vh; /* Relative margin */
+    font-size: max(1.5em, 4vw); /* Responsive heading */
 }
 
 .popup p, .overlay p {
-    margin-bottom: 10px;
-    line-height: 1.4; /* Improve readability */
+    margin-bottom: 1.5vh; /* Relative margin */
+    line-height: 1.4;
+    font-size: max(1em, 2.2vw); /* Responsive text */
+    max-width: 90%; /* Ensure text doesn't stretch too wide */
 }
 
-/* Button Styling */
+/* Button Styling - Responsive Padding/Font */
 #continueButton {
-    padding: 12px 25px;
-    background-color: #f5d306; /* Yellow background */
-    color: #151513; /* Near-black text */
+    padding: 1.5vh 3vw; /* Responsive padding */
+    background-color: #f5d306;
+    color: #151513;
     border: none;
     border-radius: 5px;
-    font-size: 1.1em;
+    font-size: max(1em, 2.5vw); /* Responsive font */
     font-weight: bold;
     cursor: pointer;
-    margin-top: 20px; /* Space above the button */
-    transition: background-color 0.2s ease; /* Smooth hover effect */
+    margin-top: 2vh; /* Relative margin */
+    min-width: 25vw; /* Minimum width */
+    min-height: 6vh; /* Minimum height for tapping */
+    transition: background-color 0.2s ease;
 }
 
 #continueButton:hover {
-    background-color: #e0bd05; /* Slightly darker yellow */
+    background-color: #e0bd05;
 }
 
-/* Note: JavaScript will be responsible for changing the 'display' property
-   of '.popup' and '.overlay' from 'none' to 'flex' to show them. */
+/* --- Mobile Orientation Message --- */
+#rotateDeviceMessage {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #151513;
+    color: #ffffff;
+    z-index: 100; /* Above game */
+    /* Use flex to center content */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: max(1.2em, 4vw); /* Responsive font size */
+    padding: 5vw;
+}
+
+@media (orientation: portrait) {
+    #rotateDeviceMessage {
+        display: flex; /* Show message only in portrait */
+    }
+    #gameContainer {
+        display: none; /* Hide game container in portrait */
+    }
+}
+/* --- End Orientation Message --- */
+
+/* Note: JS still controls showing/hiding .popup and .overlay via display property */
