@@ -43,29 +43,22 @@ let landmarks = []; // Populated by initializeLandmarks
 let score = 0;
 let frameCount = 0;
 let gameSpeed = config.obstacleSpeed; // Current speed
-let isJumpKeyDown = false;
+let isJumpKeyDown = false;      // Tracks Spacebar hold
+let isPointerDownJump = false; // <<< Tracks Mouse/Touch hold for jump
 let isStumbling = false;
 let stumbleTimer = 0;
 
 // --- Asset Loading ---
 const assets = {
     // Asset keys
-    knightPlaceholder: null,
-    stoneObstacle: null,
-    familyObstacle: null,
-    tractorObstacle: null,
-    backgroundImage: null,
-    signImage: null,
-
+    knightPlaceholder: null, stoneObstacle: null, familyObstacle: null,
+    tractorObstacle: null, backgroundImage: null, signImage: null,
     // Loading Progress Tracking
-    loaded: 0,
-    total: 0,
+    loaded: 0, total: 0,
     sources: { // Asset paths
         knightPlaceholder: 'assets/knight_placeholder.png',
-        stoneObstacle: 'assets/stones.png',
-        familyObstacle: 'assets/family.png',
-        tractorObstacle: 'assets/tractor.png',
-        backgroundImage: 'assets/background.png',
+        stoneObstacle: 'assets/stones.png', familyObstacle: 'assets/family.png',
+        tractorObstacle: 'assets/tractor.png', backgroundImage: 'assets/background.png',
         signImage: 'assets/sign.png'
     }
 };
@@ -73,26 +66,18 @@ const assets = {
 // loadImage function
 function loadImage(key, src) {
     console.log(`Attempting to load: ${key} from ${src}`);
-    assets.total++;
-    const img = new Image();
-    img.src = src;
+    assets.total++; const img = new Image(); img.src = src;
     img.onload = () => {
-        console.log(`Successfully loaded: ${key}`);
-        assets.loaded++;
-        assets[key] = img;
+        console.log(`Successfully loaded: ${key}`); assets.loaded++; assets[key] = img;
         console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`);
-        if (assets.loaded === assets.total) {
-            console.log("All assets loaded. Starting game...");
-            resetGame();
-        }
+        if (assets.loaded === assets.total) { console.log("All assets loaded. Starting game..."); resetGame(); }
     };
     img.onerror = () => { console.error(`Failed to load asset: ${key} from ${src}`); };
 }
 
 // loadAllAssets function
 function loadAllAssets() {
-    console.log("Starting asset loading...");
-    gameState = 'loading';
+    console.log("Starting asset loading..."); gameState = 'loading';
     assets.loaded = 0; assets.total = 0;
     for (const key in assets.sources) { loadImage(key, assets.sources[key]); }
     if (assets.total === 0) { console.warn("No assets defined..."); resetGame(); }
@@ -100,112 +85,78 @@ function loadAllAssets() {
 // --- END Asset Loading ---
 
 
-// --- Landmark Data (UPDATED with LONGER INFO) ---
+// --- Landmark Data ---
 const landmarkConfig = [
-    {
-        name: "SteinTherme", worldX: 1500, width: 60, height: 90,
-        descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.",
-        descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.",
-        isFinal: false
-    },
-    {
-        name: "Freibad", worldX: 3000, width: 60, height: 90,
-        descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.",
-        descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.",
-        isFinal: false
-    },
-    {
-        name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90,
-        descEN: "This building at Weitzgrunder Str. 4 houses the town library and the KleinKunstWerk cultural center. Check their schedule for concerts, theatre, readings, and cabaret. The library offers books, media, and internet access.",
-        descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das KleinKunstWerk Kulturzentrum. Informieren Sie sich über Konzerte, Theater, Lesungen und Kabarett. Die Bibliothek bietet Bücher, Medien und Internetzugang.",
-        isFinal: false
-    },
-    {
-        name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90,
-        descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.",
-        descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.",
-        isFinal: false
-    },
-    {
-        name: "Postmeilensäule (1725)", worldX: 7500, width: 60, height: 90, // Sign size
-        descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.",
-        descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.",
-        isFinal: false
-    },
-    {
-        name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90,
-        descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.",
-        descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.",
-        isFinal: false
-    },
-    {
-        name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, // Sign size
-        descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.",
-        descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.",
-        isFinal: true
-    },
+    { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in...", descDE: "Entspann dich...", isFinal: false },
+    { name: "Freibad", worldX: 3000, width: 60, height: 90, descEN: "Cool off...", descDE: "Kühl dich...", isFinal: false },
+    { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This is the Kulturzentrum...", descDE: "Hier sind das Kulturzentrum...", isFinal: false },
+    { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard...", descDE: "Einsteigen bitte...", isFinal: false },
+    { name: "Postmeilensäule (1725)", worldX: 7500, width: 60, height: 90, descEN: "See how far?...", descDE: "Schon gesehen?...", isFinal: false },
+    { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "This is the Rathaus...", descDE: "Das ist das Rathaus...", isFinal: false },
+    { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it...", descDE: "Geschafft!...", isFinal: true },
 ];
-
-function initializeLandmarks() {
-    landmarks = landmarkConfig.map(cfg => ({
-        ...cfg,
-        yPos: cfg.yPos || (config.canvasHeight - config.groundHeight - (cfg.height || 90)),
-        hasBeenTriggered: false
-    }));
+function initializeLandmarks() { /* ... initializes landmarks array ... */
+    landmarks = landmarkConfig.map(cfg => ({ ...cfg, yPos: cfg.yPos || (config.canvasHeight - config.groundHeight - (cfg.height || 90)), hasBeenTriggered: false }));
 }
 // --- END Landmark Data ---
 
 
-// --- Player State Initialization (Bigger Knight) ---
-function resetPlayer() {
-    playerState = {
-        x: 50, y: config.canvasHeight - config.groundHeight - 75,
-        width: 60, height: 75, vy: 0, isGrounded: true
-    };
+// --- Player State Initialization ---
+function resetPlayer() { /* ... resets player properties ... */
+    playerState = { x: 50, y: config.canvasHeight - config.groundHeight - 75, width: 60, height: 75, vy: 0, isGrounded: true };
 }
 
 
 // --- Game Reset Function ---
 function resetGame() {
     console.log("Resetting game...");
-    resetPlayer();
-    obstacles = [];
-    initializeLandmarks(); // Setup landmarks
-    score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed;
-    isJumpKeyDown = false; isStumbling = false; stumbleTimer = 0;
+    resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0;
+    gameSpeed = config.obstacleSpeed;
+    isJumpKeyDown = false;
+    isPointerDownJump = false; // <<< Reset pointer flag
+    isStumbling = false; stumbleTimer = 0;
     scoreDisplay.textContent = `Punkte / Score: 0`;
     gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; landmarkPopup.style.display = 'none';
     gameState = 'running';
     requestAnimationFrame(gameLoop);
 }
 
-// --- Input Handling ---
-function handleJump() { /* ... jump logic ... */
+// --- Input Handling (MODIFIED for Pointer Tracking) ---
+function handleJump() { /* ... applies initial jump force ... */
     if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; }
     else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 }
-function hideLandmarkPopup() { /* ... hide popup logic ... */
+function hideLandmarkPopup() { /* ... hides landmark popup ... */
     if (gameState === 'paused') { landmarkPopup.style.display = 'none'; gameState = 'running'; requestAnimationFrame(gameLoop); }
 }
-// Event listeners
-window.addEventListener('keydown', (e) => { /* ... keydown logic ... */
+// Keyboard listeners
+window.addEventListener('keydown', (e) => { /* ... handles keydown ... */
     if (e.code === 'Space') { e.preventDefault(); if (!isJumpKeyDown) { handleJump(); } isJumpKeyDown = true; }
-    else if (e.key === 'Enter' || e.code === 'Enter') {
-        e.preventDefault();
-        if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); }
-        else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
-    }
+    else if (e.key === 'Enter' || e.code === 'Enter') { /* ... handles Enter ... */ }
 });
 window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
-canvas.addEventListener('touchstart', (e) => { /* ... touchstart logic ... */
+
+// Touch / Mouse listeners (MODIFIED to set pointer flag)
+canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    if (gameState === 'running' || gameState === 'paused') { handleJump(); }
-    else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+    if (gameState === 'running' || gameState === 'paused') {
+        handleJump();
+        isPointerDownJump = true; // <<< Set flag
+    } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 });
-canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); } });
-gameOverScreen.addEventListener('click', resetGame);
-winScreen.addEventListener('click', resetGame);
-continueButton.addEventListener('click', hideLandmarkPopup);
+canvas.addEventListener('mousedown', (e) => {
+    if (gameState === 'running') {
+        handleJump();
+        isPointerDownJump = true; // <<< Set flag
+    }
+});
+// ADDED Global listeners to clear pointer flag
+window.addEventListener('touchend', (e) => { isPointerDownJump = false; });
+window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
+
+// Overlay/Button listeners
+gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
+// --- END Input Handling ---
 
 
 // --- Collision Detection ---
@@ -213,17 +164,11 @@ function checkCollision(rect1, rect2) { /* ... AABB check ... */
     return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y);
 }
 
-// --- Obstacle Handling (Larger Sizes, Random Types) ---
+// --- Obstacle Handling ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
 function spawnObstacle() { /* ... spawn logic with larger sizes ... */
-    const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
-    const selectedTypeKey = obstacleTypes[typeIndex];
-    let obstacleHeight, obstacleWidth;
-    switch (selectedTypeKey) {
-        case 'familyObstacle':  obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break;
-        case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break;
-        case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break;
-    }
+    const typeIndex = Math.floor(Math.random() * obstacleTypes.length); const selectedTypeKey = obstacleTypes[typeIndex]; let obstacleHeight, obstacleWidth;
+    switch (selectedTypeKey) { /* size variations */ case 'familyObstacle': obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break; case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break; case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break; }
     obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
 }
 function updateObstacles() { /* ... update obstacle positions ... */
@@ -235,9 +180,7 @@ function updateObstacles() { /* ... update obstacle positions ... */
 
 // --- Landmark Display & Popup Trigger Function ---
 function showLandmarkPopup(landmark) { /* ... show popup logic ... */
-    landmarkName.textContent = landmark.name;
-    landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`;
-    landmarkPopup.style.display = 'flex';
+    landmarkName.textContent = landmark.name; landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`; landmarkPopup.style.display = 'flex';
 }
 
 
@@ -251,10 +194,20 @@ function update() {
         stumbleTimer--; if (stumbleTimer <= 0) { isStumbling = false; gameSpeed = config.obstacleSpeed; console.log("Stumble finished."); }
     }
 
-    // Player Physics (Variable Jump)
-    let currentGravity = config.gravity; /* ... variable jump logic ... */
-    if (!playerState.isGrounded && playerState.vy < 0) { if (isJumpKeyDown) { currentGravity *= config.jumpHoldGravityMultiplier; } else { currentGravity *= config.jumpCutGravityMultiplier; } }
-    playerState.vy += currentGravity; playerState.y += playerState.vy;
+    // -- Player Physics (MODIFIED for Variable Jump Pointer Check) --
+    let currentGravity = config.gravity;
+    if (!playerState.isGrounded && playerState.vy < 0) { // If rising
+        // Apply reduced gravity if EITHER space OR mouse/touch is held
+        if (isJumpKeyDown || isPointerDownJump) { // <<< MODIFIED THIS CONDITION
+            currentGravity *= config.jumpHoldGravityMultiplier;
+        } else { // Apply increased gravity if jump released while rising
+            currentGravity *= config.jumpCutGravityMultiplier;
+        }
+    }
+    playerState.vy += currentGravity; // Apply calculated gravity
+    playerState.y += playerState.vy;  // Update position
+    // --- END Player Physics Modification ---
+
 
     // Ground Collision
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height; /* ... ground check ... */
@@ -296,12 +249,9 @@ function draw() {
     else { /* Fallback colors */ ctx.fillStyle = config.colors.blue; ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight); ctx.fillStyle = config.colors.green; ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight); }
 
     // Draw Player
-    // Optional: Stumble visual effect
-    // if (isStumbling && frameCount % 10 < 5) { ctx.globalAlpha = 0.5; }
     if (assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
-    // ctx.globalAlpha = 1.0; // Reset alpha
 
-    // Draw Obstacles (Uses typeKey and larger sizes)
+    // Draw Obstacles
     obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */
         const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
         else { /* Fallback rect */ ctx.fillStyle = config.colors.black; ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
