@@ -1,0 +1,106 @@
+/* Basic Reset & Body Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #151513; /* Near-black page background from palette */
+    font-family: Arial, sans-serif; /* Simple, readable font */
+}
+
+/* Game Container - Positions overlays */
+#gameContainer {
+    position: relative; /* Allows absolute positioning of children */
+    width: 800px;      /* Matches canvas width */
+    height: 400px;     /* Matches canvas height */
+    overflow: hidden;  /* Keeps elements contained */
+}
+
+/* Canvas Styling */
+#gameCanvas {
+    display: block; /* Removes potential extra space below */
+    background-color: #0296c6; /* Blue sky background - JS will draw over this */
+    width: 100%;
+    height: 100%;
+}
+
+/* Score Display Styling */
+#scoreDisplay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #ffffff; /* White text */
+    background-color: rgba(21, 21, 19, 0.7); /* Semi-transparent near-black bg */
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 1.2em;
+    z-index: 10; /* Places score above canvas */
+}
+
+/* Common Styles for Overlays (Hidden by Default) */
+.popup,
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Crucial: Hide overlays initially */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #ffffff; /* White text for overlays */
+    padding: 20px;
+    z-index: 20; /* Places overlays above score/canvas */
+}
+
+/* Specific Backgrounds for Overlays */
+.overlay { /* Game Over / Win */
+    background-color: rgba(21, 21, 19, 0.85); /* Near-black, semi-transparent */
+}
+
+.popup { /* Landmark Info */
+     background-color: rgba(21, 21, 19, 0.95); /* Near-black, mostly opaque */
+     border: 3px solid #f5d306; /* Yellow border */
+     max-width: 90%; /* Limit width */
+     border-radius: 8px;
+}
+
+/* Text Styling within Overlays */
+.popup h3, .overlay h2 {
+    color: #f5d306; /* Yellow headings */
+    margin-bottom: 15px;
+}
+
+.popup p, .overlay p {
+    margin-bottom: 10px;
+    line-height: 1.4; /* Improve readability */
+}
+
+/* Button Styling */
+#continueButton {
+    padding: 12px 25px;
+    background-color: #f5d306; /* Yellow background */
+    color: #151513; /* Near-black text */
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px; /* Space above the button */
+    transition: background-color 0.2s ease; /* Smooth hover effect */
+}
+
+#continueButton:hover {
+    background-color: #e0bd05; /* Slightly darker yellow */
+}
+
+/* Note: JavaScript will be responsible for changing the 'display' property
+   of '.popup' and '.overlay' from 'none' to 'flex' to show them. */
