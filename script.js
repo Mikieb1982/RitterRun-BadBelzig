@@ -40,74 +40,66 @@ let score = 0;
 let frameCount = 0;
 let gameSpeed = config.obstacleSpeed; // Can increase over time if desired
 
-// --- Asset Loading (MODIFIED SECTION) ---
+// --- Asset Loading (Includes background image) ---
 const assets = {
-    // --- ADD YOUR ASSETS HERE ---
-    // Give them meaningful keys to access them later
-    knightPlaceholder: null, // Will hold the loaded Image object for the knight
-    stonePlaceholder: null,  // Will hold the loaded Image object for the stone
-    // Add keys for other assets (landmarks, etc.) here later, e.g.:
-    // steinThermeImg: null,
+    // Asset keys
+    knightPlaceholder: null,
+    stonePlaceholder: null,
+    backgroundImage: null, // <<< Added for background image
 
-    // --- Loading Progress Tracking ---
+    // Loading Progress Tracking
     loaded: 0,
-    total: 0, // loadImage function will increment this
-    sources: { // Define the sources for your assets
-        knightPlaceholder: 'assets/knight_placeholder.png', // Path to your knight placeholder
-        stonePlaceholder: 'assets/stone_placeholder.png'   // Path to your stone placeholder
-        // steinThermeImg: 'assets/steintherme.png',      // Example for later
-        // ... add paths for all assets you need to load
+    total: 0,
+    sources: { // Asset paths
+        knightPlaceholder: 'assets/knight_placeholder.png',
+        stonePlaceholder: 'assets/stone_placeholder.png',
+        backgroundImage: 'assets/background.png' // <<< Added background image path
+        // ... add paths for landmark images etc. here later
     }
 };
 
-// Updated loadImage function - stores image in assets object using key
+// Updated loadImage function
 function loadImage(key, src) {
     console.log(`Attempting to load: ${key} from ${src}`);
-    assets.total++; // Count total assets to load
+    assets.total++;
     const img = new Image();
     img.src = src;
     img.onload = () => {
         console.log(`Successfully loaded: ${key}`);
-        assets.loaded++; // Increment loaded count
-        assets[key] = img; // Store the loaded image object in the assets object
+        assets.loaded++;
+        assets[key] = img; // Store loaded image
         // Check if all assets are loaded
         if (assets.loaded === assets.total) {
             console.log("All assets loaded. Starting game...");
-            resetGame(); // <<<<<<< START GAME ONLY WHEN ALL LOADED >>>>>>>>>
+            resetGame(); // Start game when all loaded
         }
     };
     img.onerror = () => {
         console.error(`Failed to load asset: ${key} from ${src}`);
-        // Consider adding error handling (e.g., stop the game)
     };
-    // No need to return img, it's stored in assets[key]
 }
 
 // Function to start loading all defined assets
 function loadAllAssets() {
     console.log("Starting asset loading...");
     gameState = 'loading';
-    // Reset counts in case of reload/retry
     assets.loaded = 0;
     assets.total = 0;
-    // Loop through the sources and start loading each one
     for (const key in assets.sources) {
         loadImage(key, assets.sources[key]);
     }
-    // Handle the edge case where no assets are defined
     if (assets.total === 0) {
-        console.warn("No assets defined in assets.sources. Starting game immediately...");
+        console.warn("No assets defined. Starting game immediately...");
         resetGame();
     }
 }
-// --- END Asset Loading (MODIFIED SECTION) ---
+// --- END Asset Loading ---
 
 
 // --- Landmark Data ---
-// Populate this with your landmark details
 const landmarkDefinitions = [
-    // NOTE: Adjust xTrigger values based on score/distance goals
-    { name: "SteinTherme", xTrigger: 1000, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole).", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole).", imgKey: 'steinThermeImg' /* Example key if image loaded */ },
+    // Adjust xTrigger values based on score/distance goals
+    { name: "SteinTherme", xTrigger: 1000, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole).", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole).", imgKey: 'steinThermeImg' },
     { name: "Freibad", xTrigger: 2000, descEN: "Cool off at the Freibad! This outdoor swimming pool is a popular spot in summer.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer ein beliebter Treffpunkt.", imgKey: 'freibadImg' },
     { name: "Kulturzentrum & Bibliothek", xTrigger: 3000, descEN: "This is the Kulturzentrum & Library on Weitzgrunder Str. 4, a hub for reading and local culture.", descDE: "Hier sind das Kulturzentrum & die Bibliothek in der Weitzgrunder Str. 4 – ein Zentrum für Lesen und lokale Kultur.", imgKey: 'kulturzentrumImg'},
     { name: "Fläming Bahnhof", xTrigger: 4000, descEN: "All aboard at Fläming Bahnhof! This station connects Bad Belzig to Berlin and the region.", descDE: "Einsteigen bitte am Fläming Bahnhof! Dieser Bahnhof verbindet Bad Belzig mit Berlin und der Region.", imgKey: 'bahnhofImg'},
@@ -126,8 +118,7 @@ function resetPlayer() {
         height: 50, // Adjust to your knight sprite size
         vy: 0, // Vertical velocity
         isGrounded: true
-        // Add frame tracking for animation later
-        // currentFrame: 0,
+        // currentFrame: 0, // For animation later
         // frameTimer: 0
     };
 }
@@ -137,7 +128,7 @@ function resetGame() {
     console.log("Resetting game...");
     resetPlayer();
     obstacles = [];
-    landmarks = [...landmarkDefinitions]; // Create copy to reset landmark triggers
+    landmarks = [...landmarkDefinitions]; // Reset landmark triggers
     currentLandmarkIndex = 0;
     score = 0;
     frameCount = 0;
@@ -146,20 +137,18 @@ function resetGame() {
     gameOverScreen.style.display = 'none';
     winScreen.style.display = 'none';
     landmarkPopup.style.display = 'none';
-    gameState = 'running'; // Set state to running AFTER reset
+    gameState = 'running'; // Set state AFTER reset
     requestAnimationFrame(gameLoop); // Start the game loop
 }
 
-// --- Input Handling (User Provided + Integration) ---
+// --- Input Handling ---
 function handleJump() {
     if (gameState === 'running' && playerState.isGrounded) {
         playerState.vy = config.jumpStrength;
         playerState.isGrounded = false;
-        // Add jump sound effect here if desired
     } else if (gameState === 'gameOver' || gameState === 'win') {
-        // Only reset if overlays are visible, prevent accidental immediate reset
         if (gameOverScreen.style.display !== 'none' || winScreen.style.display !== 'none') {
-             resetGame(); // Restart on input after game over/win
+             resetGame();
         }
     }
 }
@@ -172,41 +161,23 @@ function hideLandmarkPopup() {
     }
 }
 
+// Event listeners (Keyboard, Touch, Mouse, Button, Overlays)
 window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
+    if (e.code === 'Space') { e.preventDefault(); handleJump(); }
+    else if (e.key === 'Enter' || e.code === 'Enter') {
         e.preventDefault();
-        handleJump();
-    } else if (e.key === 'Enter' || e.code === 'Enter') {
-        e.preventDefault();
-        if (gameState === 'paused' && landmarkPopup.style.display !== 'none') {
-            hideLandmarkPopup();
-        } else if (gameState === 'gameOver' || gameState === 'win') {
-            resetGame();
-        }
+        if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); }
+        else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); }
     }
 });
-
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    if (gameState === 'running' || gameState === 'paused') {
-       handleJump();
-    } else if (gameState === 'gameOver' || gameState === 'win') {
-        resetGame();
-    }
+    if (gameState === 'running' || gameState === 'paused') { handleJump(); }
+    else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); }
 });
-
-canvas.addEventListener('mousedown', (e) => {
-    if (gameState === 'running') {
-        handleJump();
-    }
-    // Overlays handle their own clicks for restart below
-});
-
-// Restart listener for game over/win screens
+canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); } });
 gameOverScreen.addEventListener('click', resetGame);
 winScreen.addEventListener('click', resetGame);
-
-// Event Listener for Continue Button
 continueButton.addEventListener('click', hideLandmarkPopup);
 
 
@@ -220,77 +191,71 @@ function checkCollision(rect1, rect2) {
     );
 }
 
-// --- Obstacle Handling ---
+// --- Obstacle Handling (Spawns smaller stones) ---
 function spawnObstacle() {
-    const obstacleHeight = 30 + Math.random() * 20; // Example random height
-    const obstacleWidth = 20 + Math.random() * 10;  // Example random width
+    // --- Smaller stone dimensions --- (MODIFIED)
+    const obstacleHeight = 15 + Math.random() * 10; // e.g., height 15-25px
+    const obstacleWidth = 10 + Math.random() * 8;  // e.g., width 10-18px
+    // --- END modification ---
+
     obstacles.push({
         x: config.canvasWidth,
-        y: config.canvasHeight - config.groundHeight - obstacleHeight,
+        y: config.canvasHeight - config.groundHeight - obstacleHeight, // Position based on height
         width: obstacleWidth,
         height: obstacleHeight
     });
 }
 
 function updateObstacles() {
-    // Spawn new obstacles periodically based on frame count
-    // Ensure spawnRate is reasonable (e.g., > 60 for roughly 1 per second at 60fps)
-    if (frameCount > 100 && frameCount % config.spawnRate === 0) { // Add initial delay
+    // Spawn new obstacles periodically
+    if (frameCount > 100 && frameCount % config.spawnRate === 0) { // Start spawning after ~1.5s
         spawnObstacle();
     }
-
     // Move and remove off-screen obstacles
     for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= gameSpeed;
         if (obstacles[i].x + obstacles[i].width < 0) {
-            obstacles.splice(i, 1); // Remove obstacle
+            obstacles.splice(i, 1);
         }
     }
 }
+// --- END Obstacle Handling ---
+
 
 // --- Landmark Handling ---
 function checkLandmarks() {
     if (currentLandmarkIndex < landmarks.length) {
         const nextLandmark = landmarks[currentLandmarkIndex];
-        // Using score as a proxy for distance - adjust trigger values as needed!
         const currentScore = Math.floor(score / 10); // Use displayed score
         if (currentScore >= nextLandmark.xTrigger) {
-            // landmarkImage.src = assets.sources[nextLandmark.imgKey]; // Set image source if using images in popup
             showLandmarkPopup(nextLandmark);
             if (nextLandmark.isFinal) {
-                gameState = 'win'; // Trigger win state
-                showWinScreen(); // Show win screen immediately
+                gameState = 'win';
+                showWinScreen();
             } else {
-                 gameState = 'paused'; // Pause for regular landmarks
+                 gameState = 'paused';
             }
-            currentLandmarkIndex++; // Move to next landmark trigger
+            currentLandmarkIndex++;
         }
     }
 }
 
 function showLandmarkPopup(landmark) {
     landmarkName.textContent = landmark.name;
-    landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`; // Use innerHTML for line break
-    // Uncomment and ensure asset key exists if using images in popup
-    // if (landmark.imgKey && assets[landmark.imgKey]) {
-    //     if(landmarkImage) landmarkImage.src = assets[landmark.imgKey].src;
-    // } else {
-    //      if(landmarkImage) landmarkImage.src = ""; // Clear image if none defined
-    // }
-    landmarkPopup.style.display = 'flex'; // Show the popup
+    landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`;
+    // Add logic here later to display landmark image if loaded via assets[landmark.imgKey]
+    landmarkPopup.style.display = 'flex';
 }
+
 
 // --- Update Game State ---
 function update() {
     if (gameState !== 'running') return; // Only run updates if game is 'running'
-
     frameCount++;
 
-    // -- Player Physics --
+    // Player Physics (Gravity, Ground Check)
     playerState.vy += config.gravity;
     playerState.y += playerState.vy;
-
-    // Ground collision detection
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
     if (playerState.y >= groundLevel) {
         playerState.y = groundLevel;
@@ -299,111 +264,84 @@ function update() {
     } else {
         playerState.isGrounded = false;
     }
-    // Add animation frame updates here later
+    // Add animation updates later
 
-    // -- Obstacles --
+    // Obstacles
     updateObstacles();
 
-    // -- Collision Checks --
+    // Collision Checks
     for (const obstacle of obstacles) {
         if (checkCollision(playerState, obstacle)) {
-            gameState = 'gameOver'; // Change state
-            showGameOverScreen(); // Show overlay
-            // Optional: Add game over sound effect
-            return; // Stop the update loop immediately on collision
+            gameState = 'gameOver';
+            showGameOverScreen();
+            return; // Stop update loop
         }
     }
 
-    // -- Score --
-    score++; // Increment raw score (based on frames)
-    scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`; // Update displayed score
+    // Score
+    score++;
+    scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 
-    // -- Landmarks --
-    // CheckLandmarks might change gameState to 'paused' or 'win', stopping subsequent updates in the loop
+    // Landmarks (Check last, as it can pause/end the game)
     checkLandmarks();
-
 }
 
-// --- Draw Game (MODIFIED SECTION) ---
+
+// --- Draw Game (Draws background image) ---
 function draw() {
     // Clear canvas
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
-    // Draw background (Simple Example)
-    ctx.fillStyle = config.colors.blue; // Sky
-    ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight);
-    ctx.fillStyle = config.colors.green; // Ground
-    ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight);
-
-    // --- Draw Player ---
-    // Check if the knight placeholder image asset has been loaded
-    if (assets.knightPlaceholder) {
-        // Add animation logic here later by choosing different assets based on frameCount/playerState
-        ctx.drawImage(
-            assets.knightPlaceholder, // Use the loaded image object
-            playerState.x,
-            playerState.y,
-            playerState.width,
-            playerState.height
-        );
-    } else {
-        // Optional: Draw a fallback rectangle if image hasn't loaded yet
-        ctx.fillStyle = config.colors.black;
-        ctx.fillRect(playerState.x, playerState.y, playerState.width, playerState.height);
+    // --- Draw Background Image --- (MODIFIED)
+    if (assets.backgroundImage) { // Draw image if loaded
+        ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight);
+    } else { // Fallback colors if image not loaded
+        ctx.fillStyle = config.colors.blue; // Sky
+        ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight);
+        ctx.fillStyle = config.colors.green; // Ground
+        ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight);
     }
+    // --- END Background Image Drawing ---
 
-    // --- Draw Obstacles ---
+    // --- Draw Player --- (Using placeholder)
+    if (assets.knightPlaceholder) {
+        ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
+    } // ... (optional fallback rect)
+
+    // --- Draw Obstacles --- (Using placeholder)
     obstacles.forEach(obstacle => {
-        // Check if the stone placeholder image asset has been loaded
         if (assets.stonePlaceholder) {
-             ctx.drawImage(
-                assets.stonePlaceholder, // Use the loaded image object
-                obstacle.x,
-                obstacle.y,
-                obstacle.width,
-                obstacle.height
-            );
-        } else {
-             // Optional: Draw a fallback rectangle if image hasn't loaded yet
-             ctx.fillStyle = config.colors.black;
-             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-        }
+             ctx.drawImage(assets.stonePlaceholder, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        } // ... (optional fallback rect)
     });
 
-    // Draw Landmarks visually as they approach (Optional - more complex implementation)
-    // Could involve checking landmark proximity and drawing loaded landmark images
-
-    // Score is updated via HTML element, not drawn on canvas here
+    // Draw Landmarks visually (Optional advanced feature)
 }
-// --- END Draw Game (MODIFIED SECTION) ---
+// --- END Draw Game ---
 
 
 // --- UI Updates ---
 function showGameOverScreen() {
-    gameOverScreen.style.display = 'flex'; // Show the game over overlay
+    gameOverScreen.style.display = 'flex';
 }
-
 function showWinScreen() {
-    winScreen.style.display = 'flex'; // Show the win overlay
+    winScreen.style.display = 'flex';
 }
 
 
 // --- Main Game Loop ---
 function gameLoop() {
-    // Stop loop if not in 'running' state
-    if (gameState !== 'running') {
-        console.log(`Game loop stopping. State: ${gameState}`);
+    if (gameState !== 'running') { // Stop loop if not running
+        // console.log(`Game loop stopping. State: ${gameState}`); // Optional debug
         return;
     }
-    update(); // Update game logic
-    draw();   // Draw the current frame
-    requestAnimationFrame(gameLoop); // Request the next frame
+    update(); // Update logic
+    draw();   // Draw frame
+    requestAnimationFrame(gameLoop); // Request next frame
 }
 
-// --- Start Game (MODIFIED SECTION) ---
-// Instead of calling resetGame() directly, call loadAllAssets()
-// This ensures assets are loaded before the game attempts to start/draw them.
 
-// resetGame(); // <<<<< ORIGINAL CALL - REMOVED >>>>>
-loadAllAssets(); // <<<<< CALL THIS INSTEAD TO START LOADING PROCESS >>>>>
-// --- END Start Game (MODIFIED SECTION) ---
+// --- Start Game ---
+// Call loadAllAssets() to initiate loading. resetGame() is called by the loader.
+loadAllAssets();
+// --- END Start Game ---
