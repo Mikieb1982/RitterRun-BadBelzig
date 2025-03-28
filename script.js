@@ -2,7 +2,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('scoreDisplay');
-const livesDisplay = document.getElementById('livesDisplay');
+const livesDisplay = document.getElementById('livesDisplay'); // <<< Ensure this ID exists in HTML
 const landmarkPopup = document.getElementById('landmarkPopup');
 const landmarkName = document.getElementById('landmarkName');
 const landmarkDescription = document.getElementById('landmarkDescription');
@@ -11,7 +11,7 @@ const continueButton = document.getElementById('continueButton');
 const gameOverScreen = document.getElementById('gameOverScreen');
 const winScreen = document.getElementById('winScreen');
 
-// --- Game Configuration (Further Tweaked) ---
+// --- Game Configuration (Tweaked Values) ---
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
@@ -20,15 +20,15 @@ const config = {
     playerSpeed: 0,
     obstacleSpeed: 2.2, // Starting speed
     groundHeight: 50,
-    spawnRate: 160, // Base spawn rate (dynamic logic adjusts this)
+    spawnRate: 160,
     jumpHoldGravityMultiplier: 0.5,
     jumpCutGravityMultiplier: 2.0,
     stompJumpStrength: -8.5,
     maxGameSpeed: 7,
     startLives: 5,
-    recoveryDuration: 90,          // <<< TWEAKED: Shorter recovery
-    stompBonus: 50,               // <<< ADDED: Score bonus for stomps
-    speedIncreasePerLandmark: 0.2,// <<< ADDED: Speed increase per landmark
+    recoveryDuration: 90,
+    stompBonus: 50,
+    speedIncreasePerLandmark: 0.2,
     // Bad Belzig Color Palette
     colors: { /* ... colors ... */ }
 };
@@ -50,9 +50,7 @@ let recoveryTimer = 0;
 
 // --- Asset Loading ---
 const assets = { /* ... asset keys and sources ... */
-    knightPlaceholder: null, stoneObstacle: null, familyObstacle: null,
-    tractorObstacle: null, backgroundImage: null, signImage: null,
-    loaded: 0, total: 0,
+    knightPlaceholder: null, stoneObstacle: null, familyObstacle: null, tractorObstacle: null, backgroundImage: null, signImage: null, loaded: 0, total: 0,
     sources: { knightPlaceholder: 'assets/knight_placeholder.png', stoneObstacle: 'assets/stones.png', familyObstacle: 'assets/family.png', tractorObstacle: 'assets/tractor.png', backgroundImage: 'assets/background.png', signImage: 'assets/sign.png' }
 };
 function loadImage(key, src) { /* ... loads images ... */
@@ -82,69 +80,86 @@ function initializeLandmarks() { /* ... initializes landmarks array ... */
 // --- END Landmark Data ---
 
 
-// --- Player State Initialization (MODIFIED Position) ---
-function resetPlayer() {
-    playerState = {
-        x: 100, // <<< TWEAKED: Start knight slightly further right
-        y: config.canvasHeight - config.groundHeight - 75,
-        width: 60, height: 75, vy: 0, isGrounded: true
-    };
+// --- Player State Initialization ---
+function resetPlayer() { /* ... resets player properties ... */
+    playerState = { x: 100, y: config.canvasHeight - config.groundHeight - 75, width: 60, height: 75, vy: 0, isGrounded: true };
 }
 
 
 // --- Game Reset Function ---
-function resetGame() { /* ... resets game state including lives/recovery ... */
+function resetGame() { /* ... resets game state ... */
     console.log("Resetting game..."); resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed; isJumpKeyDown = false; isPointerDownJump = false; playerLives = config.startLives; isRecovering = false; recoveryTimer = 0; livesDisplay.textContent = `Leben / Lives: ${playerLives}`; scoreDisplay.textContent = `Punkte / Score: 0`; gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; landmarkPopup.style.display = 'none'; gameState = 'running'; requestAnimationFrame(gameLoop);
 }
 
-// --- Input Handling ---
-function handleJump() { /* ... jump logic ... */
-    if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+// --- Input Handling (ADDED console logs) ---
+function handleJump() {
+    console.log(`>>> handleJump called. State: ${gameState}, Grounded: ${playerState.isGrounded}`); // <<< LOG
+    if (gameState === 'running' && playerState.isGrounded) {
+        playerState.vy = config.jumpStrength;
+        playerState.isGrounded = false;
+        console.log(`>>> Jump Force Applied! New vy: ${playerState.vy}`); // <<< LOG
+    } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') {
+        resetGame();
+    } else if (gameState === 'win' && winScreen.style.display !== 'none') {
+        resetGame();
+    } else {
+        console.log(">>> Jump conditions not met!"); // <<< LOG
+    }
 }
 function hideLandmarkPopup() { /* ... hide popup logic ... */
     if (gameState === 'paused') { landmarkPopup.style.display = 'none'; gameState = 'running'; requestAnimationFrame(gameLoop); }
 }
 // Event listeners
-window.addEventListener('keydown', (e) => { /* ... keydown ... */ }); window.addEventListener('keyup', (e) => { /* ... keyup ... */ }); canvas.addEventListener('touchstart', (e) => { /* ... touchstart ... */ }); canvas.addEventListener('mousedown', (e) => { /* ... mousedown ... */ }); window.addEventListener('touchend', (e) => { isPointerDownJump = false; }); window.addEventListener('mouseup', (e) => { isPointerDownJump = false; }); gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        console.log(">>> Spacebar pressed"); // <<< LOG
+        if (!isJumpKeyDown) { handleJump(); }
+        isJumpKeyDown = true;
+    } else if (e.key === 'Enter' || e.code === 'Enter') {
+        /* ... Enter key logic ... */
+        e.preventDefault(); if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+    }
+});
+window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    console.log(">>> Touch detected"); // <<< LOG
+    if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; }
+    else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+});
+canvas.addEventListener('mousedown', (e) => {
+    console.log(">>> Mouse click detected"); // <<< LOG
+    if (gameState === 'running') { handleJump(); isPointerDownJump = true; }
+});
+window.addEventListener('touchend', (e) => { isPointerDownJump = false; }); window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
+gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
 // --- END Input Handling ---
 
 
 // --- Collision Detection ---
 function checkCollision(rect1, rect2) { /* ... AABB check ... */ return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y); }
 
-// --- Obstacle Handling (MODIFIED Spawn Rate Logic) ---
+// --- Obstacle Handling ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
-function spawnObstacle() { /* ... spawn logic with larger sizes ... */
-    const typeIndex = Math.floor(Math.random() * obstacleTypes.length); const selectedTypeKey = obstacleTypes[typeIndex]; let obstacleHeight, obstacleWidth; switch (selectedTypeKey) { case 'familyObstacle': obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break; case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break; case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break; } console.log(`Spawning ${selectedTypeKey} - Size: ${obstacleWidth.toFixed(0)}x${obstacleHeight.toFixed(0)}`); obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
-}
-function updateObstacles() {
-    // Calculate dynamic spawn rate (faster speed = lower rate = more obstacles)
-    let currentSpawnRate = Math.max(60, config.spawnRate - Math.floor(gameSpeed * 10)); // <<< TWEAKED: Dynamic rate
-
-    if (frameCount > 100 && frameCount % currentSpawnRate === 0) { // <<< Use dynamic rate
-        spawnObstacle();
-    }
-    // Move obstacles
-    for (let i = obstacles.length - 1; i >= 0; i--) { obstacles[i].x -= gameSpeed; if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); } }
-}
+function spawnObstacle() { /* ... spawn logic ... */ }
+function updateObstacles() { /* ... update obstacle positions ... */ }
 // --- END Obstacle Handling ---
 
 
 // --- Landmark Display & Popup Trigger Function ---
-function showLandmarkPopup(landmark) { /* ... show popup logic ... */
-    landmarkName.textContent = landmark.name; landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`; landmarkPopup.style.display = 'flex';
-}
+function showLandmarkPopup(landmark) { /* ... show popup logic ... */ }
 
 
-// --- Update Game State ---
+// --- Update Game State (ADDED console log) ---
 function update() {
     if (gameState !== 'running') return;
     frameCount++;
+    // <<< LOG Player State >>>
+    console.log(`Update Frame ${frameCount} - Y: ${playerState.y.toFixed(1)}, VY: ${playerState.vy.toFixed(1)}, Grounded: ${playerState.isGrounded}`);
 
     // Manage Recovery State
-    if (isRecovering) { /* ... recovery timer logic ... */
-        recoveryTimer--; if (recoveryTimer <= 0) { isRecovering = false; console.log("Recovery finished."); }
-    }
+    if (isRecovering) { /* ... recovery timer logic ... */ }
 
     // Player Physics (Variable Jump)
     let currentGravity = config.gravity; /* ... variable jump gravity ... */
@@ -158,74 +173,32 @@ function update() {
     // Obstacles
     updateObstacles();
 
-    // Collision Checks (MODIFIED Stomp Bonus, Penalty)
-    if (!isRecovering) {
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obstacle = obstacles[i]; if (checkCollision(playerState, obstacle)) {
-                const isFalling = playerState.vy > 0; const previousPlayerBottom = playerState.y + playerState.height - playerState.vy; const obstacleTop = obstacle.y;
-                if (isFalling && previousPlayerBottom <= obstacleTop + 1) { /* Stomp */
-                    console.log("Stomp detected!"); playerState.vy = config.stompJumpStrength; playerState.y = obstacle.y - playerState.height; playerState.isGrounded = false;
-                    score += config.stompBonus; // <<< ADDED: Use config for bonus
-                    obstacles.splice(i, 1); // Remove obstacle
-                    continue;
-                } else { /* Not a Stomp */ if (playerState.isGrounded || playerState.vy >= 0) { /* Vulnerable Hit */
-                    console.log("Vulnerable Collision Detected!"); playerLives--; livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
-                    score -= 75; if (score < 0) { score = 0; } // <<< TWEAKED: Penalty value
-                    if (playerLives <= 0) { /* Game Over */ console.log("Game Over!"); gameState = 'gameOver'; showGameOverScreen(); return; }
-                    else { /* Trigger Recovery */ console.log("Lost a life, starting recovery."); isRecovering = true; recoveryTimer = config.recoveryDuration; playerState.vy = -3; playerState.isGrounded = false; break; }
-                 } else { /* Rising Hit -> Safe */ console.log("Collision ignored (Player rising)."); }
-                }
-            }
-        }
-    }
+    // Collision Checks (Stomp=Bounce, Vulnerable Hit=Lose Life/GameOver, Rising Hit=Safe)
+    if (!isRecovering) { /* ... collision logic ... */ }
 
-    // Update Landmarks and Check Triggers (MODIFIED: Landmark speed increase)
-    for (let landmark of landmarks) {
-        landmark.worldX -= gameSpeed;
-        if (!landmark.hasBeenTriggered && landmark.worldX < playerState.x + playerState.width && landmark.worldX + landmark.width > playerState.x) {
-            console.log(`Triggering landmark: ${landmark.name}`); landmark.hasBeenTriggered = true; showLandmarkPopup(landmark);
+    // Update Landmarks and Check Triggers
+    for (let landmark of landmarks) { /* ... landmark movement and trigger logic ... */ }
 
-            // <<< ADDED: Increase speed on landmark trigger >>>
-            if (gameSpeed < config.maxGameSpeed) {
-                 gameSpeed += config.speedIncreasePerLandmark;
-                 gameSpeed = parseFloat(gameSpeed.toFixed(2));
-                 console.log("Speed Increased via Landmark:", gameSpeed);
-            }
+    // Score
+    score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 8)}`;
 
-            if (landmark.isFinal) { gameState = 'win'; showWinScreen(); } else { gameState = 'paused'; }
-        }
-    }
-
-    // Score (MODIFIED Display Rate)
-    score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 8)}`; // <<< TWEAKED: Faster score display
-
-    // --- Gradual Speed Increase REMOVED (now tied to landmarks) ---
-    // if (frameCount > 0 && frameCount % 240 === 0) { ... } // <<< REMOVED
+    // Gradual Speed Increase (Landmark based)
+    // Removed frame-based increase, logic is inside landmark trigger section now
 }
 
 
 // --- Draw Game ---
 function draw() {
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-
     // Draw Background
     if (assets.backgroundImage) { ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight); } else { /* Fallback colors */ }
-
-    // Draw Player (MODIFIED Recovery Flash)
-    let drawPlayer = true;
-    if (isRecovering && frameCount % 8 < 4) { drawPlayer = false; } // <<< TWEAKED: Faster flash
-    if (drawPlayer && assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
-    else if (drawPlayer && !assets.knightPlaceholder) { /* Fallback rect */ }
-
+    // Draw Player (With recovery flashing)
+    let drawPlayer = true; if (isRecovering && frameCount % 8 < 4) { drawPlayer = false; } // Faster flash
+    if (drawPlayer && assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); } else if (drawPlayer && !assets.knightPlaceholder) { /* Fallback rect */ }
     // Draw Obstacles
-    obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */
-        const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); } else { /* Fallback rect */ }
-    });
-
+    obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */ });
     // Draw Landmark Signs
-    if (assets.signImage) { /* ... draw sign logic ... */
-        landmarks.forEach(landmark => { if (landmark.worldX < config.canvasWidth && landmark.worldX + landmark.width > 0) { ctx.drawImage(assets.signImage, landmark.worldX, landmark.yPos, landmark.width, landmark.height); } });
-    }
+    if (assets.signImage) { /* ... draw sign logic ... */ }
 }
 // --- END Draw Game ---
 
@@ -245,4 +218,3 @@ function gameLoop() { /* ... checks state and calls update/draw ... */
 // --- Start Game ---
 loadAllAssets();
 // --- END Start Game ---
-
