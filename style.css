@@ -9,37 +9,35 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;      /* Full viewport width */
-    height: 100vh;     /* Full viewport height */
-    overflow: hidden;  /* Prevent scrollbars on mobile */
-    background-color: #151513; /* Near-black page background */
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #151513;
     font-family: Arial, sans-serif;
-    touch-action: manipulation; /* Prevent some default browser touch actions */
+    touch-action: manipulation;
 }
 
 /* Game Container - Scaled Responsively */
 #gameContainer {
     position: relative;
-    /* Scale based on viewport, maintain 2:1 ratio */
-    width: 95vw; /* Use 95% of viewport width */
-    height: calc(95vw / 2); /* Calculate height based on width (for 2:1 ratio) */
-    max-height: 95vh; /* Don't exceed 95% of viewport height */
-    max-width: calc(95vh * 2); /* Don't exceed width based on max-height (for 2:1 ratio) */
-
+    width: 95vw;
+    height: calc(95vw / 2); /* 2:1 ratio */
+    max-height: 95vh;
+    max-width: calc(95vh * 2);
     overflow: hidden;
-    margin: auto; /* Helps with centering within flex body */
-    background: #000; /* Optional: container background */
+    margin: auto;
+    background: #000;
 }
 
-/* Canvas Styling - Fills the scaled container */
+/* Canvas Styling */
 #gameCanvas {
     display: block;
-    width: 100%; /* Fill container width */
-    height: 100%; /* Fill container height */
-    background-color: #0296c6; /* Default blue sky - drawn over by JS */
+    width: 100%;
+    height: 100%;
+    background-color: #0296c6;
 }
 
-/* Score Display Styling - Responsive Units */
+/* Score Display Styling */
 #scoreDisplay {
     position: absolute;
     top: 1.5vh;
@@ -48,17 +46,31 @@ body {
     background-color: rgba(21, 21, 19, 0.7);
     padding: 0.8vh 1.5vw;
     border-radius: 3px;
-    font-size: max(1.2em, 2.5vw); /* Responsive font size */
+    font-size: max(1.2em, 2.5vw);
     z-index: 10;
     white-space: nowrap;
 }
 
-/* Common Styles for Overlays - Responsive Padding/Font */
+/* Lives Display Styling - ADDED */
+#livesDisplay {
+    position: absolute;
+    top: 1.5vh;    /* Align with score display vertically */
+    right: 2vw;   /* Position on the right */
+    color: #ffffff;
+    background-color: rgba(21, 21, 19, 0.7);
+    padding: 0.8vh 1.5vw;
+    border-radius: 3px;
+    font-size: max(1.2em, 2.5vw); /* Match score font size */
+    z-index: 10; /* Above canvas */
+    white-space: nowrap;
+}
+
+/* Common Styles for Overlays */
 .popup,
 .overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    display: none; /* Hidden by default */
+    display: none;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -69,78 +81,55 @@ body {
 }
 
 /* Specific Overlay Backgrounds */
-.overlay { /* Win Screen */
+.overlay { /* Game Over / Win */
     background-color: rgba(21, 21, 19, 0.85);
 }
 
 .popup { /* Landmark Info */
      background-color: rgba(21, 21, 19, 0.95);
      border: max(2px, 0.5vmin) solid #f5d306;
-     max-width: 85%;
-     max-height: 85%;
+     max-width: 85%; max-height: 85%;
      border-radius: 8px;
-     overflow-y: auto; /* Allow scrolling */
+     overflow-y: auto;
 }
 
 
-/* Text Styling within Overlays (SECOND font size reduction) */
-.popup h3, .overlay h2 { /* Applies to landmark title & win screen title */
+/* Text Styling within Overlays (Smaller fonts) */
+.popup h3, .overlay h2 {
     color: #f5d306;
     margin-bottom: 2vh;
-    font-size: max(1.2em, 3vw); /* <<< Reduced size again */
+    font-size: max(1.2em, 3vw); /* Further reduced size */
 }
 
-.popup p, .overlay p { /* Applies to landmark description & win screen text */
+.popup p, .overlay p {
     margin-bottom: 1.5vh;
     line-height: 1.4;
-    font-size: max(0.8em, 1.8vw); /* <<< Reduced size again */
+    font-size: max(0.8em, 1.8vw); /* Further reduced size */
     max-width: 90%;
 }
-/* --- END Text Styling Modification --- */
 
-
-/* Button Styling - Responsive Padding/Font */
+/* Button Styling */
 #continueButton {
     padding: 1.5vh 3vw;
-    background-color: #f5d306;
-    color: #151513;
-    border: none;
-    border-radius: 5px;
-    font-size: max(1em, 2.5vw);
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 2vh;
-    min-width: 25vw;
-    min-height: 6vh;
+    background-color: #f5d306; color: #151513;
+    border: none; border-radius: 5px;
+    font-size: max(1em, 2.5vw); font-weight: bold;
+    cursor: pointer; margin-top: 2vh;
+    min-width: 25vw; min-height: 6vh;
     transition: background-color 0.2s ease;
 }
+#continueButton:hover { background-color: #e0bd05; }
 
-#continueButton:hover {
-    background-color: #e0bd05;
-}
-
-/* --- Mobile Orientation Message --- */
+/* Mobile Orientation Message */
 #rotateDeviceMessage {
-    display: none;
-    position: fixed;
+    display: none; position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #151513;
-    color: #ffffff;
+    background-color: #151513; color: #ffffff;
     z-index: 100;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    font-size: max(1.2em, 4vw);
-    padding: 5vw;
+    flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; font-size: max(1.2em, 4vw); padding: 5vw;
 }
-
 @media (orientation: portrait) {
-    #rotateDeviceMessage {
-        display: flex;
-    }
-    #gameContainer {
-        display: none;
-    }
+    #rotateDeviceMessage { display: flex; }
+    #gameContainer { display: none; }
 }
-/* --- End Orientation Message --- */
