@@ -10,18 +10,19 @@ const continueButton = document.getElementById('continueButton');
 const gameOverScreen = document.getElementById('gameOverScreen');
 const winScreen = document.getElementById('winScreen');
 
-// --- Game Configuration (Includes Jump Tuning) ---
+// --- Game Configuration (Includes Stomp/Jump Tuning) ---
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
     gravity: 0.5,
-    jumpStrength: -10, // Initial upward force
+    jumpStrength: -10, // Initial upward force for regular jump
     playerSpeed: 0,
     obstacleSpeed: 3,
     groundHeight: 50,
     spawnRate: 150,
     jumpHoldGravityMultiplier: 0.5, // Gravity multiplier while holding jump & rising
     jumpCutGravityMultiplier: 2.0,  // Gravity multiplier if jump released while rising
+    stompJumpStrength: -8,         // <<< Upward force after stomping an obstacle
     // Bad Belzig Color Palette
     colors: {
         green: '#0ca644',
@@ -32,7 +33,7 @@ const config = {
     }
 };
 
-// --- Game State Variables (Includes Jump Key Tracking) ---
+// --- Game State Variables ---
 let gameState = 'loading';
 let playerState = {};
 let obstacles = [];
@@ -41,7 +42,7 @@ let currentLandmarkIndex = 0;
 let score = 0;
 let frameCount = 0;
 let gameSpeed = config.obstacleSpeed;
-let isJumpKeyDown = false; // <<< Variable to track if jump key is held
+let isJumpKeyDown = false; // Tracks if jump key is held
 
 // --- Asset Loading ---
 const assets = {
@@ -49,7 +50,6 @@ const assets = {
     knightPlaceholder: null,
     stonePlaceholder: null,
     backgroundImage: null,
-
     // Loading Progress Tracking
     loaded: 0,
     total: 0,
@@ -61,7 +61,7 @@ const assets = {
     }
 };
 
-// loadImage function (remains the same)
+// loadImage function
 function loadImage(key, src) {
     console.log(`Attempting to load: ${key} from ${src}`);
     assets.total++;
@@ -82,7 +82,7 @@ function loadImage(key, src) {
     };
 }
 
-// loadAllAssets function (remains the same)
+// loadAllAssets function
 function loadAllAssets() {
     console.log("Starting asset loading...");
     gameState = 'loading';
@@ -135,7 +135,7 @@ function resetGame() {
     score = 0;
     frameCount = 0;
     gameSpeed = config.obstacleSpeed;
-    isJumpKeyDown = false; // Reset jump key state on game reset
+    isJumpKeyDown = false; // Reset jump key state
     scoreDisplay.textContent = `Punkte / Score: 0`;
     gameOverScreen.style.display = 'none';
     winScreen.style.display = 'none';
@@ -144,15 +144,12 @@ function resetGame() {
     requestAnimationFrame(gameLoop);
 }
 
-// --- Input Handling (MODIFIED for Jump Key Tracking) ---
+// --- Input Handling ---
 function handleJump() {
-    // Allow jump only if running and grounded (prevents double jump)
     if (gameState === 'running' && playerState.isGrounded) {
-        playerState.vy = config.jumpStrength; // Apply initial jump velocity
+        playerState.vy = config.jumpStrength;
         playerState.isGrounded = false;
-        // Optional: Add jump sound effect
     } else if (gameState === 'gameOver' || gameState === 'win') {
-        // Handle restart from overlays
         if (gameOverScreen.style.display !== 'none' || winScreen.style.display !== 'none') {
              resetGame();
         }
@@ -163,38 +160,29 @@ function hideLandmarkPopup() {
     if (gameState === 'paused') {
         landmarkPopup.style.display = 'none';
         gameState = 'running';
-        requestAnimationFrame(gameLoop); // Resume game loop
+        requestAnimationFrame(gameLoop);
     }
 }
 
-// Event listeners
+// Event listeners (Keyboard - includes keyup for variable jump)
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
-        if (!isJumpKeyDown) { // Trigger jump only on initial press if grounded
-             handleJump();
-        }
-        isJumpKeyDown = true; // Set flag: key is being held
-    }
-    else if (e.key === 'Enter' || e.code === 'Enter') {
+        if (!isJumpKeyDown) { handleJump(); }
+        isJumpKeyDown = true;
+    } else if (e.key === 'Enter' || e.code === 'Enter') {
         e.preventDefault();
         if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); }
         else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); }
     }
 });
-
-// Add keyup listener for Space to track release
 window.addEventListener('keyup', (e) => {
-     if (e.code === 'Space') {
-        e.preventDefault();
-        isJumpKeyDown = false; // Clear flag: key is released
-    }
+     if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; }
 });
 
-// Touch / Mouse listeners (Note: Variable jump height for touch not implemented here)
+// Touch / Mouse listeners (Basic jump, no variable height implemented here)
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    // This currently triggers a full jump strength jump on tap
     if (gameState === 'running' || gameState === 'paused') { handleJump(); }
     else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); }
 });
@@ -202,11 +190,11 @@ canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { han
 gameOverScreen.addEventListener('click', resetGame);
 winScreen.addEventListener('click', resetGame);
 continueButton.addEventListener('click', hideLandmarkPopup);
-// --- END Input Handling ---
 
 
 // --- Collision Detection ---
 function checkCollision(rect1, rect2) {
+    // Simple AABB collision check
     return (
         rect1.x < rect2.x + rect2.width &&
         rect1.x + rect1.width > rect2.x &&
@@ -228,14 +216,10 @@ function spawnObstacle() {
 }
 
 function updateObstacles() {
-    if (frameCount > 100 && frameCount % config.spawnRate === 0) {
-        spawnObstacle();
-    }
+    if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
     for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= gameSpeed;
-        if (obstacles[i].x + obstacles[i].width < 0) {
-            obstacles.splice(i, 1);
-        }
+        if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); }
     }
 }
 
@@ -247,12 +231,8 @@ function checkLandmarks() {
         const currentScore = Math.floor(score / 10);
         if (currentScore >= nextLandmark.xTrigger) {
             showLandmarkPopup(nextLandmark);
-            if (nextLandmark.isFinal) {
-                gameState = 'win';
-                showWinScreen();
-            } else {
-                 gameState = 'paused';
-            }
+            if (nextLandmark.isFinal) { gameState = 'win'; showWinScreen(); }
+            else { gameState = 'paused'; }
             currentLandmarkIndex++;
         }
     }
@@ -265,56 +245,86 @@ function showLandmarkPopup(landmark) {
 }
 
 
-// --- Update Game State (MODIFIED Physics for Variable Jump) ---
+// --- Update Game State (Includes Variable Jump and Stomp Logic) ---
 function update() {
     if (gameState !== 'running') return;
     frameCount++;
 
-    // -- Player Physics --
-    let currentGravity = config.gravity; // Start with normal gravity
-
-    // Apply variable gravity based on jump state
+    // -- Player Physics (Variable Jump Logic) --
+    let currentGravity = config.gravity;
     if (!playerState.isGrounded && playerState.vy < 0) { // If rising
         if (isJumpKeyDown) { // And jump key is held
             currentGravity *= config.jumpHoldGravityMultiplier; // Reduce gravity
         } else { // Jump key released while rising
-            currentGravity *= config.jumpCutGravityMultiplier; // Increase gravity (cut jump short)
+            currentGravity *= config.jumpCutGravityMultiplier; // Increase gravity
         }
     }
+    playerState.vy += currentGravity; // Apply gravity
+    playerState.y += playerState.vy;  // Update position
 
-    // Apply calculated gravity & update position
-    playerState.vy += currentGravity;
-    playerState.y += playerState.vy;
-
-    // Ground collision
+    // -- Ground Collision -- Check Must Happen BEFORE Obstacle Collision Check
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
     if (playerState.y >= groundLevel) {
         playerState.y = groundLevel;
         playerState.vy = 0;
         playerState.isGrounded = true;
     } else {
-        playerState.isGrounded = false;
+        playerState.isGrounded = false; // Important: Remain not grounded if in air
     }
-    // --- END Player Physics Modification ---
 
-    // Obstacles
-    updateObstacles();
+    // -- Obstacles --
+    updateObstacles(); // Move, spawn, remove obstacles
 
-    // Collision Checks
-    for (const obstacle of obstacles) {
+    // -- Collision Checks (MODIFIED for Stomp/Bounce Logic) --
+    let didStompThisFrame = false; // Reset stomp flag each frame
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+
         if (checkCollision(playerState, obstacle)) {
-            gameState = 'gameOver';
-            showGameOverScreen();
-            return; // Stop update loop
+            const isFalling = playerState.vy > 0; // Check if player is moving downwards
+            // Estimate player's bottom position in the *previous* frame
+            const previousPlayerBottom = playerState.y + playerState.height - playerState.vy;
+            const obstacleTop = obstacle.y;
+
+            // Stomp Condition: Falling AND was above the obstacle top previously
+            if (isFalling && previousPlayerBottom <= obstacleTop + 1) { // +1 for slight tolerance
+                // --- Stomp Detected ---
+                console.log("Stomp detected!");
+                playerState.vy = config.stompJumpStrength; // Apply bounce velocity
+                playerState.y = obstacle.y - playerState.height; // Correct position onto obstacle top
+                playerState.isGrounded = false; // Still airborne after bounce
+
+                // --- Optional: Remove stomped obstacle ---
+                // obstacles.splice(i, 1);
+                // continue; // Skip to next obstacle check
+
+                // --- Optional: Score for stomp ---
+                // score += 50;
+
+                didStompThisFrame = true;
+                break; // Only stomp one obstacle per frame
+            } else {
+                // --- Side/Bottom Collision ---
+                // Trigger game over ONLY if a stomp didn't happen this frame
+                if (!didStompThisFrame) {
+                     console.log("Side/Bottom collision detected!");
+                     gameState = 'gameOver';
+                     showGameOverScreen();
+                     return; // Stop update loop immediately
+                }
+            }
         }
     }
+    // --- END Collision Checks ---
 
-    // Score
+
+    // -- Score -- (Should run even if stomp occurred)
     score++;
     scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 
-    // Landmarks
-    checkLandmarks(); // Check last as it might change gameState
+    // -- Landmarks -- (Check last, as it might pause/end the game)
+    checkLandmarks();
 }
 
 
@@ -322,20 +332,20 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
-    // Draw Background Image
+    // Draw Background Image or Fallback Colors
     if (assets.backgroundImage) {
         ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight);
-    } else { // Fallback colors
+    } else {
         ctx.fillStyle = config.colors.blue; ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight);
         ctx.fillStyle = config.colors.green; ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight);
     }
 
-    // Draw Player (Using placeholder & updated size)
+    // Draw Player (Using placeholder & bigger size)
     if (assets.knightPlaceholder) {
         ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
     }
 
-    // Draw Obstacles (Using placeholder & updated size)
+    // Draw Obstacles (Using placeholder & smaller size)
     obstacles.forEach(obstacle => {
         if (assets.stonePlaceholder) {
              ctx.drawImage(assets.stonePlaceholder, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
