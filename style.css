@@ -13,7 +13,7 @@ body {
     height: 100vh;     /* Full viewport height */
     overflow: hidden;  /* Prevent scrollbars on mobile */
     background-color: #151513; /* Near-black page background */
-    font-family: Arial, sans-serif; /* Simple, readable font */
+    font-family: Arial, sans-serif;
     touch-action: manipulation; /* Prevent some default browser touch actions */
 }
 
@@ -42,15 +42,15 @@ body {
 /* Score Display Styling - Responsive Units */
 #scoreDisplay {
     position: absolute;
-    top: 1.5vh; /* Use viewport height for vertical positioning */
-    left: 2vw;  /* Use viewport width for horizontal positioning */
+    top: 1.5vh;
+    left: 2vw;
     color: #ffffff;
     background-color: rgba(21, 21, 19, 0.7);
-    padding: 0.8vh 1.5vw; /* Use relative padding */
+    padding: 0.8vh 1.5vw;
     border-radius: 3px;
-    font-size: max(1.2em, 2.5vw); /* Responsive font size, minimum 1.2em */
+    font-size: max(1.2em, 2.5vw); /* Responsive font size */
     z-index: 10;
-    white-space: nowrap; /* Prevent score text wrapping */
+    white-space: nowrap;
 }
 
 /* Common Styles for Overlays - Responsive Padding/Font */
@@ -64,7 +64,7 @@ body {
     align-items: center;
     text-align: center;
     color: #ffffff;
-    padding: 3vw; /* Responsive padding */
+    padding: 3vw;
     z-index: 20;
 }
 
@@ -75,25 +75,25 @@ body {
 
 .popup { /* Landmark Info */
      background-color: rgba(21, 21, 19, 0.95);
-     border: max(2px, 0.5vmin) solid #f5d306; /* Responsive border */
-     max-width: 85%; /* Limit width */
-     max-height: 85%; /* Limit height */
+     border: max(2px, 0.5vmin) solid #f5d306;
+     max-width: 85%;
+     max-height: 85%;
      border-radius: 8px;
-     overflow-y: auto; /* Allow scrolling if content overflows */
+     overflow-y: auto; /* Allow scrolling */
 }
 
 
-/* Text Styling within Overlays (MODIFIED font sizes) */
+/* Text Styling within Overlays (SECOND font size reduction) */
 .popup h3, .overlay h2 { /* Applies to landmark title & win screen title */
     color: #f5d306;
     margin-bottom: 2vh;
-    font-size: max(1.3em, 3.5vw); /* <<< Reduced heading size */
+    font-size: max(1.2em, 3vw); /* <<< Reduced size again */
 }
 
 .popup p, .overlay p { /* Applies to landmark description & win screen text */
     margin-bottom: 1.5vh;
     line-height: 1.4;
-    font-size: max(0.9em, 2vw); /* <<< Reduced paragraph size */
+    font-size: max(0.8em, 1.8vw); /* <<< Reduced size again */
     max-width: 90%;
 }
 /* --- END Text Styling Modification --- */
@@ -101,17 +101,17 @@ body {
 
 /* Button Styling - Responsive Padding/Font */
 #continueButton {
-    padding: 1.5vh 3vw; /* Responsive padding */
+    padding: 1.5vh 3vw;
     background-color: #f5d306;
     color: #151513;
     border: none;
     border-radius: 5px;
-    font-size: max(1em, 2.5vw); /* Responsive font */
+    font-size: max(1em, 2.5vw);
     font-weight: bold;
     cursor: pointer;
-    margin-top: 2vh; /* Relative margin */
-    min-width: 25vw; /* Minimum width */
-    min-height: 6vh; /* Minimum height for tapping */
+    margin-top: 2vh;
+    min-width: 25vw;
+    min-height: 6vh;
     transition: background-color 0.2s ease;
 }
 
@@ -121,29 +121,26 @@ body {
 
 /* --- Mobile Orientation Message --- */
 #rotateDeviceMessage {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background-color: #151513;
     color: #ffffff;
-    z-index: 100; /* Above game */
-    /* Use flex to center content */
+    z-index: 100;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-size: max(1.2em, 4vw); /* Responsive font size */
+    font-size: max(1.2em, 4vw);
     padding: 5vw;
 }
 
 @media (orientation: portrait) {
     #rotateDeviceMessage {
-        display: flex; /* Show message only in portrait */
+        display: flex;
     }
     #gameContainer {
-        display: none; /* Hide game container in portrait */
+        display: none;
     }
 }
 /* --- End Orientation Message --- */
-
-/* Note: JS still controls showing/hiding .popup and .overlay via display property */
