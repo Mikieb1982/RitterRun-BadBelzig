@@ -2,11 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Bad Belzig Knight Run</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body { touch-action: manipulation; /* Prevent some default browser touch actions */ }
+    </style>
 </head>
 <body>
+
+    <div id="rotateDeviceMessage">
+        <p>Bitte drehen Sie Ihr Gerät ins Querformat.</p>
+        <p>(Please rotate your device to landscape mode.)</p>
+    </div>
 
     <div id="gameContainer">
 
