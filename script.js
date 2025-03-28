@@ -44,7 +44,7 @@ let score = 0;
 let frameCount = 0;
 let gameSpeed = config.obstacleSpeed; // Current speed
 let isJumpKeyDown = false;      // Tracks Spacebar hold
-let isPointerDownJump = false; // <<< Tracks Mouse/Touch hold for jump
+let isPointerDownJump = false; // Tracks Mouse/Touch hold for jump
 let isStumbling = false;
 let stumbleTimer = 0;
 
@@ -85,15 +85,15 @@ function loadAllAssets() {
 // --- END Asset Loading ---
 
 
-// --- Landmark Data ---
+// --- Landmark Data (Longer Descriptions, Position Based) ---
 const landmarkConfig = [
-    { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in...", descDE: "Entspann dich...", isFinal: false },
-    { name: "Freibad", worldX: 3000, width: 60, height: 90, descEN: "Cool off...", descDE: "Kühl dich...", isFinal: false },
-    { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This is the Kulturzentrum...", descDE: "Hier sind das Kulturzentrum...", isFinal: false },
-    { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard...", descDE: "Einsteigen bitte...", isFinal: false },
-    { name: "Postmeilensäule (1725)", worldX: 7500, width: 60, height: 90, descEN: "See how far?...", descDE: "Schon gesehen?...", isFinal: false },
-    { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "This is the Rathaus...", descDE: "Das ist das Rathaus...", isFinal: false },
-    { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it...", descDE: "Geschafft!...", isFinal: true },
+    { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.", isFinal: false },
+    { name: "Freibad", worldX: 3000, width: 60, height: 90, descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.", isFinal: false },
+    { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This building at Weitzgrunder Str. 4 houses the town library and the KleinKunstWerk cultural center. Check their schedule for concerts, theatre, readings, and cabaret. The library offers books, media, and internet access.", descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das KleinKunstWerk Kulturzentrum. Informieren Sie sich über Konzerte, Theater, Lesungen und Kabarett. Die Bibliothek bietet Bücher, Medien und Internetzugang.", isFinal: false },
+    { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.", descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.", isFinal: false },
+    { name: "Postmeilensäule (1725)", worldX: 7500, width: 60, height: 90, descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.", descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.", isFinal: false },
+    { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.", descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.", isFinal: false },
+    { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.", isFinal: true },
 ];
 function initializeLandmarks() { /* ... initializes landmarks array ... */
     landmarks = landmarkConfig.map(cfg => ({ ...cfg, yPos: cfg.yPos || (config.canvasHeight - config.groundHeight - (cfg.height || 90)), hasBeenTriggered: false }));
@@ -101,13 +101,13 @@ function initializeLandmarks() { /* ... initializes landmarks array ... */
 // --- END Landmark Data ---
 
 
-// --- Player State Initialization ---
+// --- Player State Initialization (Bigger Knight) ---
 function resetPlayer() { /* ... resets player properties ... */
     playerState = { x: 50, y: config.canvasHeight - config.groundHeight - 75, width: 60, height: 75, vy: 0, isGrounded: true };
 }
 
 
-// --- Game Reset Function ---
+// --- Game Reset Function (Includes Pointer Reset) ---
 function resetGame() {
     console.log("Resetting game...");
     resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0;
@@ -121,7 +121,7 @@ function resetGame() {
     requestAnimationFrame(gameLoop);
 }
 
-// --- Input Handling (MODIFIED for Pointer Tracking) ---
+// --- Input Handling (Includes Pointer Tracking) ---
 function handleJump() { /* ... applies initial jump force ... */
     if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; }
     else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
@@ -136,23 +136,15 @@ window.addEventListener('keydown', (e) => { /* ... handles keydown ... */
 });
 window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
 
-// Touch / Mouse listeners (MODIFIED to set pointer flag)
+// Touch / Mouse listeners (Sets pointer flag)
 canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (gameState === 'running' || gameState === 'paused') {
-        handleJump();
-        isPointerDownJump = true; // <<< Set flag
-    } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+    e.preventDefault(); if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; } // Set flag
+    else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 });
-canvas.addEventListener('mousedown', (e) => {
-    if (gameState === 'running') {
-        handleJump();
-        isPointerDownJump = true; // <<< Set flag
-    }
-});
-// ADDED Global listeners to clear pointer flag
-window.addEventListener('touchend', (e) => { isPointerDownJump = false; });
-window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
+canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); isPointerDownJump = true; } }); // Set flag
+// Global listeners to clear pointer flag
+window.addEventListener('touchend', (e) => { isPointerDownJump = false; }); // Clear flag
+window.addEventListener('mouseup', (e) => { isPointerDownJump = false; }); // Clear flag
 
 // Overlay/Button listeners
 gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
@@ -164,11 +156,12 @@ function checkCollision(rect1, rect2) { /* ... AABB check ... */
     return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y);
 }
 
-// --- Obstacle Handling ---
+// --- Obstacle Handling (Larger Sizes, Random Types) ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
 function spawnObstacle() { /* ... spawn logic with larger sizes ... */
     const typeIndex = Math.floor(Math.random() * obstacleTypes.length); const selectedTypeKey = obstacleTypes[typeIndex]; let obstacleHeight, obstacleWidth;
     switch (selectedTypeKey) { /* size variations */ case 'familyObstacle': obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break; case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break; case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break; }
+    console.log(`Spawning ${selectedTypeKey} - Calculated Size: ${obstacleWidth.toFixed(0)}x${obstacleHeight.toFixed(0)}`); // Keep log for size check
     obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
 }
 function updateObstacles() { /* ... update obstacle positions ... */
@@ -184,7 +177,7 @@ function showLandmarkPopup(landmark) { /* ... show popup logic ... */
 }
 
 
-// --- Update Game State ---
+// --- Update Game State (Includes Pointer Variable Jump Check) ---
 function update() {
     if (gameState !== 'running') return;
     frameCount++;
@@ -194,20 +187,19 @@ function update() {
         stumbleTimer--; if (stumbleTimer <= 0) { isStumbling = false; gameSpeed = config.obstacleSpeed; console.log("Stumble finished."); }
     }
 
-    // -- Player Physics (MODIFIED for Variable Jump Pointer Check) --
+    // -- Player Physics (MODIFIED Variable Jump Check) --
     let currentGravity = config.gravity;
     if (!playerState.isGrounded && playerState.vy < 0) { // If rising
         // Apply reduced gravity if EITHER space OR mouse/touch is held
-        if (isJumpKeyDown || isPointerDownJump) { // <<< MODIFIED THIS CONDITION
+        if (isJumpKeyDown || isPointerDownJump) { // <<< CHECK BOTH FLAGS
             currentGravity *= config.jumpHoldGravityMultiplier;
-        } else { // Apply increased gravity if jump released while rising
+        } else { // Apply increased gravity if jump released
             currentGravity *= config.jumpCutGravityMultiplier;
         }
     }
-    playerState.vy += currentGravity; // Apply calculated gravity
+    playerState.vy += currentGravity; // Apply gravity
     playerState.y += playerState.vy;  // Update position
     // --- END Player Physics Modification ---
-
 
     // Ground Collision
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height; /* ... ground check ... */
@@ -246,7 +238,7 @@ function draw() {
 
     // Draw Background
     if (assets.backgroundImage) { ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight); }
-    else { /* Fallback colors */ ctx.fillStyle = config.colors.blue; ctx.fillRect(0, 0, config.canvasWidth, config.canvasHeight - config.groundHeight); ctx.fillStyle = config.colors.green; ctx.fillRect(0, config.canvasHeight - config.groundHeight, config.canvasWidth, config.groundHeight); }
+    else { /* Fallback colors */ }
 
     // Draw Player
     if (assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
@@ -254,7 +246,7 @@ function draw() {
     // Draw Obstacles
     obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */
         const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
-        else { /* Fallback rect */ ctx.fillStyle = config.colors.black; ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
+        else { /* Fallback rect */ }
     });
 
     // Draw Landmark Signs
@@ -273,9 +265,7 @@ function showWinScreen() { winScreen.style.display = 'flex'; }
 // --- Main Game Loop ---
 function gameLoop() {
     if (gameState !== 'running') { return; } // Stop loop if paused/won
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
+    update(); draw(); requestAnimationFrame(gameLoop);
 }
 
 
