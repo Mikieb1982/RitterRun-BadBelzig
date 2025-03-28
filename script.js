@@ -80,15 +80,15 @@ const landmarkConfig = [
         isFinal: false
     },
     {
-        name: "Freibad", worldX: 3000, width: 60, height: 90,
+        name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90,
         descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.",
         descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.",
         isFinal: false
     },
     {
         name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90,
-        descEN: "This building at Weitzgrunder Str. 4 houses the town library and the KleinKunstWerk cultural center. Check their schedule for concerts, theatre, readings, and cabaret. The library offers books, media, and internet access.",
-        descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das KleinKunstWerk Kulturzentrum. Informieren Sie sich über Konzerte, Theater, Lesungen und Kabarett. Die Bibliothek bietet Bücher, Medien und Internetzugang.",
+        descEN: "This building at Weitzgrunder Str. 4 houses the town library and the cultural centre.",
+        descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das Kulturzentrum..",
         isFinal: false
     },
     {
@@ -98,7 +98,7 @@ const landmarkConfig = [
         isFinal: false
     },
     {
-        name: "Postmeilensäule (1725)", worldX: 7500, width: 60, height: 90, // Sign size
+        name: "Postmeilensäule", worldX: 7500, width: 60, height: 90, // Sign size
         descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.",
         descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.",
         isFinal: false
