@@ -71,7 +71,7 @@ function loadAllAssets() { /* ... starts loading ... */
 // --- END Asset Loading ---
 
 
-// --- Landmark Data (CORRECTED - LONGER Descriptions Included) ---
+// --- Landmark Data (CORRECTED - LONGER Descriptions Included This Time!) ---
 const landmarkConfig = [
     {
         name: "SteinTherme", worldX: 1500, width: 60, height: 90,
@@ -143,7 +143,7 @@ function resetGame() {
 }
 
 // --- Input Handling ---
-function handleJump() { /* ... jump logic, includes reset from gameover/win ... */
+function handleJump() { /* ... jump logic ... */
     if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; }
     else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 }
