@@ -7,10 +7,10 @@ const landmarkName = document.getElementById('landmarkName');
 const landmarkDescription = document.getElementById('landmarkDescription');
 // const landmarkImage = document.getElementById('landmarkImage');
 const continueButton = document.getElementById('continueButton');
-const gameOverScreen = document.getElementById('gameOverScreen');
+const gameOverScreen = document.getElementById('gameOverScreen'); // May be unused now
 const winScreen = document.getElementById('winScreen');
 
-// --- Game Configuration (Includes Stumble Tuning) ---
+// --- Game Configuration ---
 const config = {
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
@@ -23,8 +23,8 @@ const config = {
     jumpHoldGravityMultiplier: 0.5,
     jumpCutGravityMultiplier: 2.0,
     stompJumpStrength: -8,
-    stumbleDuration: 60,          // <<< How many frames stumble lasts
-    stumbleSpeedMultiplier: 0.5, // <<< Speed multiplier during stumble
+    stumbleDuration: 60,
+    stumbleSpeedMultiplier: 0.5,
     // Bad Belzig Color Palette
     colors: {
         green: '#0ca644',
@@ -35,7 +35,7 @@ const config = {
     }
 };
 
-// --- Game State Variables (Includes Stumble Tracking) ---
+// --- Game State Variables ---
 let gameState = 'loading';
 let playerState = {};
 let obstacles = [];
@@ -43,23 +43,28 @@ let landmarks = [];
 let currentLandmarkIndex = 0;
 let score = 0;
 let frameCount = 0;
-let gameSpeed = config.obstacleSpeed; // Current speed, changes during stumble
+let gameSpeed = config.obstacleSpeed; // Current speed
 let isJumpKeyDown = false;
-let isStumbling = false;     // <<< Tracks if currently stumbling
-let stumbleTimer = 0;        // <<< Timer for stumble duration
+let isStumbling = false;
+let stumbleTimer = 0;
 
-// --- Asset Loading ---
+// --- Asset Loading (MODIFIED for multiple obstacles) ---
 const assets = {
     // Asset keys
     knightPlaceholder: null,
-    stonePlaceholder: null,
+    stoneObstacle: null,     // <<< Renamed
+    familyObstacle: null,    // <<< Added
+    tractorObstacle: null,   // <<< Added
     backgroundImage: null,
+
     // Loading Progress Tracking
     loaded: 0,
     total: 0,
     sources: { // Asset paths
         knightPlaceholder: 'assets/knight_placeholder.png',
-        stonePlaceholder: 'assets/stone_placeholder.png',
+        stoneObstacle: 'assets/stones.png',        // <<< Renamed file
+        familyObstacle: 'assets/family.png',       // <<< Added file
+        tractorObstacle: 'assets/tractor.png',     // <<< Added file
         backgroundImage: 'assets/background.png'
         // ... add paths for landmark images etc. here later
     }
@@ -103,17 +108,52 @@ function loadAllAssets() {
 // --- END Asset Loading ---
 
 
-// --- Landmark Data ---
+// --- Landmark Data (UPDATED Descriptions) ---
 const landmarkDefinitions = [
-    // xTrigger values relate to displayed score (score / 10)
-    { name: "SteinTherme", xTrigger: 100, descEN: "Relax in...", descDE: "Entspann dich...", imgKey: 'steinThermeImg' },
-    { name: "Freibad", xTrigger: 200, descEN: "Cool off...", descDE: "Kühl dich...", imgKey: 'freibadImg' },
-    { name: "Kulturzentrum & Bibliothek", xTrigger: 300, descEN: "This is the Kulturzentrum...", descDE: "Hier sind das Kulturzentrum...", imgKey: 'kulturzentrumImg'},
-    { name: "Fläming Bahnhof", xTrigger: 400, descEN: "All aboard...", descDE: "Einsteigen bitte...", imgKey: 'bahnhofImg'},
-    { name: "Postmeilensäule (1725)", xTrigger: 500, descEN: "See how far?...", descDE: "Schon gesehen?...", imgKey: 'postsaeuleImg'},
-    { name: "Rathaus & Tourist-Information", xTrigger: 600, descEN: "This is the Rathaus...", descDE: "Das ist das Rathaus...", imgKey: 'rathausImg'},
-    { name: "Burg Eisenhardt", xTrigger: 700, descEN: "You made it...", descDE: "Geschafft!...", imgKey: 'burgImg', isFinal: true },
+    {
+        name: "SteinTherme", xTrigger: 100,
+        descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole). Its iodine-rich water is great for health, and there's an extensive sauna world.",
+        descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole). Das jodhaltige Wasser ist gut für die Gesundheit und es gibt eine große Saunawelt.",
+        imgKey: 'steinThermeImg'
+    },
+    {
+        name: "Freibad", xTrigger: 200,
+        descEN: "Cool off at the Freibad! This outdoor swimming pool is a popular spot in summer. Features include water slides and areas for children, perfect for sunny days.",
+        descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer ein beliebter Treffpunkt. Es gibt Wasserrutschen und Bereiche für Kinder, perfekt für sonnige Tage.",
+        imgKey: 'freibadImg'
+    },
+    {
+        name: "Kulturzentrum & Bibliothek", xTrigger: 300,
+        descEN: "This is the Kulturzentrum & Library on Weitzgrunder Str. 4, a hub for reading and local culture. Look out for concerts, readings, and theatre events.",
+        descDE: "Hier sind das Kulturzentrum & die Bibliothek in der Weitzgrunder Str. 4 – ein Zentrum für Lesen und lokale Kultur. Achten Sie auf Konzerte, Lesungen und Theaterveranstaltungen.",
+        imgKey: 'kulturzentrumImg'
+    },
+    {
+        name: "Fläming Bahnhof", xTrigger: 400,
+        descEN: "All aboard at Fläming Bahnhof! This station connects Bad Belzig to Berlin and the region. It's also a key access point to the Hoher Fläming nature park.",
+        descDE: "Einsteigen bitte am Fläming Bahnhof! Dieser Bahnhof verbindet Bad Belzig mit Berlin und der Region. Er ist auch ein wichtiger Zugangspunkt zum Naturpark Hoher Fläming.",
+        imgKey: 'bahnhofImg'
+    },
+    {
+        name: "Postmeilensäule (1725)", xTrigger: 500,
+        descEN: "See how far? This Postal Milestone (Postmeilensäule) from 1725 shows historic travel distances. Erected under August the Strong, it marked postal routes in hours.",
+        descDE: "Schon gesehen? Diese Postmeilensäule von 1725 zeigt historische Reisedistanzen. Errichtet unter August dem Starken, markierte sie Postrouten in Stunden.",
+        imgKey: 'postsaeuleImg'
+    },
+    {
+        name: "Rathaus & Tourist-Information", xTrigger: 600,
+        descEN: "This is the Rathaus (Town Hall), also home to the Tourist Information centre. Get maps, event info, and tips for exploring Bad Belzig here.",
+        descDE: "Das ist das Rathaus, hier befindet sich auch die Tourist-Information. Hier erhalten Sie Karten, Veranstaltungsinformationen und Tipps zur Erkundung von Bad Belzig.",
+        imgKey: 'rathausImg'
+    },
+    {
+        name: "Burg Eisenhardt", xTrigger: 700,
+        descEN: "You made it to Burg Eisenhardt! This medieval castle overlooks the town and holds a museum. Explore local history exhibits and enjoy the view from the keep.",
+        descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese mittelalterliche Burg überblickt die Stadt und beherbergt ein Museum. Erkunden Sie lokale Geschichtsausstellungen und genießen Sie die Aussicht vom Bergfried.",
+        imgKey: 'burgImg', isFinal: true
+    },
 ];
+// --- END Landmark Data ---
 
 
 // --- Player State Initialization (Bigger Knight) ---
@@ -129,7 +169,7 @@ function resetPlayer() {
 }
 
 
-// --- Game Reset Function (Includes Stumble Reset) ---
+// --- Game Reset Function ---
 function resetGame() {
     console.log("Resetting game...");
     resetPlayer();
@@ -140,10 +180,10 @@ function resetGame() {
     frameCount = 0;
     gameSpeed = config.obstacleSpeed; // Reset to normal speed
     isJumpKeyDown = false;
-    isStumbling = false;     // <<< Reset stumble state
-    stumbleTimer = 0;        // <<< Reset stumble timer
+    isStumbling = false;     // Reset stumble state
+    stumbleTimer = 0;        // Reset stumble timer
     scoreDisplay.textContent = `Punkte / Score: 0`;
-    gameOverScreen.style.display = 'none'; // Ensure Game Over screen is hidden
+    gameOverScreen.style.display = 'none'; // Hide Game Over screen if it exists
     winScreen.style.display = 'none';
     landmarkPopup.style.display = 'none';
     gameState = 'running';
@@ -155,12 +195,9 @@ function handleJump() {
     if (gameState === 'running' && playerState.isGrounded) {
         playerState.vy = config.jumpStrength;
         playerState.isGrounded = false;
-    } else if (gameState === 'gameOver' || gameState === 'win') { // Keep reset for overlays
-        if (gameOverScreen.style.display !== 'none' || winScreen.style.display !== 'none') {
-             resetGame();
-        }
+    } else if (gameState === 'win' && winScreen.style.display !== 'none') { // Reset on win
+         resetGame();
     }
-    // No longer need gameOver check here as stumble replaces it
 }
 
 function hideLandmarkPopup() {
@@ -180,9 +217,7 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Enter' || e.code === 'Enter') {
         e.preventDefault();
         if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); }
-        // Keep Enter for resetting on Win screen if desired
         else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
-        // Enter no longer resets on Game Over as it doesn't happen
     }
 });
 window.addEventListener('keyup', (e) => {
@@ -193,19 +228,16 @@ window.addEventListener('keyup', (e) => {
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (gameState === 'running' || gameState === 'paused') { handleJump(); }
-    // Keep reset for overlays
     else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
 });
 canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); } });
-// gameOverScreen listener might become redundant, but keep for now if you repurpose it
-gameOverScreen.addEventListener('click', resetGame); // Or remove if Game Over state is fully unused
+gameOverScreen.addEventListener('click', resetGame); // Keep if useful
 winScreen.addEventListener('click', resetGame);
 continueButton.addEventListener('click', hideLandmarkPopup);
 
 
 // --- Collision Detection ---
 function checkCollision(rect1, rect2) {
-    // Simple AABB collision check
     return (
         rect1.x < rect2.x + rect2.width &&
         rect1.x + rect1.width > rect2.x &&
@@ -214,25 +246,51 @@ function checkCollision(rect1, rect2) {
     );
 }
 
-// --- Obstacle Handling ---
+// --- Obstacle Handling (MODIFIED for randomization) ---
+const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle']; // Array of asset keys
+
 function spawnObstacle() {
-    const obstacleHeight = 15 + Math.random() * 10;
-    const obstacleWidth = 10 + Math.random() * 8;
+    // 1. Randomly choose an obstacle type
+    const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
+    const selectedTypeKey = obstacleTypes[typeIndex];
+
+    let obstacleHeight, obstacleWidth;
+
+    // 2. Set size based on type (Adjust these ranges as needed!)
+    switch (selectedTypeKey) {
+        case 'familyObstacle':
+            obstacleHeight = 40 + Math.random() * 15; // Taller
+            obstacleWidth = 30 + Math.random() * 10;
+            break;
+        case 'tractorObstacle':
+            obstacleHeight = 35 + Math.random() * 10; // Wider
+            obstacleWidth = 50 + Math.random() * 15;
+            break;
+        case 'stoneObstacle':
+        default: // Stones smaller
+            obstacleHeight = 15 + Math.random() * 10;
+            obstacleWidth = 10 + Math.random() * 8;
+            break;
+    }
+
+    // 3. Create obstacle object, storing its type key
     obstacles.push({
         x: config.canvasWidth,
         y: config.canvasHeight - config.groundHeight - obstacleHeight,
         width: obstacleWidth,
-        height: obstacleHeight
+        height: obstacleHeight,
+        typeKey: selectedTypeKey // Store the type key
     });
 }
 
 function updateObstacles() {
     if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
     for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].x -= gameSpeed; // Use current gameSpeed (could be slowed)
+        obstacles[i].x -= gameSpeed; // Use current gameSpeed
         if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); }
     }
 }
+// --- END Obstacle Handling ---
 
 
 // --- Landmark Handling ---
@@ -256,33 +314,31 @@ function showLandmarkPopup(landmark) {
 }
 
 
-// --- Update Game State (Includes Variable Jump, Stomp, and Stumble Logic) ---
+// --- Update Game State (Includes Stumble Logic) ---
 function update() {
     if (gameState !== 'running') return;
     frameCount++;
 
-    // -- Manage Stumble State -- (Counts down timer, restores speed)
+    // -- Manage Stumble State --
     if (isStumbling) {
         stumbleTimer--;
         if (stumbleTimer <= 0) {
             isStumbling = false;
-            gameSpeed = config.obstacleSpeed; // Restore normal speed
-            console.log("Stumble finished, speed restored.");
+            gameSpeed = config.obstacleSpeed; // Restore speed
+            console.log("Stumble finished.");
         }
     }
-    // --- END Stumble Management ---
 
-
-    // -- Player Physics -- (Variable Jump Logic included)
+    // -- Player Physics -- (Variable Jump included)
     let currentGravity = config.gravity;
-    if (!playerState.isGrounded && playerState.vy < 0) { // If rising
-        if (isJumpKeyDown) { currentGravity *= config.jumpHoldGravityMultiplier; } // Reduce gravity if holding
-        else { currentGravity *= config.jumpCutGravityMultiplier; } // Increase if released
+    if (!playerState.isGrounded && playerState.vy < 0) {
+        if (isJumpKeyDown) { currentGravity *= config.jumpHoldGravityMultiplier; }
+        else { currentGravity *= config.jumpCutGravityMultiplier; }
     }
     playerState.vy += currentGravity;
     playerState.y += playerState.vy;
 
-    // -- Ground Collision -- Check BEFORE Obstacle Collision Check
+    // -- Ground Collision -- (Must check BEFORE obstacle collision)
     const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
     if (playerState.y >= groundLevel) {
         playerState.y = groundLevel;
@@ -293,14 +349,12 @@ function update() {
     }
 
     // -- Obstacles --
-    updateObstacles(); // Move, spawn, remove obstacles using current gameSpeed
+    updateObstacles();
 
-    // -- Collision Checks (MODIFIED: Stomp or Stumble, NO Game Over) --
+    // -- Collision Checks (Stomp or Stumble, NO Game Over) --
     let didStompThisFrame = false;
-
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
-
         if (checkCollision(playerState, obstacle)) {
             const isFalling = playerState.vy > 0;
             const previousPlayerBottom = playerState.y + playerState.height - playerState.vy;
@@ -311,23 +365,20 @@ function update() {
                 console.log("Stomp detected!");
                 playerState.vy = config.stompJumpStrength;
                 playerState.y = obstacle.y - playerState.height;
-                playerState.isGrounded = false; // Still airborne
+                playerState.isGrounded = false;
                 // Optional: obstacles.splice(i, 1); score += 50;
                 didStompThisFrame = true;
                 break; // Stomp one per frame
 
-            } else if (!isStumbling && !didStompThisFrame) { // <<< Check if NOT already stumbling
-                // --- Side/Bottom Collision -> Trigger Stumble ---
+            } else if (!isStumbling && !didStompThisFrame) { // Side/Bottom hit, and not already stumbling
+                // --- Trigger Stumble ---
                 console.log("Stumble Triggered!");
-                isStumbling = true; // Set stumbling flag
-                stumbleTimer = config.stumbleDuration; // Start stumble timer
-                gameSpeed = config.obstacleSpeed * config.stumbleSpeedMultiplier; // Slow down game
-                // Optional: Add visual/audio cue for stumble
-                // Optional: Apply small knockback/bounce effect (e.g., playerState.vy = -2;)
-
-                // NO Game Over state is set here anymore
+                isStumbling = true;
+                stumbleTimer = config.stumbleDuration;
+                gameSpeed = config.obstacleSpeed * config.stumbleSpeedMultiplier;
+                // Optional: Visual/audio cues, small bounce
             }
-            // If already stumbling, side collisions are ignored in this loop iteration
+            // Collision ignored if already stumbling
         }
     }
     // --- END Collision Checks ---
@@ -338,11 +389,11 @@ function update() {
     scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 10)}`;
 
     // -- Landmarks --
-    checkLandmarks(); // Check last
+    checkLandmarks();
 }
 
 
-// --- Draw Game ---
+// --- Draw Game (MODIFIED obstacle drawing) ---
 function draw() {
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
@@ -355,17 +406,21 @@ function draw() {
     }
 
     // Draw Player
-    // Optional: Add visual effect if stumbling (e.g., change opacity)
-    // if (isStumbling && frameCount % 10 < 5) { ctx.globalAlpha = 0.5; } // Flashing effect
+    // Optional: Add visual effect if stumbling
+    // if (isStumbling && frameCount % 10 < 5) { ctx.globalAlpha = 0.5; } // Flash
     if (assets.knightPlaceholder) {
         ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
     }
-    // ctx.globalAlpha = 1.0; // Reset alpha if changed
+    // ctx.globalAlpha = 1.0; // Reset alpha
 
-    // Draw Obstacles
+    // Draw Obstacles (Uses typeKey)
     obstacles.forEach(obstacle => {
-        if (assets.stonePlaceholder) {
-             ctx.drawImage(assets.stonePlaceholder, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        const obstacleImage = assets[obstacle.typeKey]; // Get correct image
+        if (obstacleImage) {
+             ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        } else { // Fallback
+             ctx.fillStyle = config.colors.black;
+             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         }
     });
 }
@@ -373,14 +428,13 @@ function draw() {
 
 
 // --- UI Updates ---
-// showGameOverScreen might not be used anymore, keep showWinScreen
-function showGameOverScreen() { gameOverScreen.style.display = 'flex'; } // Or remove if unused
+function showGameOverScreen() { gameOverScreen.style.display = 'flex'; } // May be unused
 function showWinScreen() { winScreen.style.display = 'flex'; }
 
 
 // --- Main Game Loop ---
 function gameLoop() {
-    if (gameState !== 'running') { return; } // Stop loop if paused or won
+    if (gameState !== 'running') { return; } // Stop loop if paused/won
     update();
     draw();
     requestAnimationFrame(gameLoop);
