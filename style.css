@@ -9,7 +9,7 @@ body {
     display: flex; /* Use flexbox for centering */
     justify-content: center; /* Center content horizontally */
     align-items: center; /* Center content vertically */
-    height: 100vh; /* Make body take full viewport height */
+    height: 400px; /* Make body take full viewport height */
     font-family: 'Press Start 2P', cursive; /* Apply pixel font globally */
 }
 
