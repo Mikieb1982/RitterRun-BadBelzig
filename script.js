@@ -46,7 +46,7 @@ let isPointerDownJump = false;
 let playerLives = config.startLives;
 let isRecovering = false;
 let recoveryTimer = 0;
-// let backgroundX = 0; // No longer needed for fitted background
+let backgroundX = 0; // **MODIFIED:** Re-introduced for scrolling background
 
 // --- Asset Loading ---
 const assets = {
@@ -122,50 +122,14 @@ window.addEventListener('resize', () => {
 // --- END Canvas Setup ---
 
 // --- Landmark Data ---
-// **MODIFIED:** Restored full descriptions
 const landmarkConfig = [
-     {
-        name: "SteinTherme", worldX: 1500, width: 60, height: 90,
-        descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.",
-        descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.",
-        isFinal: false
-    },
-    {
-        name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90,
-        descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.",
-        descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.",
-        isFinal: false
-    },
-    {
-        name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90,
-        descEN: "This building at Weitzgrunder Str. 4 houses the town library and the cultural centre.",
-        descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das Kulturzentrum..", // Note: double period kept from original
-        isFinal: false
-    },
-    {
-        name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90,
-        descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.",
-        descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.",
-        isFinal: false
-    },
-    {
-        name: "Postmeilensäule", worldX: 7500, width: 60, height: 90,
-        descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.",
-        descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.",
-        isFinal: false
-    },
-    {
-        name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90,
-        descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.",
-        descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.",
-        isFinal: false
-    },
-    {
-        name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90,
-        descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.",
-        descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.",
-        isFinal: true
-    },
+     { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.", isFinal: false },
+     { name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90, descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.", isFinal: false },
+     { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This building at Weitzgrunder Str. 4 houses the town library and the cultural centre.", descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das Kulturzentrum..", isFinal: false },
+     { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.", descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.", isFinal: false },
+     { name: "Postmeilensäule", worldX: 7500, width: 60, height: 90, descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.", descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.", isFinal: false },
+     { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.", descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.", isFinal: false },
+     { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.", isFinal: true },
 ];
 
 function initializeLandmarks() {
@@ -203,6 +167,7 @@ function resetGame() {
     score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed;
     isJumpKeyDown = false; isPointerDownJump = false;
     playerLives = config.startLives; isRecovering = false; recoveryTimer = 0;
+    backgroundX = 0; // **MODIFIED:** Reset background position
 
     livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
     scoreDisplay.textContent = `Punkte / Score: 0`;
@@ -265,7 +230,6 @@ function spawnObstacle() {
         case 'stoneObstacle': default: baseHeight = 40; baseWidth = 30; break;
     }
     const scaleFactor = config.canvasHeight / 400;
-    // Use consistent height/width per type (no random variation)
     let obstacleHeight = baseHeight * scaleFactor;
     let obstacleWidth = baseWidth * scaleFactor;
 
@@ -352,7 +316,22 @@ function update() {
     if (frameCount > 0 && frameCount % 240 === 0) {
         if (gameSpeed < config.maxGameSpeed) { gameSpeed += 0.07; gameSpeed = parseFloat(gameSpeed.toFixed(2)); }
     }
+
+     // **MODIFIED:** Background Scroll Update
+     backgroundX -= scaledGameSpeed * 0.5; // Adjust 0.5 for parallax speed
+     // Estimate scaled background width for seamless looping (using height scaling)
+     let scaledBgWidth = config.canvasWidth; // Default if no image
+     if (assets.backgroundImage) {
+         const bgScaleFactor = (config.canvasHeight - config.groundHeight) / assets.backgroundImage.height;
+         scaledBgWidth = assets.backgroundImage.width * bgScaleFactor;
+     }
+     // Reset background position for looping effect
+     // Use Math.abs to prevent issues if scaledBgWidth is somehow negative/zero
+     if (scaledBgWidth > 0 && backgroundX <= -scaledBgWidth) {
+         backgroundX += scaledBgWidth;
+     }
 }
+
 
 // --- Draw Game ---
 function draw() {
@@ -360,26 +339,50 @@ function draw() {
     const canvasH = config.canvasHeight;
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-     // Draw Background (Fitted)
-     const destW = canvasW;
-     const destH = canvasH - config.groundHeight;
+     // --- Draw Background (Scrolling Tiled) ---
+     // **MODIFIED:** Changed drawing logic back to tiling/scrolling
+     const destH = canvasH - config.groundHeight; // Height to draw background
      if (assets.backgroundImage && destH > 0) {
          const img = assets.backgroundImage;
-         const imgRatio = img.width / img.height;
-         const destRatio = destW / destH;
-         let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
-         if (imgRatio > destRatio) { sourceWidth = img.height * destRatio; sourceX = (img.width - sourceWidth) / 2; }
-         else if (imgRatio < destRatio) { sourceHeight = img.width / destRatio; sourceY = (img.height - sourceHeight) / 2; }
-         ctx.drawImage( img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destW, destH );
+         // Scale background to fit the available height
+         const scaleFactor = destH / img.height;
+         const scaledBgWidth = img.width * scaleFactor;
+
+         // Calculate starting X position for seamless looping based on backgroundX
+         // Use Math.abs to handle potential negative scaledBgWidth if image/canvas is tiny
+         let currentX = scaledBgWidth > 0 ? (backgroundX % scaledBgWidth) : backgroundX;
+         // Ensure it starts off-screen left if necessary for smooth loop
+         if (currentX > 0 && scaledBgWidth > 0) currentX -= scaledBgWidth;
+
+         // Draw background image tiles to cover the canvas width
+         // Ensure scaledBgWidth is positive before entering loop to prevent infinite loop
+         if (scaledBgWidth > 0) {
+             while (currentX < canvasW) {
+                 ctx.drawImage(
+                     img, // Source image
+                     0, 0, img.width, img.height, // Source rect (full image)
+                     currentX, 0, scaledBgWidth, destH // Destination rect (scaled and positioned)
+                 );
+                 currentX += scaledBgWidth; // Move to next tile position
+             }
+         } else {
+             // Handle case where scaledBgWidth is zero or negative (e.g., image failed to load height)
+             ctx.fillStyle = config.colors.blue;
+             ctx.fillRect(0, 0, canvasW, destH);
+         }
+
      } else if (destH > 0) {
-         ctx.fillStyle = config.colors.blue; ctx.fillRect(0, 0, destW, destH);
+         // Fallback: Draw solid blue sky if background image failed or destH is 0
+         ctx.fillStyle = config.colors.blue;
+         ctx.fillRect(0, 0, canvasW, destH);
      }
 
-     // Draw Visual Ground
+
+     // --- Draw Visual Ground ---
      ctx.fillStyle = config.colors.ground;
      ctx.fillRect(0, canvasH - config.groundHeight, canvasW, config.groundHeight);
 
-    // Draw Player
+    // --- Draw Player ---
     let drawPlayer = true;
     if (isRecovering && frameCount % 10 < 5) { drawPlayer = false; }
     if (drawPlayer) {
@@ -387,14 +390,14 @@ function draw() {
         else { ctx.fillStyle = config.colors.green; ctx.fillRect(playerState.x, playerState.y, playerState.width, playerState.height); }
     }
 
-    // Draw Obstacles
+    // --- Draw Obstacles ---
     obstacles.forEach(obstacle => {
         const obstacleImage = assets[obstacle.typeKey];
         if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
         else { ctx.fillStyle = config.colors.black; ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
     });
 
-    // Draw Landmark Signs
+    // --- Draw Landmark Signs ---
     landmarks.forEach(landmark => {
          const scaleFactor = config.canvasHeight / 400;
          const signW = (landmark.width || 60) * scaleFactor;
