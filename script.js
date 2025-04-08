@@ -122,15 +122,51 @@ window.addEventListener('resize', () => {
 // --- END Canvas Setup ---
 
 // --- Landmark Data ---
+// **MODIFIED:** Restored full descriptions
 const landmarkConfig = [
-     { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in the SteinTherme! ...", descDE: "Entspann dich in der SteinTherme! ...", isFinal: false },
-     { name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90, descEN: "Cool off at the Freibad! ...", descDE: "Kühl dich ab im Freibad! ...", isFinal: false },
-     { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This building houses the town library...", descDE: "Dieses Gebäude beherbergt die Stadtbibliothek...", isFinal: false },
-     { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard at Fläming Bahnhof! ...", descDE: "Einsteigen bitte am Fläming Bahnhof! ...", isFinal: false },
-     { name: "Postmeilensäule", worldX: 7500, width: 60, height: 90, descEN: "See how far? This sandstone Postal Milestone...", descDE: "Schon gesehen? Diese kursächsische Postmeilensäule...", isFinal: false },
-     { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "The historic Rathaus (Town Hall)...", descDE: "Das historische Rathaus befindet sich...", isFinal: false },
-     { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it to Burg Eisenhardt! ...", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! ...", isFinal: true },
-]; // Descriptions shortened for brevity
+     {
+        name: "SteinTherme", worldX: 1500, width: 60, height: 90,
+        descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.",
+        descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.",
+        isFinal: false
+    },
+    {
+        name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90,
+        descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.",
+        descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.",
+        isFinal: false
+    },
+    {
+        name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90,
+        descEN: "This building at Weitzgrunder Str. 4 houses the town library and the cultural centre.",
+        descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das Kulturzentrum..", // Note: double period kept from original
+        isFinal: false
+    },
+    {
+        name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90,
+        descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.",
+        descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.",
+        isFinal: false
+    },
+    {
+        name: "Postmeilensäule", worldX: 7500, width: 60, height: 90,
+        descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.",
+        descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.",
+        isFinal: false
+    },
+    {
+        name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90,
+        descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.",
+        descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.",
+        isFinal: false
+    },
+    {
+        name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90,
+        descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.",
+        descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.",
+        isFinal: true
+    },
+];
 
 function initializeLandmarks() {
     const currentCanvasHeight = config.canvasHeight;
@@ -167,7 +203,6 @@ function resetGame() {
     score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed;
     isJumpKeyDown = false; isPointerDownJump = false;
     playerLives = config.startLives; isRecovering = false; recoveryTimer = 0;
-    // backgroundX = 0; // No longer needed
 
     livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
     scoreDisplay.textContent = `Punkte / Score: 0`;
@@ -220,10 +255,6 @@ function checkCollision(rect1, rect2) { return ( rect1.x < rect2.x + rect2.width
 // --- Obstacle Handling ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
 
-/**
- * Spawns a new obstacle of a random type, scaled to canvas size,
- * with consistent height for each type (bottom aligned on ground).
- */
 function spawnObstacle() {
     const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
     const selectedTypeKey = obstacleTypes[typeIndex];
@@ -234,13 +265,12 @@ function spawnObstacle() {
         case 'stoneObstacle': default: baseHeight = 40; baseWidth = 30; break;
     }
     const scaleFactor = config.canvasHeight / 400;
-    // **MODIFIED:** Removed random variation from height and width scaling
+    // Use consistent height/width per type (no random variation)
     let obstacleHeight = baseHeight * scaleFactor;
     let obstacleWidth = baseWidth * scaleFactor;
 
     obstacles.push({
         x: config.canvasWidth,
-        // Position top edge so bottom edge is on the ground line
         y: config.canvasHeight - config.groundHeight - obstacleHeight,
         width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey
     });
@@ -322,12 +352,7 @@ function update() {
     if (frameCount > 0 && frameCount % 240 === 0) {
         if (gameSpeed < config.maxGameSpeed) { gameSpeed += 0.07; gameSpeed = parseFloat(gameSpeed.toFixed(2)); }
     }
-
-     // Background Scroll Update - REMOVED as background is now fitted
-     // backgroundX -= scaledGameSpeed * 0.5;
-     // ... looping logic removed ...
 }
-
 
 // --- Draw Game ---
 function draw() {
@@ -335,8 +360,7 @@ function draw() {
     const canvasH = config.canvasHeight;
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-     // --- Draw Background ---
-     // **MODIFIED:** Draw background to cover the area above the ground
+     // Draw Background (Fitted)
      const destW = canvasW;
      const destH = canvasH - config.groundHeight;
      if (assets.backgroundImage && destH > 0) {
@@ -344,32 +368,18 @@ function draw() {
          const imgRatio = img.width / img.height;
          const destRatio = destW / destH;
          let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
-
-         // Calculate source rect to 'cover' the destination, maintaining aspect ratio
-         if (imgRatio > destRatio) { // Image wider than destination area
-             sourceWidth = img.height * destRatio;
-             sourceX = (img.width - sourceWidth) / 2;
-         } else if (imgRatio < destRatio) { // Image taller than destination area
-             sourceHeight = img.width / destRatio;
-             sourceY = (img.height - sourceHeight) / 2;
-         }
-
-         ctx.drawImage(
-             img, // Source image
-             sourceX, sourceY, sourceWidth, sourceHeight, // Source rectangle (cropped)
-             0, 0, destW, destH // Destination rectangle (covers area above ground)
-         );
+         if (imgRatio > destRatio) { sourceWidth = img.height * destRatio; sourceX = (img.width - sourceWidth) / 2; }
+         else if (imgRatio < destRatio) { sourceHeight = img.width / destRatio; sourceY = (img.height - sourceHeight) / 2; }
+         ctx.drawImage( img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destW, destH );
      } else if (destH > 0) {
-         // Fallback: Draw solid blue sky if background image failed or destH is 0
-         ctx.fillStyle = config.colors.blue;
-         ctx.fillRect(0, 0, destW, destH);
+         ctx.fillStyle = config.colors.blue; ctx.fillRect(0, 0, destW, destH);
      }
 
-     // --- Draw Visual Ground ---
+     // Draw Visual Ground
      ctx.fillStyle = config.colors.ground;
      ctx.fillRect(0, canvasH - config.groundHeight, canvasW, config.groundHeight);
 
-    // --- Draw Player ---
+    // Draw Player
     let drawPlayer = true;
     if (isRecovering && frameCount % 10 < 5) { drawPlayer = false; }
     if (drawPlayer) {
@@ -377,14 +387,14 @@ function draw() {
         else { ctx.fillStyle = config.colors.green; ctx.fillRect(playerState.x, playerState.y, playerState.width, playerState.height); }
     }
 
-    // --- Draw Obstacles ---
+    // Draw Obstacles
     obstacles.forEach(obstacle => {
         const obstacleImage = assets[obstacle.typeKey];
         if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
         else { ctx.fillStyle = config.colors.black; ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
     });
 
-    // --- Draw Landmark Signs ---
+    // Draw Landmark Signs
     landmarks.forEach(landmark => {
          const scaleFactor = config.canvasHeight / 400;
          const signW = (landmark.width || 60) * scaleFactor;
