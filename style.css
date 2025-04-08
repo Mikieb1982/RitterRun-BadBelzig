@@ -1,161 +1,157 @@
-/* Basic Reset & Body Styling */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* General body styling */
 body {
+    margin: 0;
+    overflow: hidden; /* Prevent scrollbars */
+    background-color: #87CEEB; /* Sky blue background */
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
     height: 100vh;
-    overflow: hidden; /* Prevent scrollbars on body */
-    background-color: #151513; /* Dark background for the page */
-    font-family: Arial, sans-serif;
-    touch-action: manipulation; /* Improve touch responsiveness */
+    font-family: 'Press Start 2P', cursive; /* Apply pixel font */
 }
 
-/* Game Container - Scaled Responsively */
-#gameContainer {
-    position: relative;
-    /* **MODIFIED:** Use CSS aspect-ratio */
-    aspect-ratio: 2 / 1; /* Enforce a 2:1 aspect ratio */
-    width: 95vw; /* Base width on viewport width */
-    /* Max width/height constraints based on viewport height */
-    max-width: calc(95vh * 2); /* Max width derived from max height & ratio */
-    max-height: 95vh; /* Limit height */
-    overflow: hidden; /* Hide anything outside the container */
-    margin: auto; /* Center container */
-    background: #000; /* Fallback background */
-}
-
-/* Canvas Styling */
+/* Canvas styling */
 #gameCanvas {
-    display: block; /* Remove extra space below canvas */
-    /* **MODIFIED:** Canvas should fill the container */
-    width: 100%;
-    height: 100%;
-    background-color: #0296c6; /* Blue sky background */
+    background-color: #eee; /* Light grey canvas background */
+    display: block; /* Ensure canvas is block-level */
+    /* Removed fixed width/height to allow responsiveness */
 }
 
-/* Score Display Styling */
-#scoreDisplay {
+/* Score board styling */
+#score-board {
     position: absolute;
-    top: 1.5vh;
-    left: 2vw;
-    color: #ffffff;
-    background-color: rgba(21, 21, 19, 0.7);
-    padding: 0.8vh 1.5vw;
-    border-radius: 3px;
-    font-size: clamp(1em, 2.5vw, 1.6em);
-    z-index: 10;
-    white-space: nowrap;
-    font-family: 'Press Start 2P', cursive;
+    top: 10px;
+    left: 10px;
+    /* --- CHANGE MADE HERE --- */
+    font-size: 16px; /* Reduced font size from 20px */
+    /* --- END OF CHANGE --- */
+    color: white; /* White text color */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    padding: 5px 10px; /* Padding around text */
+    border-radius: 5px; /* Rounded corners */
+    font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
+    z-index: 10; /* Ensure score is above canvas elements */
 }
 
-/* Lives Display Styling */
-#livesDisplay {
+/* Game Over screen styling */
+#gameOverScreen {
     position: absolute;
-    top: 1.5vh;
-    right: 2vw;
-    color: #ffffff;
-    background-color: rgba(21, 21, 19, 0.7);
-    padding: 0.8vh 1.5vw;
-    border-radius: 3px;
-    font-size: clamp(1em, 2.5vw, 1.6em);
-    z-index: 10;
-    white-space: nowrap;
-    font-family: 'Press Start 2P', cursive;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the screen */
+    background-color: rgba(0, 0, 0, 0.8); /* Darker semi-transparent background */
+    color: white; /* White text */
+    padding: 40px; /* Increased padding */
+    border-radius: 10px; /* Rounded corners */
+    text-align: center; /* Center text */
+    z-index: 20; /* Ensure it's above everything else */
+    display: none; /* Hidden by default */
+    border: 3px solid #FFFF00; /* Yellow border */
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); /* Yellow glow */
 }
 
-/* Common Styles for Popups and Overlays */
-.popup,
-.overlay {
+/* Game Over title styling */
+#gameOverScreen h2 {
+    margin-top: 0;
+    color: #FF0000; /* Red "Game Over!" text */
+    font-size: 2em; /* Larger font size */
+    text-shadow: 2px 2px #000000; /* Black text shadow */
+}
+
+/* Game Over message styling */
+#gameOverScreen p {
+    font-size: 1em; /* Standard font size */
+    margin-bottom: 20px; /* Space below message */
+}
+
+/* Retry button styling */
+#retryButton {
+    padding: 15px 30px; /* Larger padding */
+    font-size: 1.2em; /* Larger font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    background-color: #FFFF00; /* Yellow background */
+    color: #000000; /* Black text */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
+    text-transform: uppercase; /* Uppercase text */
+    box-shadow: 0 4px #DAA520; /* Goldenrod bottom shadow for 3D effect */
+    transition: all 0.1s ease; /* Smooth transition */
+}
+
+/* Retry button hover effect */
+#retryButton:hover {
+    background-color: #FFD700; /* Slightly darker yellow on hover */
+    box-shadow: 0 2px #DAA520; /* Reduce shadow on hover/press */
+    transform: translateY(2px); /* Move button down slightly on hover/press */
+}
+
+/* Retry button active effect */
+#retryButton:active {
+    box-shadow: 0 0 #DAA520; /* Remove shadow when fully pressed */
+    transform: translateY(4px); /* Move button down further when fully pressed */
+}
+
+/* Start screen styling (similar to Game Over) */
+#startScreen {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 90%; /* Use 90% width by default */
-    max-width: 600px; /* Cap the width at 600px */
-    max-height: 85%; /* Limit height to 85% of viewport */
-    height: auto; /* Allow height to adjust to content, up to max-height */
-    color: #ffffff;
-    padding: 1.5em; /* Use em based padding */
-    border-radius: 8px;
-    border: max(2px, 0.5vmin) solid #f5d306; /* Yellow border */
-    display: none; /* Hidden by default */
-    flex-direction: column;
-    justify-content: flex-start; /* Align content to top */
-    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 40px;
+    border-radius: 10px;
     text-align: center;
-    overflow-y: auto; /* Add scrollbar if content overflows vertically */
-    z-index: 20; /* Ensure overlays are on top */
-    box-sizing: border-box;
+    z-index: 20;
+    display: block; /* Visible by default */
+    border: 3px solid #00FF00; /* Green border */
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.7); /* Green glow */
 }
 
-/* Specific Overlay Backgrounds */
-.overlay { /* Game Over / Win screens */
-    background-color: rgba(21, 21, 19, 0.9);
+/* Start screen title styling */
+#startScreen h2 {
+    margin-top: 0;
+    color: #00FF00; /* Green title text */
+    font-size: 1.8em; /* Slightly smaller than Game Over */
+    text-shadow: 2px 2px #000000;
 }
 
-.popup { /* Landmark Info popup */
-     background-color: rgba(21, 21, 19, 0.95);
+/* Start screen paragraph styling */
+#startScreen p {
+    font-size: 0.9em; /* Slightly smaller instructions */
+    margin-bottom: 25px;
 }
 
 
-/* Text Styling within Overlays */
-.popup h3, .overlay h2 {
-    color: #f5d306;
-    margin-bottom: 1em;
-    font-size: clamp(1.1em, 3vw, 1.8em);
-    font-family: 'Press Start 2P', cursive;
-    width: 100%;
-}
-
-.popup p, .overlay p {
-    margin-bottom: 1em;
-    line-height: 1.5;
-    font-size: clamp(0.85em, 1.8vw, 1.0em);
-    max-width: 100%; /* Use container padding for spacing */
-    font-family: Arial, sans-serif;
-    text-align: left;
-}
-
-/* Button Styling */
-#continueButton, .overlay button {
-    padding: 0.8em 1.5em;
-    background-color: #f5d306;
-    color: #151513;
-    border: none; border-radius: 5px;
-    font-size: clamp(0.9em, 2.5vw, 1.2em); /* Adjusted max size */
-    font-weight: bold;
+/* Start button styling (similar to Retry) */
+#startButton {
+    padding: 15px 30px;
+    font-size: 1.2em;
     cursor: pointer;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    min-width: 40%;
-    transition: background-color 0.2s ease;
+    background-color: #00FF00; /* Green background */
+    color: #000000;
+    border: none;
+    border-radius: 5px;
     font-family: 'Press Start 2P', cursive;
-    flex-shrink: 0;
-}
-#continueButton:hover, .overlay button:hover {
-     background-color: #e0bd05;
+    text-transform: uppercase;
+    box-shadow: 0 4px #008000; /* Dark green shadow */
+    transition: all 0.1s ease;
 }
 
-/* Mobile Orientation Message */
-#rotateDeviceMessage {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #151513; color: #ffffff;
-    z-index: 100;
-    flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; font-size: max(1.2em, 4vw); padding: 5vw;
+/* Start button hover effect */
+#startButton:hover {
+    background-color: #32CD32; /* Lime green on hover */
+    box-shadow: 0 2px #008000;
+    transform: translateY(2px);
 }
-/* Show message only in portrait orientation */
-@media (orientation: portrait) {
-    #rotateDeviceMessage { display: flex; }
-    #gameContainer { display: none; }
+
+/* Start button active effect */
+#startButton:active {
+    box-shadow: 0 0 #008000;
+    transform: translateY(4px);
 }
 
