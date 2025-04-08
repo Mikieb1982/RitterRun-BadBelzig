@@ -46,7 +46,7 @@ let isPointerDownJump = false;
 let playerLives = config.startLives;
 let isRecovering = false;
 let recoveryTimer = 0;
-let backgroundX = 0; // **MODIFIED:** Re-introduced for scrolling background
+let backgroundX = 0; // For scrolling background
 
 // --- Asset Loading ---
 const assets = {
@@ -56,7 +56,7 @@ const assets = {
     sources: {
         knightPlaceholder: 'assets/knight_placeholder.png',
         stoneObstacle: 'assets/stones.png',
-        familyObstacle: 'assets/family.png',
+        familyObstacle: 'assets/family.png', // Assumes stroller is this type
         tractorObstacle: 'assets/tractor.png',
         backgroundImage: 'assets/background.png',
         signImage: 'assets/sign.png'
@@ -148,8 +148,9 @@ function initializeLandmarks() {
 // --- Player State Initialization ---
 function resetPlayer() {
     const currentCanvasHeight = config.canvasHeight;
-    const playerHeight = currentCanvasHeight * 0.15;
-    const playerWidth = playerHeight * (60 / 75);
+    // **MODIFIED:** Increase player height percentage slightly
+    const playerHeight = currentCanvasHeight * 0.18; // Was 0.15
+    const playerWidth = playerHeight * (60 / 75); // Maintain aspect ratio
     playerState = {
         x: 50, y: currentCanvasHeight - config.groundHeight - playerHeight,
         width: playerWidth, height: playerHeight,
@@ -160,14 +161,14 @@ function resetPlayer() {
 // --- Game Reset Function ---
 function resetGame() {
     console.log("Resetting game...");
-    setupCanvas(); // Ensure canvas size is current
+    setupCanvas();
     resetPlayer();
     obstacles = [];
     initializeLandmarks();
     score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed;
     isJumpKeyDown = false; isPointerDownJump = false;
     playerLives = config.startLives; isRecovering = false; recoveryTimer = 0;
-    backgroundX = 0; // **MODIFIED:** Reset background position
+    backgroundX = 0; // Reset background position
 
     livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
     scoreDisplay.textContent = `Punkte / Score: 0`;
@@ -202,7 +203,7 @@ function hideLandmarkPopup() {
     }
 }
 
-// Event listeners (No changes here)
+// Event listeners
 window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); if (!isJumpKeyDown) { handleJump(); } isJumpKeyDown = true; } else if (e.key === 'Enter' || e.code === 'Enter') { e.preventDefault(); if ((gameState === 'paused' || gameState === 'win') && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); } } });
 window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; } else if (gameState === 'gameOver') { resetGame(); } else if (gameState === 'win') { resetGame(); } });
@@ -225,7 +226,8 @@ function spawnObstacle() {
     const selectedTypeKey = obstacleTypes[typeIndex];
     let baseHeight, baseWidth;
     switch (selectedTypeKey) {
-        case 'familyObstacle': baseHeight = 100; baseWidth = 70; break;
+        // **MODIFIED:** Adjusted familyObstacle base height
+        case 'familyObstacle': baseHeight = 90; baseWidth = 65; break; // Was H:100, W:70
         case 'tractorObstacle': baseHeight = 80; baseWidth = 115; break;
         case 'stoneObstacle': default: baseHeight = 40; baseWidth = 30; break;
     }
@@ -317,18 +319,11 @@ function update() {
         if (gameSpeed < config.maxGameSpeed) { gameSpeed += 0.07; gameSpeed = parseFloat(gameSpeed.toFixed(2)); }
     }
 
-     // **MODIFIED:** Background Scroll Update
+     // Background Scroll Update
      backgroundX -= scaledGameSpeed * 0.5; // Adjust 0.5 for parallax speed
-     // Estimate scaled background width for seamless looping (using height scaling)
-     let scaledBgWidth = config.canvasWidth; // Default if no image
-     if (assets.backgroundImage) {
-         const bgScaleFactor = (config.canvasHeight - config.groundHeight) / assets.backgroundImage.height;
-         scaledBgWidth = assets.backgroundImage.width * bgScaleFactor;
-     }
-     // Reset background position for looping effect
-     // Use Math.abs to prevent issues if scaledBgWidth is somehow negative/zero
-     if (scaledBgWidth > 0 && backgroundX <= -scaledBgWidth) {
-         backgroundX += scaledBgWidth;
+     // **MODIFIED:** Use native image width for looping calculation
+     if (assets.backgroundImage && assets.backgroundImage.width > 0 && backgroundX <= -assets.backgroundImage.width) {
+         backgroundX += assets.backgroundImage.width;
      }
 }
 
@@ -339,36 +334,38 @@ function draw() {
     const canvasH = config.canvasHeight;
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-     // --- Draw Background (Scrolling Tiled) ---
-     // **MODIFIED:** Changed drawing logic back to tiling/scrolling
-     const destH = canvasH - config.groundHeight; // Height to draw background
-     if (assets.backgroundImage && destH > 0) {
+     // --- Draw Background (Scrolling Tiled - Native Size) ---
+     // **MODIFIED:** Draw background without scaling, aligned to ground
+     const destH = canvasH - config.groundHeight; // Max height available
+     if (assets.backgroundImage && assets.backgroundImage.height > 0 && destH > 0) {
          const img = assets.backgroundImage;
-         // Scale background to fit the available height
-         const scaleFactor = destH / img.height;
-         const scaledBgWidth = img.width * scaleFactor;
+         const imgW = img.width;
+         const imgH = img.height;
 
-         // Calculate starting X position for seamless looping based on backgroundX
-         // Use Math.abs to handle potential negative scaledBgWidth if image/canvas is tiny
-         let currentX = scaledBgWidth > 0 ? (backgroundX % scaledBgWidth) : backgroundX;
-         // Ensure it starts off-screen left if necessary for smooth loop
-         if (currentX > 0 && scaledBgWidth > 0) currentX -= scaledBgWidth;
+         // Calculate Y position to align bottom of image with ground line
+         // Clamp Y so image top doesn't go below canvas top
+         const drawY = Math.max(0, destH - imgH);
+         const drawH = Math.min(imgH, destH); // Height to actually draw (clipped by canvas top)
+         const sourceY = Math.max(0, imgH - destH); // Corresponding source Y offset
+         const sourceH = drawH; // Source height matches draw height
+
+         // Calculate starting X position for seamless looping
+         let currentX = imgW > 0 ? (backgroundX % imgW) : backgroundX;
+         if (currentX > 0 && imgW > 0) currentX -= imgW;
 
          // Draw background image tiles to cover the canvas width
-         // Ensure scaledBgWidth is positive before entering loop to prevent infinite loop
-         if (scaledBgWidth > 0) {
+         if (imgW > 0) {
              while (currentX < canvasW) {
                  ctx.drawImage(
                      img, // Source image
-                     0, 0, img.width, img.height, // Source rect (full image)
-                     currentX, 0, scaledBgWidth, destH // Destination rect (scaled and positioned)
+                     0, sourceY, imgW, sourceH, // Source rect (full width, potentially clipped height)
+                     currentX, drawY, imgW, drawH // Destination rect (positioned, potentially clipped height)
                  );
-                 currentX += scaledBgWidth; // Move to next tile position
+                 currentX += imgW; // Move to next tile position
              }
-         } else {
-             // Handle case where scaledBgWidth is zero or negative (e.g., image failed to load height)
-             ctx.fillStyle = config.colors.blue;
-             ctx.fillRect(0, 0, canvasW, destH);
+         } else { // Fallback if image width is 0
+              ctx.fillStyle = config.colors.blue;
+              ctx.fillRect(0, 0, canvasW, destH);
          }
 
      } else if (destH > 0) {
@@ -377,10 +374,22 @@ function draw() {
          ctx.fillRect(0, 0, canvasW, destH);
      }
 
-
      // --- Draw Visual Ground ---
      ctx.fillStyle = config.colors.ground;
      ctx.fillRect(0, canvasH - config.groundHeight, canvasW, config.groundHeight);
+
+     // --- Draw Game Title (Example - REMOVE IF NOT NEEDED) ---
+     // Check if you added code like this and remove it if unwanted
+     /*
+     if (frameCount < 180) { // Example: Show for 3 seconds
+         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+         ctx.font = 'bold 24px "Press Start 2P"'; // Example font
+         ctx.textAlign = 'center';
+         ctx.fillText("Ritter Run - Bad Belzig", canvasW / 2, 60); // Example position
+     }
+     */
+     // --- End Example Title ---
+
 
     // --- Draw Player ---
     let drawPlayer = true;
@@ -426,3 +435,4 @@ function gameLoop() {
 // --- Start Game ---
 loadAllAssets(); // Start loading assets, which calls setupCanvas and resetGame
 // --- END Start Game ---
+
