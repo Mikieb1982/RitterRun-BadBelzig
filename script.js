@@ -6,7 +6,7 @@ const livesDisplay = document.getElementById('livesDisplay');
 const landmarkPopup = document.getElementById('landmarkPopup');
 const landmarkName = document.getElementById('landmarkName');
 const landmarkDescription = document.getElementById('landmarkDescription');
-// const landmarkImage = document.getElementById('landmarkImage');
+// const landmarkImage = document.getElementById('landmarkImage'); // Removed - Not used
 const continueButton = document.getElementById('continueButton');
 const gameOverScreen = document.getElementById('gameOverScreen');
 const winScreen = document.getElementById('winScreen');
@@ -60,13 +60,37 @@ const assets = {
         backgroundImage: 'assets/background.png', signImage: 'assets/sign.png'
     }
 };
-function loadImage(key, src) { /* ... loads images ... */
-    console.log(`Attempting to load: ${key} from ${src}`); assets.total++; const img = new Image(); img.src = src;
-    img.onload = () => { console.log(`Successfully loaded: ${key}`); assets.loaded++; assets[key] = img; console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`); if (assets.loaded === assets.total) { console.log("All assets loaded. Starting game..."); resetGame(); } };
-    img.onerror = () => { console.error(`Failed to load asset: ${key} from ${src}`); };
+function loadImage(key, src) {
+    console.log(`Attempting to load: ${key} from ${src}`);
+    assets.total++;
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+        console.log(`Successfully loaded: ${key}`);
+        assets.loaded++;
+        assets[key] = img;
+        console.log(`Assets loaded: ${assets.loaded} / ${assets.total}`);
+        if (assets.loaded === assets.total) {
+            console.log("All assets loaded. Starting game...");
+            resetGame();
+        }
+    };
+    img.onerror = () => {
+        console.error(`Failed to load asset: ${key} from ${src}`);
+    };
 }
-function loadAllAssets() { /* ... starts loading ... */
-    console.log("Starting asset loading..."); gameState = 'loading'; assets.loaded = 0; assets.total = 0; for (const key in assets.sources) { loadImage(key, assets.sources[key]); } if (assets.total === 0) { console.warn("No assets defined..."); resetGame(); }
+function loadAllAssets() {
+    console.log("Starting asset loading...");
+    gameState = 'loading';
+    assets.loaded = 0;
+    assets.total = 0;
+    for (const key in assets.sources) {
+        loadImage(key, assets.sources[key]);
+    }
+    if (assets.total === 0) {
+        console.warn("No assets defined...");
+        resetGame();
+    }
 }
 // --- END Asset Loading ---
 
@@ -116,14 +140,14 @@ const landmarkConfig = [
         isFinal: true
     },
 ];
-function initializeLandmarks() { /* ... initializes landmarks array ... */
+function initializeLandmarks() {
     landmarks = landmarkConfig.map(cfg => ({ ...cfg, yPos: cfg.yPos || (config.canvasHeight - config.groundHeight - (cfg.height || 90)), hasBeenTriggered: false }));
 }
 // --- END Landmark Data ---
 
 
 // --- Player State Initialization ---
-function resetPlayer() { /* ... resets player properties ... */
+function resetPlayer() {
     playerState = { x: 50, y: config.canvasHeight - config.groundHeight - 75, width: 60, height: 75, vy: 0, isGrounded: true };
 }
 
@@ -131,63 +155,151 @@ function resetPlayer() { /* ... resets player properties ... */
 // --- Game Reset Function ---
 function resetGame() {
     console.log("Resetting game...");
-    resetPlayer(); obstacles = []; initializeLandmarks(); score = 0; frameCount = 0;
+    resetPlayer();
+    obstacles = [];
+    initializeLandmarks();
+    score = 0;
+    frameCount = 0;
     gameSpeed = config.obstacleSpeed; // Reset speed
-    isJumpKeyDown = false; isPointerDownJump = false;
-    playerLives = config.startLives; isRecovering = false; recoveryTimer = 0; // Reset lives/recovery
+    isJumpKeyDown = false;
+    isPointerDownJump = false;
+    playerLives = config.startLives;
+    isRecovering = false;
+    recoveryTimer = 0; // Reset lives/recovery
     livesDisplay.textContent = `Leben / Lives: ${playerLives}`; // Update display
     scoreDisplay.textContent = `Punkte / Score: 0`;
-    gameOverScreen.style.display = 'none'; winScreen.style.display = 'none'; landmarkPopup.style.display = 'none';
+    gameOverScreen.style.display = 'none';
+    winScreen.style.display = 'none';
+    landmarkPopup.style.display = 'none';
     gameState = 'running';
     requestAnimationFrame(gameLoop);
 }
 
 // --- Input Handling ---
-function handleJump() { /* ... jump logic ... */
-    if (gameState === 'running' && playerState.isGrounded) { playerState.vy = config.jumpStrength; playerState.isGrounded = false; }
-    else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+function handleJump() {
+    if (gameState === 'running' && playerState.isGrounded) {
+        playerState.vy = config.jumpStrength;
+        playerState.isGrounded = false;
+    }
+    else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') {
+        resetGame();
+    } else if (gameState === 'win' && winScreen.style.display !== 'none') {
+        resetGame();
+    }
 }
-function hideLandmarkPopup() { /* ... hide popup logic ... */
-    if (gameState === 'paused') { landmarkPopup.style.display = 'none'; gameState = 'running'; requestAnimationFrame(gameLoop); }
+function hideLandmarkPopup() {
+    if (gameState === 'paused') {
+        landmarkPopup.style.display = 'none';
+        gameState = 'running';
+        requestAnimationFrame(gameLoop);
+    }
 }
 // Event listeners
-window.addEventListener('keydown', (e) => { /* ... keydown logic ... */
-    if (e.code === 'Space') { e.preventDefault(); if (!isJumpKeyDown) { handleJump(); } isJumpKeyDown = true; }
-    else if (e.key === 'Enter' || e.code === 'Enter') { e.preventDefault(); if (gameState === 'paused' && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); } }
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        if (!isJumpKeyDown) {
+            handleJump();
+        }
+        isJumpKeyDown = true;
+    }
+    else if (e.key === 'Enter' || e.code === 'Enter') {
+        e.preventDefault();
+        if (gameState === 'paused' && landmarkPopup.style.display !== 'none') {
+            hideLandmarkPopup();
+        } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') {
+            resetGame();
+        } else if (gameState === 'win' && winScreen.style.display !== 'none') {
+            resetGame();
+        }
+    }
 });
-window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
-canvas.addEventListener('touchstart', (e) => { /* ... touchstart logic ... */
-    e.preventDefault(); if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); }
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        isJumpKeyDown = false;
+    }
 });
-canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); isPointerDownJump = true; } });
-window.addEventListener('touchend', (e) => { isPointerDownJump = false; }); window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
-gameOverScreen.addEventListener('click', resetGame); winScreen.addEventListener('click', resetGame); continueButton.addEventListener('click', hideLandmarkPopup);
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (gameState === 'running' || gameState === 'paused') {
+        handleJump();
+        isPointerDownJump = true;
+    } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') {
+        resetGame();
+    } else if (gameState === 'win' && winScreen.style.display !== 'none') {
+        resetGame();
+    }
+});
+canvas.addEventListener('mousedown', (e) => {
+    if (gameState === 'running') {
+        handleJump();
+        isPointerDownJump = true;
+    }
+});
+window.addEventListener('touchend', (e) => {
+    isPointerDownJump = false;
+});
+window.addEventListener('mouseup', (e) => {
+    isPointerDownJump = false;
+});
+gameOverScreen.addEventListener('click', resetGame);
+winScreen.addEventListener('click', resetGame);
+continueButton.addEventListener('click', hideLandmarkPopup);
 // --- END Input Handling ---
 
 
 // --- Collision Detection ---
-function checkCollision(rect1, rect2) { /* ... AABB check ... */
-    return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y);
+function checkCollision(rect1, rect2) {
+    return (rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y);
 }
 
 // --- Obstacle Handling ---
 const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
-function spawnObstacle() { /* ... spawn logic with larger sizes ... */
-    const typeIndex = Math.floor(Math.random() * obstacleTypes.length); const selectedTypeKey = obstacleTypes[typeIndex]; let obstacleHeight, obstacleWidth;
-    switch (selectedTypeKey) { /* size variations */ case 'familyObstacle': obstacleHeight = 80 + Math.random() * 30; obstacleWidth = 60 + Math.random() * 20; break; case 'tractorObstacle': obstacleHeight = 70 + Math.random() * 20; obstacleWidth = 100 + Math.random() * 30; break; case 'stoneObstacle': default: obstacleHeight = 30 + Math.random() * 20; obstacleWidth = 20 + Math.random() * 16; break; }
+function spawnObstacle() {
+    const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
+    const selectedTypeKey = obstacleTypes[typeIndex];
+    let obstacleHeight, obstacleWidth;
+    switch (selectedTypeKey) {
+        case 'familyObstacle':
+            obstacleHeight = 80 + Math.random() * 30;
+            obstacleWidth = 60 + Math.random() * 20;
+            break;
+        case 'tractorObstacle':
+            obstacleHeight = 70 + Math.random() * 20;
+            obstacleWidth = 100 + Math.random() * 30;
+            break;
+        case 'stoneObstacle':
+        default:
+            obstacleHeight = 30 + Math.random() * 20;
+            obstacleWidth = 20 + Math.random() * 16;
+            break;
+    }
     console.log(`Spawning ${selectedTypeKey} - Size: ${obstacleWidth.toFixed(0)}x${obstacleHeight.toFixed(0)}`);
     obstacles.push({ x: config.canvasWidth, y: config.canvasHeight - config.groundHeight - obstacleHeight, width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey });
 }
-function updateObstacles() { /* ... update obstacle positions ... */
-    if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
-    for (let i = obstacles.length - 1; i >= 0; i--) { obstacles[i].x -= gameSpeed; if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); } }
+function updateObstacles() {
+    if (frameCount > 100 && frameCount % config.spawnRate === 0) {
+        spawnObstacle();
+    }
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= gameSpeed;
+        if (obstacles[i].x + obstacles[i].width < 0) {
+            obstacles.splice(i, 1);
+        }
+    }
 }
 // --- END Obstacle Handling ---
 
 
 // --- Landmark Display & Popup Trigger Function ---
-function showLandmarkPopup(landmark) { /* ... show popup logic ... */
-    landmarkName.textContent = landmark.name; landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`; landmarkPopup.style.display = 'flex';
+function showLandmarkPopup(landmark) {
+    landmarkName.textContent = landmark.name;
+    landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`;
+    landmarkPopup.style.display = 'flex';
 }
 
 
@@ -197,18 +309,35 @@ function update() {
     frameCount++;
 
     // Manage Recovery State
-    if (isRecovering) { /* ... recovery timer logic ... */
-        recoveryTimer--; if (recoveryTimer <= 0) { isRecovering = false; console.log("Recovery finished."); }
+    if (isRecovering) {
+        recoveryTimer--;
+        if (recoveryTimer <= 0) {
+            isRecovering = false;
+            console.log("Recovery finished.");
+        }
     }
 
     // Player Physics (Variable Jump)
-    let currentGravity = config.gravity; /* ... variable jump gravity ... */
-    if (!playerState.isGrounded && playerState.vy < 0) { if (isJumpKeyDown || isPointerDownJump) { currentGravity *= config.jumpHoldGravityMultiplier; } else { currentGravity *= config.jumpCutGravityMultiplier; } }
-    playerState.vy += currentGravity; playerState.y += playerState.vy;
+    let currentGravity = config.gravity;
+    if (!playerState.isGrounded && playerState.vy < 0) {
+        if (isJumpKeyDown || isPointerDownJump) {
+            currentGravity *= config.jumpHoldGravityMultiplier;
+        } else {
+            currentGravity *= config.jumpCutGravityMultiplier;
+        }
+    }
+    playerState.vy += currentGravity;
+    playerState.y += playerState.vy;
 
     // Ground Collision
-    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height; /* ... ground check ... */
-    if (playerState.y >= groundLevel) { playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true; } else { playerState.isGrounded = false; }
+    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
+    if (playerState.y >= groundLevel) {
+        playerState.y = groundLevel;
+        playerState.vy = 0;
+        playerState.isGrounded = true;
+    } else {
+        playerState.isGrounded = false;
+    }
 
     // Obstacles
     updateObstacles(); // Uses current gameSpeed
@@ -216,36 +345,76 @@ function update() {
     // Collision Checks (Stomp=Bounce, Vulnerable Hit=Lose Life/GameOver, Rising Hit=Safe, Score Penalty)
     if (!isRecovering) { // Only check collisions if NOT recovering
         for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obstacle = obstacles[i]; if (checkCollision(playerState, obstacle)) {
-                const isFalling = playerState.vy > 0; const previousPlayerBottom = playerState.y + playerState.height - playerState.vy; const obstacleTop = obstacle.y;
+            const obstacle = obstacles[i];
+            if (checkCollision(playerState, obstacle)) {
+                const isFalling = playerState.vy > 0;
+                const previousPlayerBottom = playerState.y + playerState.height - playerState.vy;
+                const obstacleTop = obstacle.y;
                 if (isFalling && previousPlayerBottom <= obstacleTop + 1) { /* Stomp */
-                     console.log("Stomp detected!"); playerState.vy = config.stompJumpStrength; playerState.y = obstacle.y - playerState.height; playerState.isGrounded = false;
-                     score += 50; // Stomp bonus
-                     obstacles.splice(i, 1); // Remove obstacle
-                     continue; // Skip other checks for this obstacle
-                } else { /* Not a Stomp */ if (playerState.isGrounded || playerState.vy >= 0) { /* Vulnerable Hit */
-                    console.log("Vulnerable Collision Detected!"); playerLives--; livesDisplay.textContent = `Leben / Lives: ${playerLives}`; score -= 75; if (score < 0) { score = 0; } // Penalty
-                    if (playerLives <= 0) { /* Game Over */ console.log("Game Over!"); gameState = 'gameOver'; showGameOverScreen(); return; /* STOP update */ }
-                    else { /* Trigger Recovery */ console.log("Lost a life, starting recovery."); isRecovering = true; recoveryTimer = config.recoveryDuration; playerState.vy = -3; playerState.isGrounded = false; break; /* Stop checking collisions */ }
-                 } else { /* Rising Hit -> Safe */ console.log("Collision ignored (Player rising)."); }
+                    console.log("Stomp detected!");
+                    playerState.vy = config.stompJumpStrength;
+                    playerState.y = obstacle.y - playerState.height;
+                    playerState.isGrounded = false;
+                    score += 50; // Stomp bonus
+                    obstacles.splice(i, 1); // Remove obstacle
+                    continue; // Skip other checks for this obstacle
+                } else { /* Not a Stomp */
+                    if (playerState.isGrounded || playerState.vy >= 0) { /* Vulnerable Hit */
+                        console.log("Vulnerable Collision Detected!");
+                        playerLives--;
+                        livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
+                        score -= 75;
+                        if (score < 0) {
+                            score = 0;
+                        } // Penalty
+                        if (playerLives <= 0) { /* Game Over */
+                            console.log("Game Over!");
+                            gameState = 'gameOver';
+                            showGameOverScreen();
+                            return; /* STOP update */
+                        }
+                        else { /* Trigger Recovery */
+                            console.log("Lost a life, starting recovery.");
+                            isRecovering = true;
+                            recoveryTimer = config.recoveryDuration;
+                            playerState.vy = -3;
+                            playerState.isGrounded = false;
+                            break; /* Stop checking collisions */
+                        }
+                    } else { /* Rising Hit -> Safe */
+                        console.log("Collision ignored (Player rising).");
+                    }
                 }
             }
         }
     }
 
     // Update Landmarks and Check Triggers
-    for (let landmark of landmarks) { /* ... landmark movement and trigger logic ... */
-        landmark.worldX -= gameSpeed; if (!landmark.hasBeenTriggered && landmark.worldX < playerState.x + playerState.width && landmark.worldX + landmark.width > playerState.x) { console.log(`Triggering landmark: ${landmark.name}`); landmark.hasBeenTriggered = true; showLandmarkPopup(landmark); if (landmark.isFinal) { gameState = 'win'; showWinScreen(); } else { gameState = 'paused'; } }
+    for (let landmark of landmarks) {
+        landmark.worldX -= gameSpeed;
+        if (!landmark.hasBeenTriggered && landmark.worldX < playerState.x + playerState.width && landmark.worldX + landmark.width > playerState.x) {
+            console.log(`Triggering landmark: ${landmark.name}`);
+            landmark.hasBeenTriggered = true;
+            showLandmarkPopup(landmark);
+            if (landmark.isFinal) {
+                gameState = 'win';
+                showWinScreen();
+            } else {
+                gameState = 'paused';
+            }
+        }
     }
 
     // Score
-    score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 8)}`; // Faster score display
+    score++;
+    scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 8)}`; // Faster score display
 
     // Gradual Speed Increase
     if (frameCount > 0 && frameCount % 240 === 0) { // Faster interval
         if (gameSpeed < config.maxGameSpeed) {
             gameSpeed += 0.07; // Slightly faster increment
-            gameSpeed = parseFloat(gameSpeed.toFixed(2)); console.log("Speed Increased:", gameSpeed);
+            gameSpeed = parseFloat(gameSpeed.toFixed(2));
+            console.log("Speed Increased:", gameSpeed);
         }
     }
 }
@@ -256,37 +425,63 @@ function draw() {
     ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
 
     // Draw Background
-    if (assets.backgroundImage) { ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight); }
-    else { /* Fallback colors */ }
+    if (assets.backgroundImage) {
+        ctx.drawImage(assets.backgroundImage, 0, 0, config.canvasWidth, config.canvasHeight);
+    }
+    else { /* Fallback colors */
+    }
 
     // Draw Player (With recovery flashing)
     let drawPlayer = true;
-    if (isRecovering && frameCount % 8 < 4) { drawPlayer = false; } // Faster flash
-    if (drawPlayer && assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
-    else if (drawPlayer && !assets.knightPlaceholder) { /* Fallback rect */ }
+    if (isRecovering && frameCount % 8 < 4) {
+        drawPlayer = false;
+    } // Faster flash
+    if (drawPlayer && assets.knightPlaceholder) {
+        ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height);
+    }
+    else if (drawPlayer && !assets.knightPlaceholder) { /* Fallback rect */
+    }
 
     // Draw Obstacles
-    obstacles.forEach(obstacle => { /* ... draw obstacle logic ... */
-        const obstacleImage = assets[obstacle.typeKey]; if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); } else { /* Fallback rect */ }
+    obstacles.forEach(obstacle => {
+        const obstacleImage = assets[obstacle.typeKey];
+        if (obstacleImage) {
+            ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        } else { /* Fallback rect */
+        }
     });
 
     // Draw Landmark Signs
-    if (assets.signImage) { /* ... draw sign logic ... */
-        landmarks.forEach(landmark => { if (landmark.worldX < config.canvasWidth && landmark.worldX + landmark.width > 0) { ctx.drawImage(assets.signImage, landmark.worldX, landmark.yPos, landmark.width, landmark.height); } });
+    if (assets.signImage) {
+        landmarks.forEach(landmark => {
+            if (landmark.worldX < config.canvasWidth && landmark.worldX + landmark.width > 0) {
+                ctx.drawImage(assets.signImage, landmark.worldX, landmark.yPos, landmark.width, landmark.height);
+            }
+        });
     }
 }
 // --- END Draw Game ---
 
 
 // --- UI Updates ---
-function showGameOverScreen() { gameOverScreen.style.display = 'flex'; }
-function showWinScreen() { winScreen.style.display = 'flex'; }
+function showGameOverScreen() {
+    gameOverScreen.style.display = 'flex';
+}
+function showWinScreen() {
+    winScreen.style.display = 'flex';
+}
 
 
 // --- Main Game Loop ---
-function gameLoop() { /* ... checks state and calls update/draw ... */
-    if (gameState === 'paused' || gameState === 'gameOver' || gameState === 'win') { return; }
-    if (gameState === 'running') { update(); draw(); requestAnimationFrame(gameLoop); }
+function gameLoop() {
+    if (gameState === 'paused' || gameState === 'gameOver' || gameState === 'win') {
+        return;
+    }
+    if (gameState === 'running') {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
 }
 
 
