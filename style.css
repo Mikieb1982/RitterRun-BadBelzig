@@ -1,101 +1,101 @@
-/* Import Google Font */
+/* Import Google Font 'Press Start 2P' for the pixelated game look */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 /* General body styling */
 body {
-    margin: 0;
-    overflow: hidden; /* Prevent scrollbars */
-    background-color: #87CEEB; /* Sky blue background */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    margin: 0; /* Remove default body margin */
+    overflow: hidden; /* Prevent scrollbars on the page */
+    background-color: #87CEEB; /* Sky blue background color */
+    display: flex; /* Use flexbox for centering */
+    justify-content: center; /* Center content horizontally */
+    align-items: center; /* Center content vertically */
+    height: 100vh; /* Make body take full viewport height */
     font-family: 'Press Start 2P', cursive; /* Apply pixel font globally */
 }
 
-/* Canvas styling */
+/* Canvas where the game is drawn */
 #gameCanvas {
-    background-color: #eee; /* Light grey canvas background */
-    display: block; /* Ensure canvas is block-level */
-    /* Canvas size will likely be set by JavaScript */
+    background-color: #eee; /* Light grey background for the canvas */
+    display: block; /* Ensure canvas behaves like a block element */
+    /* Width and height are typically set by JavaScript to fit the game area */
 }
 
-/* Score board styling */
+/* Score board display */
 #score-board {
-    position: absolute; /* Position relative to the nearest positioned ancestor (or body) */
-    top: 10px;  /* 10 pixels from the top */
-    left: 10px; /* 10 pixels from the left */
-    /* --- FONT SIZE CHANGED HERE --- */
-    font-size: 16px; /* Reduced font size from original 20px */
+    position: absolute; /* Position relative to the viewport or nearest positioned ancestor */
+    top: 10px;          /* 10 pixels from the top edge */
+    left: 10px;         /* 10 pixels from the left edge */
+    /* --- THIS IS THE ONLY CHANGE MADE --- */
+    font-size: 16px;    /* Set font size to 16px (was 20px in original repo file) */
     /* --- END OF CHANGE --- */
-    color: white; /* White text color */
+    color: white;       /* White text color */
     background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-    padding: 5px 10px; /* Padding around text (top/bottom 5px, left/right 10px) */
-    border-radius: 5px; /* Rounded corners */
-    font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
-    z-index: 10; /* Ensure score is above most canvas elements */
+    padding: 5px 10px;  /* Padding inside the score board (5px top/bottom, 10px left/right) */
+    border-radius: 5px; /* Slightly rounded corners */
+    font-family: 'Press Start 2P', cursive; /* Ensure pixel font is used */
+    z-index: 10;        /* Ensure score board is layered above the game canvas elements */
 }
 
-/* Game Over screen styling */
+/* Game Over screen container */
 #gameOverScreen {
-    position: absolute; /* Position relative to the nearest positioned ancestor */
-    top: 50%;           /* Position top edge at 50% of the container height */
-    left: 50%;          /* Position left edge at 50% of the container width */
-    transform: translate(-50%, -50%); /* Center the element precisely */
-    background-color: rgba(0, 0, 0, 0.8); /* Darker semi-transparent background */
-    color: white; /* White text */
-    padding: 40px; /* Generous padding inside the box */
-    border-radius: 10px; /* Rounded corners */
-    text-align: center; /* Center text */
-    z-index: 20; /* Ensure it's above everything else */
-    display: none; /* Hidden by default (JavaScript will show it) */
-    border: 3px solid #FFFF00; /* Yellow border */
-    box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); /* Yellow glow effect */
+    position: absolute; /* Position relative to the viewport */
+    top: 50%;           /* Position top edge at the vertical center */
+    left: 50%;          /* Position left edge at the horizontal center */
+    transform: translate(-50%, -50%); /* Offset by half its own width/height to truly center */
+    background-color: rgba(0, 0, 0, 0.8); /* Dark semi-transparent background */
+    color: white;       /* White text color */
+    padding: 40px;      /* Generous padding inside the screen */
+    border-radius: 10px;/* Rounded corners */
+    text-align: center; /* Center the text inside */
+    z-index: 20;        /* Ensure it appears above everything else */
+    display: none;      /* Hide it by default; JavaScript will show it when game ends */
+    border: 3px solid #FFFF00; /* Bright yellow border */
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); /* Glowing yellow effect */
 }
 
-/* Game Over title styling */
+/* "Game Over!" title text */
 #gameOverScreen h2 {
-    margin-top: 0; /* Remove default top margin */
-    color: #FF0000; /* Red "Game Over!" text */
-    font-size: 2em; /* Larger font size (relative to parent) */
-    text-shadow: 2px 2px #000000; /* Black text shadow for visibility */
+    margin-top: 0;      /* Remove default top margin for the heading */
+    color: #FF0000;     /* Red color for the title */
+    font-size: 2em;     /* Larger font size (relative to parent) */
+    text-shadow: 2px 2px #000000; /* Black shadow for better readability */
 }
 
-/* Game Over message styling */
+/* Informational paragraph on Game Over screen */
 #gameOverScreen p {
-    font-size: 1em; /* Standard font size */
-    margin-bottom: 20px; /* Space below message, before button */
+    font-size: 1em;     /* Standard font size */
+    margin-bottom: 20px;/* Space below the paragraph, before the button */
 }
 
 /* Retry button styling */
 #retryButton {
-    padding: 15px 30px; /* Large clickable area */
-    font-size: 1.2em; /* Larger font size */
-    cursor: pointer; /* Pointer cursor on hover */
+    padding: 15px 30px; /* Large padding for easy clicking */
+    font-size: 1.2em;   /* Slightly larger font */
+    cursor: pointer;    /* Indicate it's clickable */
     background-color: #FFFF00; /* Yellow background */
-    color: #000000; /* Black text */
-    border: none; /* No default border */
+    color: #000000;     /* Black text */
+    border: none;       /* Remove default button border */
     border-radius: 5px; /* Rounded corners */
-    font-family: 'Press Start 2P', cursive; /* Ensure pixel font */
-    text-transform: uppercase; /* Uppercase text */
-    box-shadow: 0 4px #DAA520; /* Goldenrod bottom shadow for 3D effect */
+    font-family: 'Press Start 2P', cursive; /* Use pixel font */
+    text-transform: uppercase; /* Make text uppercase */
+    box-shadow: 0 4px #DAA520; /* Dark yellow bottom shadow for 3D effect */
     transition: all 0.1s ease; /* Smooth transition for hover/active states */
 }
 
-/* Retry button hover effect */
+/* Retry button hover state */
 #retryButton:hover {
-    background-color: #FFD700; /* Slightly darker yellow on hover */
-    box-shadow: 0 2px #DAA520; /* Reduce shadow on hover/press */
-    transform: translateY(2px); /* Move button down slightly on hover/press */
+    background-color: #FFD700; /* Slightly darker yellow */
+    box-shadow: 0 2px #DAA520; /* Reduce shadow slightly */
+    transform: translateY(2px); /* Move button down slightly */
 }
 
-/* Retry button active effect (when clicked) */
+/* Retry button active (clicked) state */
 #retryButton:active {
-    box-shadow: 0 0 #DAA520; /* Remove shadow when fully pressed */
-    transform: translateY(4px); /* Move button down further when fully pressed */
+    box-shadow: 0 0 #DAA520; /* Remove shadow completely */
+    transform: translateY(4px); /* Move button down further */
 }
 
-/* Start screen styling (similar to Game Over) */
+/* Start screen container (similar styling to Game Over) */
 #startScreen {
     position: absolute;
     top: 50%;
@@ -106,26 +106,25 @@ body {
     padding: 40px;
     border-radius: 10px;
     text-align: center;
-    z-index: 20; /* Ensure it's above game elements */
-    display: block; /* Visible by default (JavaScript might hide it) */
-    border: 3px solid #00FF00; /* Green border */
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.7); /* Green glow effect */
+    z-index: 20;        /* Ensure it appears above game elements */
+    display: block;     /* Show it by default; JavaScript likely hides it on start */
+    border: 3px solid #00FF00; /* Bright green border */
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.7); /* Glowing green effect */
 }
 
-/* Start screen title styling */
+/* Start screen title text */
 #startScreen h2 {
     margin-top: 0;
-    color: #00FF00; /* Green title text */
-    font-size: 1.8em; /* Slightly smaller than Game Over */
-    text-shadow: 2px 2px #000000; /* Black text shadow */
+    color: #00FF00;     /* Green color */
+    font-size: 1.8em;   /* Slightly smaller than Game Over title */
+    text-shadow: 2px 2px #000000; /* Black shadow */
 }
 
-/* Start screen paragraph styling */
+/* Informational paragraph on Start screen */
 #startScreen p {
-    font-size: 0.9em; /* Slightly smaller instructions */
-    margin-bottom: 25px; /* Space below instructions, before button */
+    font-size: 0.9em;   /* Slightly smaller font for instructions */
+    margin-bottom: 25px;/* Space below paragraph, before start button */
 }
-
 
 /* Start button styling (similar to Retry) */
 #startButton {
@@ -133,30 +132,29 @@ body {
     font-size: 1.2em;
     cursor: pointer;
     background-color: #00FF00; /* Green background */
-    color: #000000; /* Black text */
+    color: #000000;     /* Black text */
     border: none;
     border-radius: 5px;
     font-family: 'Press Start 2P', cursive;
     text-transform: uppercase;
-    box-shadow: 0 4px #008000; /* Dark green shadow for 3D effect */
+    box-shadow: 0 4px #008000; /* Dark green bottom shadow */
     transition: all 0.1s ease;
 }
 
-/* Start button hover effect */
+/* Start button hover state */
 #startButton:hover {
-    background-color: #32CD32; /* Lime green on hover */
+    background-color: #32CD32; /* Lime green */
     box-shadow: 0 2px #008000; /* Reduce shadow */
     transform: translateY(2px); /* Move down slightly */
 }
 
-/* Start button active effect (when clicked) */
+/* Start button active (clicked) state */
 #startButton:active {
     box-shadow: 0 0 #008000; /* Remove shadow */
     transform: translateY(4px); /* Move down further */
 }
 
-/* --- ADD ANY MISSING STYLES BELOW IF NEEDED --- */
-/* For example, if there were specific styles for player, obstacles etc. */
-/* Or if there were @media queries for responsiveness */
+/* Add any other necessary styles below */
+/* e.g., styles for player, obstacles, background elements if needed */
 
 
