@@ -124,9 +124,19 @@
     // --- Named Event Handlers ---
     function handleKeyDown(e){if(e.code==='Space'||e.key===' '||e.keyCode===32){e.preventDefault(); if(!allAssetsLoaded)return; if(currentGameState===GameState.PLAYING){handleJumpInput();}else if(currentGameState===GameState.MENU){startGame();}else if(currentGameState===GameState.GAME_OVER){restartGame();}}}
     function handleTouchStart(e){e.preventDefault(); if(!allAssetsLoaded)return; if(currentGameState===GameState.PLAYING){handleJumpInput();}else if(currentGameState===GameState.MENU){startGame();}else if(currentGameState===GameState.GAME_OVER){restartGame();}}}
-    function handleButtonTouchStart(e){e.preventDefault(); if(!allAssetsLoaded)return; if(e.target.id==='startButton'&¤tGameState===GameState.MENU){startGame();}else if(e.target.id==='restartButton'&¤tGameState===GameState.GAME_OVER){restartGame();}}}
+    // *** VVV CORRECTION IS HERE VVV ***
+    function handleButtonTouchStart(e) {
+        e.preventDefault(); if (!allAssetsLoaded) return;
+        // Use '&&' for logical AND and correct variable name 'currentGameState'
+        if (e.target.id === 'startButton' && currentGameState === GameState.MENU) {
+            startGame();
+        } else if (e.target.id === 'restartButton' && currentGameState === GameState.GAME_OVER) {
+            restartGame();
+        }
+    } // <-- Brace for handleButtonTouchStart
+    // *** ^^^ END CORRECTION ^^^ ***
 
     // --- Start Loading Assets ---
-    document.addEventListener('DOMContentLoaded', () => { console.log("DOM Ready. Loading assets."); loadAssets(); });
+    document.addEventListener('DOMContentLoaded', () => { console.log("DOM Ready. Loading assets."); loadAssets(); }); // Triggers init() when done
 
 })(); // End of IIFE
