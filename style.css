@@ -1,32 +1,43 @@
-/* Keep your existing styles for body, canvas etc. */
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #333; /* Or your preferred background */
+    background-color: #222; /* Dark background */
     margin: 0;
-    font-family: sans-serif;
+    font-family: 'Arial', sans-serif; /* Common sans-serif font */
 }
 
 #game-container {
-    position: relative; /* Needed for absolute positioning of UI */
-    border: 1px solid black; /* Optional: Frame the game area */
+    position: relative; /* Crucial for positioning UI elements over the canvas */
+    width: 800px; /* Match canvas width */
+    height: 400px; /* Match canvas height */
+    border: 2px solid #555; /* Optional border */
+    overflow: hidden; /* Hide anything extending beyond the container */
 }
 
 canvas {
-    display: block; /* Remove extra space below canvas */
-    background-color: #87CEEB; /* Default sky blue, will be covered by image */
+    display: block; /* Removes extra space below the canvas */
+    width: 100%;
+    height: 100%;
+    background-color: #87CEEB; /* Fallback sky blue, will be covered by image */
 }
 
-/* UI Screen Styling */
+/* UI Screen Styling (Start & Game Over) */
 .ui-screen {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent overlay */
+    background-color: rgba(0, 0, 0, 0.75); /* Dark semi-transparent overlay */
     color: white;
     display: flex;
     flex-direction: column;
@@ -34,38 +45,51 @@ canvas {
     align-items: center;
     text-align: center;
     z-index: 10; /* Ensure UI is above the canvas */
+    padding: 20px;
 }
 
 .ui-screen h1 {
-    font-size: 3em;
-    margin-bottom: 10px;
+    font-size: 3.5em;
+    margin-bottom: 15px;
+    color: #FFD700; /* Gold color for title */
+    text-shadow: 2px 2px 4px #000;
 }
 .ui-screen h2 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
+    font-size: 3em;
+    margin-bottom: 15px;
+    color: #DC143C; /* Crimson for Game Over */
+    text-shadow: 2px 2px 4px #000;
 }
 
 .ui-screen p {
-    font-size: 1.2em;
-    margin: 5px 0;
+    font-size: 1.4em;
+    margin: 8px 0;
 }
 
 .ui-screen button {
-    padding: 15px 30px;
-    font-size: 1.2em;
-    margin-top: 20px;
+    padding: 12px 25px;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 25px;
     cursor: pointer;
-    background-color: #eee; /* Basic button style */
-    border: 2px solid #ccc;
-    border-radius: 5px;
+    background-color: #eee; /* Light gray button */
+    border: 3px solid #aaa;
+    border-radius: 8px;
     color: #333;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .ui-screen button:hover {
     background-color: #ddd;
+    border-color: #888;
 }
+.ui-screen button:active {
+    background-color: #ccc;
+}
+
 
 .instructions {
     margin-top: 30px;
+    font-size: 1.1em !important; /* Override default p size */
     font-style: italic;
     color: #ccc;
 }
@@ -73,12 +97,13 @@ canvas {
 /* In-Game Score Display */
 #scoreDisplay {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 1.5em;
+    top: 15px;
+    left: 15px;
+    font-size: 1.8em;
+    font-weight: bold;
     color: white;
-    text-shadow: 1px 1px 2px black; /* Make it readable */
-    z-index: 5; /* Above canvas, below overlay */
+    text-shadow: 2px 2px 3px black; /* Make it readable */
+    z-index: 5; /* Above canvas, below overlay screens */
 }
 
 /* Utility class to hide elements */
