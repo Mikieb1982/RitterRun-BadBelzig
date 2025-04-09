@@ -1,168 +1,87 @@
-/* Basic Reset & Body Styling */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* Keep your existing styles for body, canvas etc. */
 body {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden; /* Prevent scrollbars on body */
-    background-color: #151513; /* Dark background for the page */
-    font-family: Arial, sans-serif;
-    touch-action: manipulation; /* Improve touch responsiveness */
+    min-height: 100vh;
+    background-color: #333; /* Or your preferred background */
+    margin: 0;
+    font-family: sans-serif;
 }
 
-/* Game Container - Scaled Responsively */
-#gameContainer {
-    position: relative;
-    /* Responsive sizing based on viewport width, maintaining aspect ratio */
-    width: 95vw;
-    height: calc(95vw / 2); /* Maintain a 2:1 aspect ratio */
-    /* Limit size based on viewport height */
-    max-height: 95vh;
-    max-width: calc(95vh * 2); /* Max width based on max height and ratio */
-    overflow: hidden; /* Hide anything outside the container */
-    margin: auto; /* Center container */
-    background: #000; /* Fallback background */
+#game-container {
+    position: relative; /* Needed for absolute positioning of UI */
+    border: 1px solid black; /* Optional: Frame the game area */
 }
 
-/* Canvas Styling */
-#gameCanvas {
+canvas {
     display: block; /* Remove extra space below canvas */
+    background-color: #87CEEB; /* Default sky blue, will be covered by image */
+}
+
+/* UI Screen Styling */
+.ui-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background-color: #0296c6; /* Blue sky background */
-}
-
-/* Score Display Styling */
-#scoreDisplay {
-    position: absolute;
-    top: 1.5vh; /* Position from top based on viewport height */
-    left: 2vw; /* Position from left based on viewport width */
-    color: #ffffff;
-    background-color: rgba(21, 21, 19, 0.7); /* Semi-transparent dark background */
-    padding: 0.8vh 1.5vw; /* Padding based on viewport dimensions */
-    border-radius: 3px;
-    /* Responsive font size, minimum 1.2em */
-    font-size: clamp(1em, 2.5vw, 1.6em); /* Adjusted font size */
-    z-index: 10; /* Ensure it's above the canvas */
-    white-space: nowrap; /* Prevent text wrapping */
-    font-family: 'Press Start 2P', cursive; /* Use game font */
-}
-
-/* Lives Display Styling */
-#livesDisplay {
-    position: absolute;
-    top: 1.5vh;    /* Align with score display vertically */
-    right: 2vw;   /* Position on the right */
-    color: #ffffff;
-    background-color: rgba(21, 21, 19, 0.7);
-    padding: 0.8vh 1.5vw;
-    border-radius: 3px;
-    font-size: clamp(1em, 2.5vw, 1.6em); /* Match score font size */
-    z-index: 10; /* Above canvas */
-    white-space: nowrap;
-    font-family: 'Press Start 2P', cursive; /* Use game font */
-}
-
-/* Common Styles for Popups and Overlays */
-.popup,
-.overlay {
-    position: absolute;
-    /* Centering trick */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /* Sizing */
-    width: 90%; /* Use 90% width by default */
-    max-width: 600px; /* Cap the width at 600px */
-    max-height: 85%; /* Limit height to 85% of viewport */
-    height: auto; /* Allow height to adjust to content, up to max-height */
-    /* Appearance */
-    color: #ffffff;
-    padding: 1.5em; /* Use em based padding */
-    border-radius: 8px;
-    border: max(2px, 0.5vmin) solid #f5d306; /* Yellow border */
-    /* Layout & Overflow */
-    display: none; /* Hidden by default */
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent overlay */
+    color: white;
+    display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Align content to top */
+    justify-content: center;
     align-items: center;
     text-align: center;
-    overflow-y: auto; /* Add scrollbar if content overflows vertically */
-    z-index: 20; /* Ensure overlays are on top */
-    box-sizing: border-box;
+    z-index: 10; /* Ensure UI is above the canvas */
 }
 
-/* Specific Overlay Backgrounds */
-.overlay { /* Game Over / Win screens */
-    background-color: rgba(21, 21, 19, 0.9); /* Slightly darker */
+.ui-screen h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+}
+.ui-screen h2 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
 }
 
-.popup { /* Landmark Info popup */
-     background-color: rgba(21, 21, 19, 0.95); /* Even darker popup */
+.ui-screen p {
+    font-size: 1.2em;
+    margin: 5px 0;
 }
 
-
-/* Text Styling within Overlays (Responsive fonts) */
-.popup h3, .overlay h2 { /* Different heading levels targeted */
-    color: #f5d306; /* Yellow heading color */
-    margin-bottom: 1em; /* Space below heading (use em) */
-    font-size: clamp(1.1em, 3vw, 1.8em); /* Min, Preferred (Viewport), Max */
-    font-family: 'Press Start 2P', cursive; /* Use game font for titles */
-    padding-top: 0; /* Removed top padding */
-    width: 100%; /* Ensure title takes full width */
-}
-
-.popup p, .overlay p {
-    margin-bottom: 1em; /* Space below paragraphs (use em) */
-    line-height: 1.5; /* Slightly increased for readability */
-    font-size: clamp(0.85em, 1.8vw, 1.0em); /* Slightly adjusted clamp */
-    max-width: 100%; /* Allow text to use container width (padding handles spacing) */
-    font-family: Arial, sans-serif; /* Standard font for descriptions */
-    text-align: left; /* Align description text left */
-    /* Removed padding-left/right - handled by container padding */
-}
-
-/* Button Styling */
-#continueButton, .overlay button { /* Style continue and overlay buttons */
-    padding: 0.8em 1.5em; /* Use em based padding */
-    background-color: #f5d306; /* Yellow background */
-    color: #151513; /* Dark text */
-    border: none; border-radius: 5px;
-    font-size: clamp(0.9em, 2.5vw, 1.2em); /* Slightly adjusted max size */
-    font-weight: bold;
+.ui-screen button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    margin-top: 20px;
     cursor: pointer;
-    margin-top: 1.5em; /* Use em */
-    margin-bottom: 0.5em; /* Use em */
-    min-width: 40%; /* Adjust as needed */
-    /* min-height: 6vh; Removed fixed min-height */
-    transition: background-color 0.2s ease;
-    font-family: 'Press Start 2P', cursive; /* Game font for buttons */
-    flex-shrink: 0; /* Prevent button from shrinking */
+    background-color: #eee; /* Basic button style */
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    color: #333;
 }
-#continueButton:hover, .overlay button:hover {
-     background-color: #e0bd05; /* Darker yellow on hover */
+.ui-screen button:hover {
+    background-color: #ddd;
 }
 
-/* Mobile Orientation Message */
-#rotateDeviceMessage {
-    display: none; /* Hidden by default */
-    position: fixed; /* Cover the whole screen */
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #151513; color: #ffffff;
-    z-index: 100; /* Above everything else */
-    flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; font-size: max(1.2em, 4vw); padding: 5vw;
-}
-/* Show message only in portrait orientation */
-@media (orientation: portrait) {
-    #rotateDeviceMessage { display: flex; }
-    #gameContainer { display: none; } /* Hide game in portrait */
+.instructions {
+    margin-top: 30px;
+    font-style: italic;
+    color: #ccc;
 }
 
+/* In-Game Score Display */
+#scoreDisplay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 1.5em;
+    color: white;
+    text-shadow: 1px 1px 2px black; /* Make it readable */
+    z-index: 5; /* Above canvas, below overlay */
+}
+
+/* Utility class to hide elements */
+.hidden {
+    display: none;
+}
