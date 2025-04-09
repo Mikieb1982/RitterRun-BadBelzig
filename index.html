@@ -10,12 +10,11 @@
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="400"></canvas> <!-- Adjust size if needed -->
 
-        <!-- *** NEW: POI Information Overlay *** -->
+        <!-- POI Information Overlay -->
         <div id="poiInfoOverlay" class="poi-overlay hidden">
             <h3 id="poiName">POI Name</h3>
             <p id="poiInfoText">POI information will appear here.</p>
         </div>
-        <!-- *** END NEW *** -->
 
         <!-- Start Screen UI -->
         <div id="startScreen" class="ui-screen">
@@ -38,11 +37,7 @@
         <div id="scoreDisplay" class="hidden">Score: <span id="currentScore">0</span></div>
     </div>
 
-    <!-- Audio Elements - Add corresponding files to assets folder! -->
-    <audio id="jumpSound" src="assets/jump.wav" preload="auto"></audio>
-    <audio id="collisionSound" src="assets/collision.wav" preload="auto"></audio>
-    <audio id="gameOverSound" src="assets/gameover.wav" preload="auto"></audio>
-    <!-- <audio id="bgMusic" src="assets/music.mp3" loop preload="auto"></audio> -->
+    <!-- Audio Elements Removed -->
 
     <script src="script.js"></script>
 </body>
