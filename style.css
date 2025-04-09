@@ -109,10 +109,11 @@ canvas {
 }
 
 
-/* *** NEW: POI Overlay Styling *** */
+/* *** MODIFIED: POI Overlay Styling (using top instead of bottom) *** */
 .poi-overlay {
     position: absolute;
-    bottom: 15px; /* Position near the bottom */
+    /* bottom: 15px; */   /* Original position - commented out */
+    top: 30px;       /* <<< CHANGED: Position near the top */
     left: 50%;
     transform: translateX(-50%); /* Center horizontally */
     width: 85%; /* Adjust width */
@@ -145,7 +146,7 @@ canvas {
     font-size: 1.05em; /* Slightly larger text */
     line-height: 1.45;
 }
-/* *** END NEW *** */
+/* *** END POI Styling Changes *** */
 
 
 /* Utility class to hide elements */
