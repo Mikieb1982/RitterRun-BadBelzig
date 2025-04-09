@@ -3,43 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Debugging POI</title> <!-- Changed title slightly -->
+    <title>RitterRun Enhanced - Debugging POI V3</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
-
-        <!-- POI Information Overlay -->
-        <!-- Ensure this is directly inside game-container and IDs are correct -->
         <div id="poiInfoOverlay" class="poi-overlay hidden">
             <h3 id="poiName">POI Name</h3>
             <p id="poiInfoText">POI information will appear here.</p>
         </div>
-
-        <!-- Start Screen UI -->
         <div id="startScreen" class="ui-screen">
-            <h1>RitterRun</h1>
-            <p>Explore Bad Belzig!</p>
-            <p>High Score: <span id="startHighScore">0</span></p>
-            <button id="startButton">Start Game</button>
-            <p class="instructions">Press SPACE or Click Start to Play<br>Press SPACE to Jump</p>
+            <h1>RitterRun</h1> <p>Explore Bad Belzig!</p> <p>High Score: <span id="startHighScore">0</span></p>
+            <button id="startButton">Start Game</button> <p class="instructions">Press SPACE or Click Start to Play<br>Press SPACE to Jump</p>
         </div>
-
-        <!-- Game Over Screen UI -->
         <div id="gameOverScreen" class="ui-screen hidden">
-            <h2>Game Over!</h2>
-            <p>Your Score: <span id="finalScore">0</span></p>
-            <p>High Score: <span id="gameOverHighScore">0</span></p>
+            <h2>Game Over!</h2> <p>Your Score: <span id="finalScore">0</span></p> <p>High Score: <span id="gameOverHighScore">0</span></p>
             <button id="restartButton">Restart</button>
         </div>
-
-        <!-- In-Game Score -->
         <div id="scoreDisplay" class="hidden">Score: <span id="currentScore">0</span></div>
     </div>
-
-    <!-- No Audio Elements -->
-
     <script src="script.js"></script>
 </body>
 </html>
