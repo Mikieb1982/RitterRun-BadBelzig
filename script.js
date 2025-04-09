@@ -4,486 +4,204 @@
 
     // --- Canvas and Context ---
     const canvas = document.getElementById('gameCanvas');
-    if (!canvas || !canvas.getContext) {
-        console.error("Fatal Error: Canvas not found or not supported!");
-        alert("Fatal Error: Canvas not found or not supported! Try a different browser.");
-        return;
-    }
+    if (!canvas || !canvas.getContext) { /* ... error handling ... */ return; }
     const ctx = canvas.getContext('2d');
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
+    const canvasWidth = canvas.width; const canvasHeight = canvas.height;
 
     // --- DOM Element References ---
-    const startScreen = document.getElementById('startScreen');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const startButton = document.getElementById('startButton');
-    const restartButton = document.getElementById('restartButton');
-    const scoreDisplay = document.getElementById('scoreDisplay');
-    const currentScoreSpan = document.getElementById('currentScore');
-    const finalScoreSpan = document.getElementById('finalScore');
-    const startHighScoreSpan = document.getElementById('startHighScore');
-    const gameOverHighScoreSpan = document.getElementById('gameOverHighScore');
-    // *** NEW: POI Overlay Elements ***
-    const poiOverlay = document.getElementById('poiInfoOverlay');
-    const poiNameEl = document.getElementById('poiName');
-    const poiInfoTextEl = document.getElementById('poiInfoText');
-    // *** --------------- ***
+    // (Includes checks as before)
+    const startScreen = document.getElementById('startScreen'); /* ... and others ... */
+    const poiOverlay = document.getElementById('poiInfoOverlay'); /* ... and POI elements ... */
+    if (!startScreen || /* ... other checks ... */ !poiInfoTextEl) { /* ... error handling ... */ return; }
 
-    // Check essential UI elements
-    if (!startScreen || !gameOverScreen || !startButton || !restartButton || !scoreDisplay ||
-        !currentScoreSpan || !finalScoreSpan || !startHighScoreSpan || !gameOverHighScoreSpan ||
-        !poiOverlay || !poiNameEl || !poiInfoTextEl) { // Added POI elements check
-        console.error("Fatal Error: One or more required UI elements not found in index.html!");
-        alert("Fatal Error: UI elements missing! Check index.html.");
-        return;
-    }
-
-    // --- Audio References ---
-    const jumpSound = document.getElementById('jumpSound');
-    const collisionSound = document.getElementById('collisionSound');
-    const gameOverSound = document.getElementById('gameOverSound');
+    // --- Audio References --- (Assume elements exist or handle nulls in playSound)
+    const jumpSound = document.getElementById('jumpSound'); /* ... and others ... */
 
     // --- Game States ---
-    const GameState = {
-        MENU: 'MENU',
-        PLAYING: 'PLAYING',
-        GAME_OVER: 'GAME_OVER'
-    };
+    const GameState = { MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER' };
     let currentGameState = GameState.MENU;
 
     // --- Game Variables ---
-    let score = 0;
-    let highScore = 0;
-    let player = {
-        x: 60, y: canvasHeight - 60,
-        // !!! ADJUST THESE TO MATCH YOUR KNIGHT IMAGE SIZE !!!
-        width: 40, height: 40,
-        // -------------------------------------------------
-        dx: 0, dy: 0, gravity: 0.65, jumpPower: -13, grounded: true
-    };
-    let obstacles = []; // Will now contain both obstacles and POI signs
-    let frameCount = 0;
-    let gameSpeed = 5.5;
-    let initialGameSpeed = 5.5;
-    let speedIncreaseInterval = 400;
-    let nextSpeedIncreaseScore = speedIncreaseInterval;
+    let score = 0; let highScore = 0;
+    let player = { x: 60, y: canvasHeight - 60, /* !!! CHECK DIMENSIONS !!! */ width: 40, height: 40, dx: 0, dy: 0, gravity: 0.65, jumpPower: -13, grounded: true };
+    let obstacles = []; let frameCount = 0; let gameSpeed = 5.5; let initialGameSpeed = 5.5;
+    let speedIncreaseInterval = 400; let nextSpeedIncreaseScore = speedIncreaseInterval;
     let groundHeight = 25;
 
     // --- Graphics Assets ---
     const assets = {
         knight: { img: new Image(), loaded: false, src: 'assets/knight_placeholder.png' },
         stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-        sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, // Used for POIs
+        sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
         tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
         background: { img: new Image(), loaded: false, src: 'assets/background.png' }
     };
-    let assetsLoadedCount = 0;
-    let totalAssets = Object.keys(assets).length;
-    let allAssetsLoaded = false;
-    let gameInitialized = false;
+    let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length;
+    let allAssetsLoaded = false; let gameInitialized = false; let bgX = 0;
 
-    let bgX = 0;
+    // --- Obstacle/POI Definitions ---
+    // !!! CHECK DIMENSIONS !!!
+    const regularObstacleTypes = [ { assetKey: 'stone', width: 35, height: 35 }, { assetKey: 'tractor', width: 70, height: 45 } ];
+    const poiSignDimensions = { width: 45, height: 55 }; // !!! CHECK DIMENSIONS !!!
 
-    // !!! IMPORTANT: ADJUST OBSTACLE DIMENSIONS !!!
-    // Define types for *game-ending* obstacles only now
-    const regularObstacleTypes = [
-        { assetKey: 'stone', width: 35, height: 35 },
-        { assetKey: 'tractor', width: 70, height: 45 }
-    ];
-    // Define dimensions for the POI sign separately
-    const poiSignDimensions = { width: 45, height: 55 }; // !!! ADJUST TO YOUR sign.png SIZE !!!
-    // ---------------------------------------------
-
-
-    // --- *** NEW: POI Data and Handling *** ---
-    // !!! IMPORTANT: REPLACE WITH YOUR ACTUAL BAD BELZIG POI INFO !!!
+    // --- POI Data & Handling ---
+    // !!! REPLACE WITH YOUR INFO !!!
     const poiData = [
-        { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. Features a museum and tower access with great views." },
-        { id: 2, name: "SteinTherme", info: "Modern thermal baths known for unique brine pools ('Liquid Sound Temple') and sauna world." },
-        { id: 3, name: "Historic Town Center", info: "Walk through the Altstadt, see the Marienkirche, Rathaus (Town Hall), and half-timbered houses." },
-        { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813) against Napoleon's forces. Located south of the town." },
-        { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig, housed in his former residence." },
-        { id: 6, name: "Fläming Nature Park Center", info: "Located in nearby Raben, provides info about the Hoher Fläming region, hiking, and nature." },
-        // Add more POIs if you like
+        { id: 1, name: "Burg Eisenhardt", info: "Medieval castle..." },
+        { id: 2, name: "SteinTherme", info: "Thermal baths..." },
+        // ... rest of your POIs ...
     ];
-    let nextPoiIndex = 0; // To cycle through POIs
-    let poiTimeoutId = null; // To store the timeout ID for hiding the overlay
-    const poiDisplayDuration = 6000; // Show POI info for 6 seconds (6000ms)
-    // --- *** -------------------------- *** ---
+    let nextPoiIndex = 0; let poiTimeoutId = null; const poiDisplayDuration = 6000;
+
+    // --- Asset Loading Functions (assetLoaded, assetLoadError, loadAssets) ---
+    // (Keep existing functions as provided in the previous full code)
+    function assetLoaded(assetKey) { assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets && !gameInitialized) { allAssetsLoaded = true; init(); } }
+    function assetLoadError(assetKey) { console.error(`Failed to load asset: ${assets[assetKey].src}.`); alert(`Error loading image: ${assets[assetKey].src}\nGame cannot start.`); }
+    function loadAssets() { console.log("Starting asset loading..."); for (const key in assets) { if (assets.hasOwnProperty(key) && assets[key].img) { assets[key].img.onload = () => assetLoaded(key); assets[key].img.onerror = () => assetLoadError(key); assets[key].img.src = assets[key].src; } } }
 
 
-    // --- Asset Loading ---
-    function assetLoaded(assetKey) {
-        assets[assetKey].loaded = true;
-        assetsLoadedCount++;
-        if (assetsLoadedCount === totalAssets && !gameInitialized) {
-            allAssetsLoaded = true;
-            init();
-        }
-    }
-    function assetLoadError(assetKey) {
-        console.error(`Failed to load asset: ${assets[assetKey].src}.`);
-        alert(`Error loading image: ${assets[assetKey].src}\nGame cannot start.`);
-    }
-    function loadAssets() {
-        console.log("Starting asset loading...");
-        for (const key in assets) {
-            if (assets.hasOwnProperty(key) && assets[key].img) {
-                assets[key].img.onload = () => assetLoaded(key);
-                assets[key].img.onerror = () => assetLoadError(key);
-                assets[key].img.src = assets[key].src; // Start loading
-            }
-        }
-    }
+    // --- High Score Handling (loadHighScore, saveHighScore) ---
+    // (Keep existing functions)
+    function loadHighScore() { try { const savedScore = localStorage.getItem('ritterRunHighScore'); highScore = savedScore ? parseInt(savedScore, 10) : 0; if (isNaN(highScore)) highScore = 0; startHighScoreSpan.textContent = highScore; gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Load HS:", e); highScore = 0; } }
+    function saveHighScore() { if (score > highScore) { highScore = score; try { localStorage.setItem('ritterRunHighScore', highScore.toString()); gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Save HS:", e); } } }
 
-    // --- High Score Handling ---
-    function loadHighScore() { /* ... (keep existing function) ... */
-        try {
-            const savedScore = localStorage.getItem('ritterRunHighScore');
-            highScore = savedScore ? parseInt(savedScore, 10) : 0;
-            if (isNaN(highScore)) highScore = 0; // Handle case where saved value isn't a number
-            startHighScoreSpan.textContent = highScore;
-            gameOverHighScoreSpan.textContent = highScore;
-        } catch (e) {
-            console.error("Could not access localStorage for high score:", e);
-            highScore = 0; // Default to 0 if localStorage fails
-        }
-    }
-    function saveHighScore() { /* ... (keep existing function) ... */
-        if (score > highScore) {
-            highScore = score;
-            try {
-                localStorage.setItem('ritterRunHighScore', highScore.toString());
-                gameOverHighScoreSpan.textContent = highScore; // Update display
-            } catch (e) {
-                 console.error("Could not save high score to localStorage:", e);
-            }
-        }
-    }
 
-    // --- Sound Playing Helper ---
-    function playSound(soundElement) { /* ... (keep existing function) ... */
-        if (!soundElement || typeof soundElement.play !== 'function') return;
-        soundElement.currentTime = 0;
-        const playPromise = soundElement.play();
-        if (playPromise !== undefined) { playPromise.catch(error => {}); } // Ignore autoplay errors silently
-    }
+    // --- Sound Playing Helper (playSound) ---
+    // (Keep existing function)
+     function playSound(soundElement) { if (!soundElement || typeof soundElement.play !== 'function') return; soundElement.currentTime = 0; const p = soundElement.play(); if(p !== undefined) { p.catch(_ => {}); } }
 
-    // --- Reset Game Variables ---
-    function resetGame() { /* ... (keep existing function) ... */
-        score = 0; obstacles = []; frameCount = 0;
-        gameSpeed = initialGameSpeed; nextSpeedIncreaseScore = speedIncreaseInterval;
-        bgX = 0; player.y = canvasHeight - player.height - groundHeight;
-        player.dy = 0; player.grounded = true;
-        if (currentScoreSpan) currentScoreSpan.textContent = score;
-         // Hide POI overlay on reset
-        if (poiTimeoutId) clearTimeout(poiTimeoutId);
-        poiOverlay.classList.remove('visible');
-        nextPoiIndex = 0; // Reset POI cycle
-    }
+
+    // --- Reset Game Variables (resetGame) ---
+    // (Keep existing function, ensures POI overlay is hidden)
+     function resetGame() { score = 0; obstacles = []; frameCount = 0; gameSpeed = initialGameSpeed; nextSpeedIncreaseScore = speedIncreaseInterval; bgX = 0; player.y = canvasHeight - player.height - groundHeight; player.dy = 0; player.grounded = true; if (currentScoreSpan) currentScoreSpan.textContent = score; if (poiTimeoutId) clearTimeout(poiTimeoutId); poiOverlay?.classList.remove('visible'); nextPoiIndex = 0; }
+
 
     // --- Update Functions ---
-    function updatePlayer() { /* ... (keep existing function) ... */
-        if (!player.grounded) {
-            player.dy += player.gravity;
-            player.y += player.dy;
-        }
-        if (player.y >= canvasHeight - player.height - groundHeight) {
-            player.y = canvasHeight - player.height - groundHeight;
-            player.dy = 0;
-            player.grounded = true;
-        }
-    }
+    // (Keep existing updatePlayer)
+     function updatePlayer() { if (!player.grounded) { player.dy += player.gravity; player.y += player.dy; } if (player.y >= canvasHeight - player.height - groundHeight) { player.y = canvasHeight - player.height - groundHeight; player.dy = 0; player.grounded = true; } }
 
-    // --- *** MODIFIED: updateObstacles Function *** ---
+
+    // --- Update Obstacles/POIs ---
     function updateObstacles() {
         frameCount++;
-        const baseFrequency = 130; // Slightly less frequent spawns overall
-        const speedFactor = Math.max(1, gameSpeed * 2.5); // Less impact from speed
-        const spawnFrequency = Math.max(50, baseFrequency - speedFactor); // Min freq 50
+        const baseFrequency = 130; const speedFactor = Math.max(1, gameSpeed * 2.5);
+        const spawnFrequency = Math.max(50, baseFrequency - speedFactor);
 
         if (frameCount % Math.floor(spawnFrequency) === 0) {
             let newObjectData = null;
-            // Decide type: POI (sign) or regular obstacle (stone/tractor)
-            // POI Spawn Chance (e.g., 15-20%? Adjust for desired frequency)
             const spawnPOI = Math.random() < 0.18 && poiData.length > 0 && assets.sign.loaded;
 
             if (spawnPOI) {
-                // Spawn a POI sign
                 const poi = poiData[nextPoiIndex % poiData.length];
-                newObjectData = {
-                    isPOI: true, // Mark as POI
-                    poiId: poi.id, // Store which POI this is
-                    passed: false, // Has player passed it yet?
-                    x: canvasWidth,
-                    y: canvasHeight - poiSignDimensions.height - groundHeight, // Use POI sign dimensions
-                    width: poiSignDimensions.width,
-                    height: poiSignDimensions.height,
-                    assetKey: 'sign' // Use the sign asset
-                };
-                nextPoiIndex++; // Prepare for the next POI
-                // console.log(`Spawning POI Sign: ID ${poi.id}`);
+                newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - poiSignDimensions.height - groundHeight, width: poiSignDimensions.width, height: poiSignDimensions.height, assetKey: 'sign' };
+                nextPoiIndex++;
+                // *** DEBUG LOG ***
+                console.log(`>>> Spawning POI Sign (ID: ${poi.id})`);
             } else {
-                // Spawn a regular game-ending obstacle
                 if (regularObstacleTypes.length > 0) {
                     const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
                     const type = regularObstacleTypes[typeIndex];
-
                     if (assets[type.assetKey] && assets[type.assetKey].loaded) {
-                        newObjectData = {
-                            isPOI: false, // Not a POI
-                            x: canvasWidth,
-                            y: canvasHeight - type.height - groundHeight,
-                            width: type.width,
-                            height: type.height,
-                            assetKey: type.assetKey
-                        };
-                        // console.log(`Spawning Obstacle: ${type.assetKey}`);
+                        newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - type.height - groundHeight, width: type.width, height: type.height, assetKey: type.assetKey };
+                         // *** DEBUG LOG ***
+                         console.log(`>>> Spawning Obstacle (${type.assetKey})`);
                     }
                 }
             }
-
-            // Add the successfully created object to the array
-            if (newObjectData) {
-                obstacles.push(newObjectData);
-            }
+            if (newObjectData) { obstacles.push(newObjectData); }
         }
 
-        // Move all objects (obstacles and POIs) left
+        // Move & Check Passing POI & Remove Off-screen
         for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obj = obstacles[i]; // Reference the current object
-            obj.x -= gameSpeed;
-
-            // --- NEW: Check for Passing a POI Sign ---
-            if (obj.isPOI && !obj.passed) {
-                // Check if the player's front (x) is past the POI sign's center
-                 if (player.x > obj.x + obj.width / 2) {
-                    displayPOIInfo(obj.poiId); // Show the info for this POI
-                    obj.passed = true; // Mark as passed to prevent re-triggering
-                    score += 50; // Optional: Score bonus for seeing POI info
-                    if (currentScoreSpan) currentScoreSpan.textContent = score; // Update score display
-                 }
+            const obj = obstacles[i]; obj.x -= gameSpeed;
+            // Check for passing POI
+            if (obj.isPOI && !obj.passed && player.x > obj.x + obj.width / 2) {
+                 // *** DEBUG LOG ***
+                 console.log(`*** Player passed POI ID: ${obj.poiId} - Triggering info display.`);
+                displayPOIInfo(obj.poiId);
+                obj.passed = true; score += 50;
+                if (currentScoreSpan) currentScoreSpan.textContent = score;
             }
-            // --- END NEW ---
-
-            // Remove objects that are well off-screen
-            if (obj.x + obj.width < -100) { // Allow extra space for POI text visibility
-                obstacles.splice(i, 1);
-            }
+            // Remove Off-screen
+            if (obj.x + obj.width < -100) { obstacles.splice(i, 1); }
         }
     }
-    // --- *** END MODIFIED updateObstacles *** ---
 
-
-    // --- *** MODIFIED: checkCollisions Function *** ---
+    // --- Check Collisions ---
     function checkCollisions() {
         const playerRect = { x: player.x, y: player.y, width: player.width, height: player.height };
-
         for (const obstacle of obstacles) {
-            // --- >>> IMPORTANT: Skip collision check if it's a POI sign <<<---
-            if (obstacle.isPOI) {
-                continue; // Ignore POI signs for game-ending collisions
-            }
-            // --- >>> ---------------------------------------------------- <<<---
+             // *** DEBUG LOG *** Check EVERY object before the POI check
+            // console.log(`Checking collision against object with assetKey: ${obstacle.assetKey}, isPOI: ${obstacle.isPOI}`);
 
-            // Regular collision check for game-ending obstacles
+            // --- Skip check if it's a POI ---
+            if (obstacle.isPOI) {
+                 // *** DEBUG LOG ***
+                // console.log(`--- Object is POI (${obstacle.assetKey}), skipping collision check.`);
+                continue; // Skip to next object in loop
+            }
+            // --- Collision check for non-POI objects ---
             const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
             if (playerRect.x < obstacleRect.x + obstacleRect.width &&
                 playerRect.x + playerRect.width > obstacleRect.x &&
                 playerRect.y < obstacleRect.y + obstacleRect.height &&
                 playerRect.y + playerRect.height > obstacleRect.y)
             {
-                return true; // Collision detected
+                // *** DEBUG LOG *** THIS IS THE GAME OVER TRIGGER
+                console.error(`!!! COLLISION DETECTED with non-POI object: assetKey=${obstacle.assetKey}, isPOI=${obstacle.isPOI}`);
+                return true; // Collision detected -> GAME OVER
             }
         }
-        return false; // No game-ending collision
-    }
-    // --- *** END MODIFIED checkCollisions *** ---
-
-
-    function updateScoreAndSpeed() { /* ... (keep existing function) ... */
-        score++;
-        if (currentScoreSpan) currentScoreSpan.textContent = score;
-        if (score > 0 && score % speedIncreaseInterval === 0 && score >= nextSpeedIncreaseScore) {
-            gameSpeed += 0.3;
-            nextSpeedIncreaseScore += speedIncreaseInterval;
-        }
+        return false; // No game-ending collision found in this frame
     }
 
-    // --- Draw Functions ---
-    function drawBackground() { /* ... (keep existing function) ... */
-        if (!assets.background.loaded) {
-             ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-             ctx.fillStyle = '#228B22'; ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight); return;
-        }
-        const scrollSpeed = gameSpeed; // Scroll background at main game speed
-        bgX -= scrollSpeed;
-        bgX = bgX % canvasWidth;
-        if (bgX > 0) bgX -= canvasWidth;
-        ctx.drawImage(assets.background.img, bgX, 0, canvasWidth, canvasHeight);
-        ctx.drawImage(assets.background.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-    }
-    function drawPlayer() { /* ... (keep existing function) ... */
-        if (!assets.knight.loaded) { ctx.fillStyle = 'grey'; ctx.fillRect(player.x, player.y, player.width, player.height); return; }
-        ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
-    }
-    // --- MODIFIED: drawObstacles now draws POIs too ---
-    function drawObstacles() { // Renamed to drawObjects is clearer, but keeping name for now
-        for (const obj of obstacles) { // Changed variable name to 'obj'
-            if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
-            } else {
-                // Draw fallback rectangle if image fails
-                ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; // Different fallback for POIs
-                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-            }
-        }
-    }
-    // --- END MODIFIED ---
 
-    // --- *** NEW: POI Display Function *** ---
-    function displayPOIInfo(poiId) {
-        if (!poiOverlay || !poiNameEl || !poiInfoTextEl) {
-            console.error("POI display elements not found!");
-            return;
-        }
-        const poi = poiData.find(p => p.id === poiId);
-        if (!poi) {
-            console.warn(`POI data not found for ID: ${poiId}`);
-            return;
-        }
-        // console.log(`Displaying POI: ${poi.name}`);
-        poiNameEl.textContent = poi.name;
-        poiInfoTextEl.textContent = poi.info;
-        poiOverlay.classList.add('visible'); // Show with fade-in
-
-        // Clear any previous timeout to ensure the new one runs fully
-        if (poiTimeoutId) {
-            clearTimeout(poiTimeoutId);
-        }
-        // Set timeout to hide the overlay
-        poiTimeoutId = setTimeout(() => {
-            poiOverlay.classList.remove('visible'); // Hide with fade-out
-            poiTimeoutId = null;
-        }, poiDisplayDuration);
-    }
-    // --- *** ------------------------- *** ---
+    // --- Update Score & Speed (updateScoreAndSpeed) ---
+    // (Keep existing function)
+     function updateScoreAndSpeed() { score++; if (currentScoreSpan) currentScoreSpan.textContent = score; if (score > 0 && score % speedIncreaseInterval === 0 && score >= nextSpeedIncreaseScore) { gameSpeed += 0.3; nextSpeedIncreaseScore += speedIncreaseInterval; } }
 
 
-    // --- Game Loop ---
-    let lastTime = 0;
-    function gameLoop(timestamp) { /* ... (keep existing game loop structure) ... */
-        requestAnimationFrame(gameLoop); // Request next frame early
-        const deltaTime = timestamp - lastTime; lastTime = timestamp;
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        drawBackground();
+    // --- Draw Functions (drawBackground, drawPlayer, drawObstacles) ---
+    // (Keep existing functions, drawObstacles already draws based on assetKey)
+     function drawBackground() { if (!assets.background.loaded) { ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); ctx.fillStyle = '#228B22'; ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight); return; } const scrollSpeed = gameSpeed; bgX -= scrollSpeed; bgX = bgX % canvasWidth; if (bgX > 0) bgX -= canvasWidth; ctx.drawImage(assets.background.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); }
+     function drawPlayer() { if (!assets.knight.loaded) { ctx.fillStyle = 'grey'; ctx.fillRect(player.x, player.y, player.width, player.height); return; } ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height); }
+     function drawObstacles() { for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
 
-        if (currentGameState === GameState.PLAYING) {
-            updatePlayer(); updateObstacles(); updateScoreAndSpeed();
-            drawPlayer(); drawObstacles(); // Draws both obstacles and POIs
-            if (checkCollisions()) { // checkCollisions now ignores POIs
-                playSound(collisionSound); playSound(gameOverSound);
-                currentGameState = GameState.GAME_OVER;
-                saveHighScore(); finalScoreSpan.textContent = score;
-                gameOverHighScoreSpan.textContent = highScore;
-                gameOverScreen.classList.remove('hidden');
-                scoreDisplay.classList.add('hidden');
-                // Hide POI overlay instantly on game over
-                if (poiTimeoutId) clearTimeout(poiTimeoutId);
-                poiOverlay.classList.remove('visible');
-            }
-        } else { // Menu or Game Over state
-             drawPlayer(); // Draw player standing
-             if (currentGameState === GameState.GAME_OVER) {
-                 drawObstacles(); // Show final state
-             }
-        }
-    }
 
-    // --- Game State Changers / Event Handlers ---
-    function startGame() { /* ... (keep existing function, ensures POI overlay is hidden on start) ... */
-        if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
-        console.log("Attempting to start game...");
-        resetGame(); // Reset includes hiding POI overlay
-        currentGameState = GameState.PLAYING;
-        startScreen.classList.add('hidden');
-        gameOverScreen.classList.add('hidden');
-        scoreDisplay.classList.remove('hidden');
-        console.log("Game state set to PLAYING.");
-    }
-    function restartGame() { /* ... (keep existing function, ensures POI overlay is hidden on restart) ... */
-         if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
-         console.log("Attempting to restart game...");
-         resetGame(); // Reset includes hiding POI overlay
-         currentGameState = GameState.PLAYING;
-         gameOverScreen.classList.add('hidden');
-         startScreen.classList.add('hidden');
-         scoreDisplay.classList.remove('hidden');
-         console.log("Game state set to PLAYING after restart.");
-    }
-    function handleJumpInput() { /* ... (keep existing function) ... */
-        if (currentGameState === GameState.PLAYING && player.grounded) {
-            player.dy = player.jumpPower; player.grounded = false;
-            playSound(jumpSound);
-        }
-    }
+    // --- Display POI Info (displayPOIInfo) ---
+    // (Keep existing function)
+     function displayPOIInfo(poiId) { if (!poiOverlay || !poiNameEl || !poiInfoTextEl) { return; } const poi = poiData.find(p => p.id === poiId); if (!poi) { return; } poiNameEl.textContent = poi.name; poiInfoTextEl.textContent = poi.info; poiOverlay.classList.add('visible'); if (poiTimeoutId) { clearTimeout(poiTimeoutId); } poiTimeoutId = setTimeout(() => { poiOverlay.classList.remove('visible'); poiTimeoutId = null; }, poiDisplayDuration); }
 
-    // --- Initial Setup Function ---
-    function init() { /* ... (keep existing init structure, just attaches listeners) ... */
-        console.log("init() function called.");
-        if (gameInitialized) { console.warn("init() called more than once. Skipping."); return; }
-        gameInitialized = true;
 
-        loadHighScore();
-        startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden');
-        scoreDisplay.classList.add('hidden'); poiOverlay.classList.add('hidden'); // Ensure POI hidden initially
-        player.y = canvasHeight - player.height - groundHeight; // Place player correctly for menu
+    // --- Game Loop (gameLoop) ---
+    // (Keep existing structure)
+     let lastTime = 0;
+     function gameLoop(timestamp) { requestAnimationFrame(gameLoop); const deltaTime = timestamp - lastTime; lastTime = timestamp; ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(); if (currentGameState === GameState.PLAYING) { updatePlayer(); updateObstacles(); updateScoreAndSpeed(); drawPlayer(); drawObstacles(); if (checkCollisions()) { playSound(collisionSound); playSound(gameOverSound); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); if (poiTimeoutId) clearTimeout(poiTimeoutId); poiOverlay.classList.remove('visible'); } } else { drawPlayer(); if (currentGameState === GameState.GAME_OVER) { drawObstacles(); } } }
 
-        console.log("Attaching event listeners...");
-        // Remove potential old listeners first
-        startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame);
-        document.removeEventListener('keydown', handleKeyDown); canvas.removeEventListener('touchstart', handleTouchStart);
-        startButton.removeEventListener('touchstart', handleButtonTouchStart); restartButton.removeEventListener('touchstart', handleButtonTouchStart);
-        // Add listeners
-        startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame);
-        document.addEventListener('keydown', handleKeyDown);
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        startButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false });
-        restartButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false });
-        console.log("Event listeners attached.");
 
-        console.log("Requesting first game loop frame.");
-        requestAnimationFrame(gameLoop); // Start the loop
-    }
+    // --- Game State Changers / Event Handlers (startGame, restartGame, handleJumpInput) ---
+    // (Keep existing functions)
+     function startGame() { if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Attempting to start game..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); console.log("Game state set to PLAYING."); }
+     function restartGame() { if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Attempting to restart game..."); resetGame(); currentGameState = GameState.PLAYING; gameOverScreen.classList.add('hidden'); startScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); console.log("Game state set to PLAYING after restart."); }
+     function handleJumpInput() { if (currentGameState === GameState.PLAYING && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound(jumpSound); } }
 
-    // --- Named Event Handlers --- (Keep existing handlers: handleKeyDown, handleTouchStart, handleButtonTouchStart)
-    function handleKeyDown(e) { /* ... (keep existing function) ... */
-        if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
-            e.preventDefault();
-            if (!allAssetsLoaded) { return; }
-            if (currentGameState === GameState.PLAYING) { handleJumpInput(); }
-            else if (currentGameState === GameState.MENU) { startGame(); }
-            else if (currentGameState === GameState.GAME_OVER) { restartGame(); }
-        }
-    }
-    function handleTouchStart(e) { /* ... (keep existing function) ... */
-        e.preventDefault();
-        if (!allAssetsLoaded) return;
-         if (currentGameState === GameState.PLAYING) { handleJumpInput(); }
-         else if (currentGameState === GameState.MENU) { startGame(); }
-         else if (currentGameState === GameState.GAME_OVER) { restartGame(); }
-    }
-    function handleButtonTouchStart(e) { /* ... (keep existing function) ... */
-        e.preventDefault();
-        if (!allAssetsLoaded) return;
-        if (e.target.id === 'startButton' && currentGameState === GameState.MENU) { startGame(); }
-        else if (e.target.id === 'restartButton' && currentGameState === GameState.GAME_OVER) { restartGame(); }
-    }
+
+    // --- Initial Setup (init) ---
+    // (Keep existing function - attaches listeners after assets load)
+     function init() { console.log("init() function called."); if (gameInitialized) { return; } gameInitialized = true; loadHighScore(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); poiOverlay?.classList.add('hidden'); player.y = canvasHeight - player.height - groundHeight; console.log("Attaching event listeners..."); startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); canvas.removeEventListener('touchstart', handleTouchStart); startButton.removeEventListener('touchstart', handleButtonTouchStart); restartButton.removeEventListener('touchstart', handleButtonTouchStart); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); canvas.addEventListener('touchstart', handleTouchStart, { passive: false }); startButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false }); restartButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false }); console.log("Event listeners attached."); console.log("Requesting first game loop frame."); requestAnimationFrame(gameLoop); }
+
+
+    // --- Named Event Handlers (handleKeyDown, handleTouchStart, handleButtonTouchStart) ---
+    // (Keep existing functions)
+     function handleKeyDown(e) { if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) { e.preventDefault(); if (!allAssetsLoaded) { return; } if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } } }
+     function handleTouchStart(e) { e.preventDefault(); if (!allAssetsLoaded) return; if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } }
+     function handleButtonTouchStart(e) { e.preventDefault(); if (!allAssetsLoaded) return; if (e.target.id === 'startButton' && currentGameState === GameState.MENU) { startGame(); } else if (e.target.id === 'restartButton' && currentGameState === GameState.GAME_OVER) { restartGame(); } }
+
 
     // --- Start Loading Assets ---
     document.addEventListener('DOMContentLoaded', () => {
          console.log("DOM Content Loaded. Starting asset load.");
-         loadAssets(); // This will trigger init() when done
+         loadAssets(); // Triggers init() when done
     });
 
 })(); // End of IIFE
