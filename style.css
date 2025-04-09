@@ -13,6 +13,7 @@ body {
     background-color: #222; /* Dark background */
     margin: 0;
     font-family: 'Arial', sans-serif; /* Common sans-serif font */
+    overflow: hidden; /* Prevent scrollbars if container overflows slightly */
 }
 
 #game-container {
@@ -44,7 +45,7 @@ canvas {
     justify-content: center;
     align-items: center;
     text-align: center;
-    z-index: 10; /* Ensure UI is above the canvas */
+    z-index: 30; /* Highest: Above game, score, and POI */
     padding: 20px;
 }
 
@@ -88,10 +89,11 @@ canvas {
 
 
 .instructions {
-    margin-top: 30px;
+    margin-top: 20px; /* Adjusted margin */
     font-size: 1.1em !important; /* Override default p size */
     font-style: italic;
     color: #ccc;
+    line-height: 1.5; /* Improve readability */
 }
 
 /* In-Game Score Display */
@@ -103,8 +105,48 @@ canvas {
     font-weight: bold;
     color: white;
     text-shadow: 2px 2px 3px black; /* Make it readable */
-    z-index: 5; /* Above canvas, below overlay screens */
+    z-index: 20; /* Above game and POI, below Menu/Game Over */
 }
+
+
+/* *** NEW: POI Overlay Styling *** */
+.poi-overlay {
+    position: absolute;
+    bottom: 15px; /* Position near the bottom */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    width: 85%; /* Adjust width */
+    max-width: 550px; /* Max width */
+    background-color: rgba(30, 30, 50, 0.9); /* Darker blueish semi-transparent */
+    color: #f0f0f0; /* Light text color */
+    border: 2px solid #bdc3c7; /* Light silver border */
+    border-radius: 10px;
+    padding: 12px 18px;
+    z-index: 15; /* Above game canvas, below score and UI screens */
+    text-align: center;
+    opacity: 0; /* Start hidden */
+    transition: opacity 0.4s ease-in-out; /* Fade effect */
+    pointer-events: none; /* Prevent interaction */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Add subtle shadow */
+}
+
+.poi-overlay.visible {
+    opacity: 1; /* Make visible */
+}
+
+.poi-overlay h3 {
+    margin-bottom: 8px;
+    font-size: 1.4em; /* Slightly larger */
+    color: #f1c40f; /* Brighter yellow title */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+.poi-overlay p {
+    font-size: 1.05em; /* Slightly larger text */
+    line-height: 1.45;
+}
+/* *** END NEW *** */
+
 
 /* Utility class to hide elements */
 .hidden {
