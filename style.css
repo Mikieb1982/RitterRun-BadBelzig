@@ -13,7 +13,7 @@ body {
     background-color: #222;
     margin: 0;
     font-family: 'Arial', sans-serif;
-    overflow: hidden;
+    /* overflow: hidden; */ /* Removed from body too, just in case */
 }
 
 #game-container {
@@ -21,7 +21,7 @@ body {
     width: 800px; /* Match canvas width */
     height: 400px; /* Match canvas height */
     border: 2px solid #555;
-    overflow: hidden; /* IMPORTANT: Might be clipping the overlay */
+    /* overflow: hidden; */ /* <<< TEMPORARILY COMMENTED OUT/REMOVED FOR DEBUGGING */
 }
 
 canvas {
@@ -33,93 +33,62 @@ canvas {
 
 /* UI Screen Styling (Start & Game Over) */
 .ui-screen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.75);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    z-index: 30; /* Highest */
-    padding: 20px;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.75); color: white; display: flex;
+    flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; z-index: 30; padding: 20px;
 }
-
-.ui-screen h1 {
-    font-size: 3.5em; margin-bottom: 15px; color: #FFD700; text-shadow: 2px 2px 4px #000;
-}
-.ui-screen h2 {
-    font-size: 3em; margin-bottom: 15px; color: #DC143C; text-shadow: 2px 2px 4px #000;
-}
-.ui-screen p {
-    font-size: 1.4em; margin: 8px 0;
-}
-.ui-screen button {
-    padding: 12px 25px; font-size: 1.3em; font-weight: bold; margin-top: 25px;
-    cursor: pointer; background-color: #eee; border: 3px solid #aaa;
-    border-radius: 8px; color: #333; transition: background-color 0.2s ease, border-color 0.2s ease;
-}
+.ui-screen h1 { font-size: 3.5em; margin-bottom: 15px; color: #FFD700; text-shadow: 2px 2px 4px #000; }
+.ui-screen h2 { font-size: 3em; margin-bottom: 15px; color: #DC143C; text-shadow: 2px 2px 4px #000; }
+.ui-screen p { font-size: 1.4em; margin: 8px 0; }
+.ui-screen button { padding: 12px 25px; font-size: 1.3em; font-weight: bold; margin-top: 25px; cursor: pointer; background-color: #eee; border: 3px solid #aaa; border-radius: 8px; color: #333; transition: background-color 0.2s ease, border-color 0.2s ease; }
 .ui-screen button:hover { background-color: #ddd; border-color: #888; }
 .ui-screen button:active { background-color: #ccc; }
-.instructions {
-    margin-top: 20px; font-size: 1.1em !important; font-style: italic;
-    color: #ccc; line-height: 1.5;
-}
+.instructions { margin-top: 20px; font-size: 1.1em !important; font-style: italic; color: #ccc; line-height: 1.5; }
 
 /* In-Game Score Display */
 #scoreDisplay {
-    position: absolute;
-    top: 15px; left: 15px; font-size: 1.8em; font-weight: bold;
-    color: white; text-shadow: 2px 2px 3px black;
-    z-index: 20; /* Below menus, above POI */
+    position: absolute; top: 15px; left: 15px; font-size: 1.8em; font-weight: bold;
+    color: white; text-shadow: 2px 2px 3px black; z-index: 20;
 }
 
 
 /* *** AGGRESSIVE DEBUG POI Overlay Styling *** */
+/* (Still using red box, top position, high z-index from previous attempt) */
 .poi-overlay {
     position: absolute;
     top: 30px;       /* Near top */
     left: 50%;
-    transform: translateX(-50%); /* Center horizontally */
+    transform: translateX(-50%);
     width: 85%;
     max-width: 550px;
     /* --- DEBUG STYLES --- */
-    min-height: 50px; /* Ensure it has some height */
-    background-color: rgba(255, 0, 0, 0.8) !important; /* BRIGHT RED, HIGH OPACITY */
-    border: 3px dashed yellow !important; /* VERY OBVIOUS BORDER */
-    z-index: 9999 !important;              /* FORCE TO VERY TOP */
+    min-height: 50px;
+    background-color: rgba(255, 0, 0, 0.8) !important; /* BRIGHT RED */
+    border: 3px dashed yellow !important; /* OBVIOUS BORDER */
+    z-index: 9999 !important;              /* FORCE TO TOP */
     /* --- END DEBUG --- */
-    color: #f0f0f0; /* Text color (will be hard to read on red) */
-    border-radius: 10px; /* Original style */
-    padding: 12px 18px;  /* Original style */
-    text-align: center;  /* Original style */
+    color: #f0f0f0;
+    border-radius: 10px;
+    padding: 12px 18px;
+    text-align: center;
     opacity: 0; /* Start hidden */
-    /* transition: opacity 0.4s ease-in-out; */ /* Transition OFF for debug */
-    pointer-events: none; /* Original style */
-    /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); */ /* Shadow OFF for debug */
-    visibility: hidden; /* Use visibility instead of just opacity for testing */
+    /* transition: none; */ /* Keep transition off */
+    pointer-events: none;
+    visibility: hidden;
 }
 
 .poi-overlay.visible {
-    opacity: 1 !important;    /* Force opacity */
-    visibility: visible !important; /* Force visibility */
-    /* transition: none; */    /* Keep transition off */
+    opacity: 1 !important;
+    visibility: visible !important;
+    /* transition: none; */
 }
 /* *** END DEBUG POI Styling *** */
 
 
-/* Original POI Text Styles (within the debug box) */
-.poi-overlay h3 {
-    margin-bottom: 8px; font-size: 1.4em; color: #f1c40f;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-}
-.poi-overlay p {
-    font-size: 1.05em; line-height: 1.45; color: white; /* Ensure text is visible on red */
-}
+/* Original POI Text Styles */
+.poi-overlay h3 { margin-bottom: 8px; font-size: 1.4em; color: #f1c40f; text-shadow: 1px 1px 2px rgba(0,0,0,0.7); }
+.poi-overlay p { font-size: 1.05em; line-height: 1.45; color: white; }
 
 
 /* Utility class to hide elements */
