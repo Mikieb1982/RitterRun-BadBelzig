@@ -10,25 +10,25 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #222; /* Dark background */
+    background-color: #222;
     margin: 0;
-    font-family: 'Arial', sans-serif; /* Common sans-serif font */
-    overflow: hidden; /* Prevent scrollbars if container overflows slightly */
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
 }
 
 #game-container {
-    position: relative; /* Crucial for positioning UI elements over the canvas */
+    position: relative;
     width: 800px; /* Match canvas width */
     height: 400px; /* Match canvas height */
-    border: 2px solid #555; /* Optional border */
-    overflow: hidden; /* Hide anything extending beyond the container */
+    border: 2px solid #555;
+    overflow: hidden; /* IMPORTANT: Might be clipping the overlay */
 }
 
 canvas {
-    display: block; /* Removes extra space below the canvas */
+    display: block;
     width: 100%;
     height: 100%;
-    background-color: #87CEEB; /* Fallback sky blue, will be covered by image */
+    background-color: #87CEEB;
 }
 
 /* UI Screen Styling (Start & Game Over) */
@@ -38,115 +38,88 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.75); /* Dark semi-transparent overlay */
+    background-color: rgba(0, 0, 0, 0.75);
     color: white;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    z-index: 30; /* Highest: Above game, score, and POI */
+    z-index: 30; /* Highest */
     padding: 20px;
 }
 
 .ui-screen h1 {
-    font-size: 3.5em;
-    margin-bottom: 15px;
-    color: #FFD700; /* Gold color for title */
-    text-shadow: 2px 2px 4px #000;
+    font-size: 3.5em; margin-bottom: 15px; color: #FFD700; text-shadow: 2px 2px 4px #000;
 }
 .ui-screen h2 {
-    font-size: 3em;
-    margin-bottom: 15px;
-    color: #DC143C; /* Crimson for Game Over */
-    text-shadow: 2px 2px 4px #000;
+    font-size: 3em; margin-bottom: 15px; color: #DC143C; text-shadow: 2px 2px 4px #000;
 }
-
 .ui-screen p {
-    font-size: 1.4em;
-    margin: 8px 0;
+    font-size: 1.4em; margin: 8px 0;
 }
-
 .ui-screen button {
-    padding: 12px 25px;
-    font-size: 1.3em;
-    font-weight: bold;
-    margin-top: 25px;
-    cursor: pointer;
-    background-color: #eee; /* Light gray button */
-    border: 3px solid #aaa;
-    border-radius: 8px;
-    color: #333;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    padding: 12px 25px; font-size: 1.3em; font-weight: bold; margin-top: 25px;
+    cursor: pointer; background-color: #eee; border: 3px solid #aaa;
+    border-radius: 8px; color: #333; transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.ui-screen button:hover {
-    background-color: #ddd;
-    border-color: #888;
-}
-.ui-screen button:active {
-    background-color: #ccc;
-}
-
-
+.ui-screen button:hover { background-color: #ddd; border-color: #888; }
+.ui-screen button:active { background-color: #ccc; }
 .instructions {
-    margin-top: 20px; /* Adjusted margin */
-    font-size: 1.1em !important; /* Override default p size */
-    font-style: italic;
-    color: #ccc;
-    line-height: 1.5; /* Improve readability */
+    margin-top: 20px; font-size: 1.1em !important; font-style: italic;
+    color: #ccc; line-height: 1.5;
 }
 
 /* In-Game Score Display */
 #scoreDisplay {
     position: absolute;
-    top: 15px;
-    left: 15px;
-    font-size: 1.8em;
-    font-weight: bold;
-    color: white;
-    text-shadow: 2px 2px 3px black; /* Make it readable */
-    z-index: 20; /* Above game and POI, below Menu/Game Over */
+    top: 15px; left: 15px; font-size: 1.8em; font-weight: bold;
+    color: white; text-shadow: 2px 2px 3px black;
+    z-index: 20; /* Below menus, above POI */
 }
 
 
-/* *** MODIFIED: POI Overlay Styling (using top instead of bottom) *** */
+/* *** AGGRESSIVE DEBUG POI Overlay Styling *** */
 .poi-overlay {
     position: absolute;
-    /* bottom: 15px; */   /* Original position - commented out */
-    top: 30px;       /* <<< CHANGED: Position near the top */
+    top: 30px;       /* Near top */
     left: 50%;
     transform: translateX(-50%); /* Center horizontally */
-    width: 85%; /* Adjust width */
-    max-width: 550px; /* Max width */
-    background-color: rgba(30, 30, 50, 0.9); /* Darker blueish semi-transparent */
-    color: #f0f0f0; /* Light text color */
-    border: 2px solid #bdc3c7; /* Light silver border */
-    border-radius: 10px;
-    padding: 12px 18px;
-    z-index: 15; /* Above game canvas, below score and UI screens */
-    text-align: center;
+    width: 85%;
+    max-width: 550px;
+    /* --- DEBUG STYLES --- */
+    min-height: 50px; /* Ensure it has some height */
+    background-color: rgba(255, 0, 0, 0.8) !important; /* BRIGHT RED, HIGH OPACITY */
+    border: 3px dashed yellow !important; /* VERY OBVIOUS BORDER */
+    z-index: 9999 !important;              /* FORCE TO VERY TOP */
+    /* --- END DEBUG --- */
+    color: #f0f0f0; /* Text color (will be hard to read on red) */
+    border-radius: 10px; /* Original style */
+    padding: 12px 18px;  /* Original style */
+    text-align: center;  /* Original style */
     opacity: 0; /* Start hidden */
-    transition: opacity 0.4s ease-in-out; /* Fade effect */
-    pointer-events: none; /* Prevent interaction */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Add subtle shadow */
+    /* transition: opacity 0.4s ease-in-out; */ /* Transition OFF for debug */
+    pointer-events: none; /* Original style */
+    /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); */ /* Shadow OFF for debug */
+    visibility: hidden; /* Use visibility instead of just opacity for testing */
 }
 
 .poi-overlay.visible {
-    opacity: 1; /* Make visible */
+    opacity: 1 !important;    /* Force opacity */
+    visibility: visible !important; /* Force visibility */
+    /* transition: none; */    /* Keep transition off */
 }
+/* *** END DEBUG POI Styling *** */
 
+
+/* Original POI Text Styles (within the debug box) */
 .poi-overlay h3 {
-    margin-bottom: 8px;
-    font-size: 1.4em; /* Slightly larger */
-    color: #f1c40f; /* Brighter yellow title */
+    margin-bottom: 8px; font-size: 1.4em; color: #f1c40f;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
 }
-
 .poi-overlay p {
-    font-size: 1.05em; /* Slightly larger text */
-    line-height: 1.45;
+    font-size: 1.05em; line-height: 1.45; color: white; /* Ensure text is visible on red */
 }
-/* *** END POI Styling Changes *** */
 
 
 /* Utility class to hide elements */
