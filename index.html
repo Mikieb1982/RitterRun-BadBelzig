@@ -2,53 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun - Bad Belzig</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RitterRun Enhanced</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas> <!-- Adjust size as needed -->
 
-    <div id="rotateDeviceMessage">
-        Please rotate your device to landscape mode to play.
-        <br><br>
-        Bitte drehe dein Gerät ins Querformat zum Spielen.
+        <!-- Start Screen UI -->
+        <div id="startScreen" class="ui-screen">
+            <h1>RitterRun</h1>
+            <p>High Score: <span id="startHighScore">0</span></p>
+            <button id="startButton">Start Game</button>
+            <p class="instructions">Press SPACE to Jump</p>
+        </div>
+
+        <!-- Game Over Screen UI -->
+        <div id="gameOverScreen" class="ui-screen hidden">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span id="finalScore">0</span></p>
+            <p>High Score: <span id="gameOverHighScore">0</span></p>
+            <button id="restartButton">Restart</button>
+        </div>
+
+        <!-- In-Game Score -->
+        <div id="scoreDisplay">Score: <span id="currentScore">0</span></div>
     </div>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <!-- Audio Elements - Add corresponding files to assets folder! -->
+    <audio id="jumpSound" src="assets/jump.wav" preload="auto"></audio>
+    <audio id="collisionSound" src="assets/collision.wav" preload="auto"></audio>
+    <audio id="gameOverSound" src="assets/gameover.wav" preload="auto"></audio>
+    <!-- <audio id="bgMusic" src="assets/music.mp3" loop preload="auto"></audio> -->
 
-        <div class="game-info">
-            <span id="scoreDisplay">Punkte / Score: 0</span>
-            <span id="livesDisplay">Leben / Lives: 5</span>
-        </div>
-
-        <div id="landmarkPopup" class="popup">
-             <div class="popup-content">
-                <h3 id="landmarkName">Landmark Name</h3>
-                <p id="landmarkDescription">Landmark description goes here...</p>
-                <button id="continueButton">Continue / Weiter</button>
-            </div>
-        </div>
-
-        <div id="gameOverScreen" class="overlay">
-             <div class="popup-content">
-                <h2>Game Over!</h2>
-                <p>Du hast verloren. Klicke zum Neustarten.</p>
-                <button>Retry / Nochmal</button>
-            </div>
-        </div>
-
-        <div id="winScreen" class="overlay">
-             <div class="popup-content">
-                <h2>Gewonnen! / You Win!</h2>
-                <p>Glückwunsch! Du hast die Burg Eisenhardt erreicht! Klicke zum Neustarten.</p>
-                <button>Play Again / Nochmal Spielen</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js" defer></script>
-
+    <script src="script.js"></script>
 </body>
 </html>
