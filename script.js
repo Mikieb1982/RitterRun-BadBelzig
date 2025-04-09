@@ -1,18 +1,12 @@
-// --- Strict mode and IIFE (optional but good practice) ---
+// --- Strict mode and IIFE ---
 (function() {
     'use strict';
 
     // --- Canvas and Context ---
     const canvas = document.getElementById('gameCanvas');
-    if (!canvas) {
-        console.error("Fatal Error: Canvas element not found!");
-        alert("Fatal Error: Canvas element not found! Check index.html."); // Alert user
-        return;
-    }
-    // Basic check for getContext
-    if (!canvas.getContext) {
-        console.error("Fatal Error: Canvas context not supported!");
-        alert("Fatal Error: Canvas context not supported! Try a different browser."); // Alert user
+    if (!canvas || !canvas.getContext) {
+        console.error("Fatal Error: Canvas not found or not supported!");
+        alert("Fatal Error: Canvas not found or not supported! Try a different browser.");
         return;
     }
     const ctx = canvas.getContext('2d');
@@ -20,7 +14,6 @@
     const canvasHeight = canvas.height;
 
     // --- DOM Element References ---
-    // Add checks to ensure elements exist right away
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startButton = document.getElementById('startButton');
@@ -30,21 +23,25 @@
     const finalScoreSpan = document.getElementById('finalScore');
     const startHighScoreSpan = document.getElementById('startHighScore');
     const gameOverHighScoreSpan = document.getElementById('gameOverHighScore');
+    // *** NEW: POI Overlay Elements ***
+    const poiOverlay = document.getElementById('poiInfoOverlay');
+    const poiNameEl = document.getElementById('poiName');
+    const poiInfoTextEl = document.getElementById('poiInfoText');
+    // *** --------------- ***
 
+    // Check essential UI elements
     if (!startScreen || !gameOverScreen || !startButton || !restartButton || !scoreDisplay ||
-        !currentScoreSpan || !finalScoreSpan || !startHighScoreSpan || !gameOverHighScoreSpan) {
+        !currentScoreSpan || !finalScoreSpan || !startHighScoreSpan || !gameOverHighScoreSpan ||
+        !poiOverlay || !poiNameEl || !poiInfoTextEl) { // Added POI elements check
         console.error("Fatal Error: One or more required UI elements not found in index.html!");
-        alert("Fatal Error: UI elements missing! Check index.html."); // Alert user
-        return; // Stop script execution if critical UI is missing
+        alert("Fatal Error: UI elements missing! Check index.html.");
+        return;
     }
 
-
     // --- Audio References ---
-    // These might be null if the <audio> tags are missing, handle gracefully later
     const jumpSound = document.getElementById('jumpSound');
     const collisionSound = document.getElementById('collisionSound');
     const gameOverSound = document.getElementById('gameOverSound');
-    // const bgMusic = document.getElementById('bgMusic');
 
     // --- Game States ---
     const GameState = {
@@ -52,111 +49,95 @@
         PLAYING: 'PLAYING',
         GAME_OVER: 'GAME_OVER'
     };
-    let currentGameState = GameState.MENU; // Start at menu
+    let currentGameState = GameState.MENU;
 
     // --- Game Variables ---
     let score = 0;
     let highScore = 0;
     let player = {
-        x: 60,
-        y: canvasHeight - 60, // Initial position (adjust)
-        // !!! IMPORTANT: ADJUST THESE TO MATCH YOUR knight_placeholder.png ACTUAL SIZE !!!
-        width: 40,
-        height: 40,
-        // !!! ----------------------------------------------------------------------- !!!
-        dx: 0, // Horizontal velocity (if needed)
-        dy: 0, // Vertical velocity
-        gravity: 0.65, // Gravity strength (adjust feel)
-        jumpPower: -13, // Jump impulse strength (adjust feel)
-        grounded: true
+        x: 60, y: canvasHeight - 60,
+        // !!! ADJUST THESE TO MATCH YOUR KNIGHT IMAGE SIZE !!!
+        width: 40, height: 40,
+        // -------------------------------------------------
+        dx: 0, dy: 0, gravity: 0.65, jumpPower: -13, grounded: true
     };
-    let obstacles = [];
-    let frameCount = 0; // For timing events
-    let gameSpeed = 5.5; // Initial scrolling speed
-    let initialGameSpeed = 5.5; // Store initial speed for reset
-    let speedIncreaseInterval = 400; // Score interval to increase speed
+    let obstacles = []; // Will now contain both obstacles and POI signs
+    let frameCount = 0;
+    let gameSpeed = 5.5;
+    let initialGameSpeed = 5.5;
+    let speedIncreaseInterval = 400;
     let nextSpeedIncreaseScore = speedIncreaseInterval;
-    let groundHeight = 25; // Visual 'floor' height if background is seamless
+    let groundHeight = 25;
 
     // --- Graphics Assets ---
-    // Use objects to manage loading state
     const assets = {
-        // Ensure these paths and filenames EXACTLY match your files in the 'assets' folder
         knight: { img: new Image(), loaded: false, src: 'assets/knight_placeholder.png' },
         stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-        sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
+        sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, // Used for POIs
         tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
         background: { img: new Image(), loaded: false, src: 'assets/background.png' }
     };
     let assetsLoadedCount = 0;
     let totalAssets = Object.keys(assets).length;
     let allAssetsLoaded = false;
-    let gameInitialized = false; // Flag to prevent multiple initializations
+    let gameInitialized = false;
 
-    let bgX = 0; // Background position for scrolling
+    let bgX = 0;
 
-    // !!! IMPORTANT: ADJUST THESE DIMENSIONS TO MATCH YOUR ACTUAL OBSTACLE IMAGE SIZES !!!
-    const obstacleTypes = [
+    // !!! IMPORTANT: ADJUST OBSTACLE DIMENSIONS !!!
+    // Define types for *game-ending* obstacles only now
+    const regularObstacleTypes = [
         { assetKey: 'stone', width: 35, height: 35 },
-        { assetKey: 'sign', width: 45, height: 55 },
         { assetKey: 'tractor', width: 70, height: 45 }
     ];
-    // !!! --------------------------------------------------------------------------- !!!
+    // Define dimensions for the POI sign separately
+    const poiSignDimensions = { width: 45, height: 55 }; // !!! ADJUST TO YOUR sign.png SIZE !!!
+    // ---------------------------------------------
+
+
+    // --- *** NEW: POI Data and Handling *** ---
+    // !!! IMPORTANT: REPLACE WITH YOUR ACTUAL BAD BELZIG POI INFO !!!
+    const poiData = [
+        { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. Features a museum and tower access with great views." },
+        { id: 2, name: "SteinTherme", info: "Modern thermal baths known for unique brine pools ('Liquid Sound Temple') and sauna world." },
+        { id: 3, name: "Historic Town Center", info: "Walk through the Altstadt, see the Marienkirche, Rathaus (Town Hall), and half-timbered houses." },
+        { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813) against Napoleon's forces. Located south of the town." },
+        { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig, housed in his former residence." },
+        { id: 6, name: "Fläming Nature Park Center", info: "Located in nearby Raben, provides info about the Hoher Fläming region, hiking, and nature." },
+        // Add more POIs if you like
+    ];
+    let nextPoiIndex = 0; // To cycle through POIs
+    let poiTimeoutId = null; // To store the timeout ID for hiding the overlay
+    const poiDisplayDuration = 6000; // Show POI info for 6 seconds (6000ms)
+    // --- *** -------------------------- *** ---
 
 
     // --- Asset Loading ---
     function assetLoaded(assetKey) {
-        // console.log(`Asset loaded successfully: ${assets[assetKey].src}`);
         assets[assetKey].loaded = true;
         assetsLoadedCount++;
-        // console.log(`Progress: ${assetsLoadedCount}/${totalAssets} assets loaded.`);
         if (assetsLoadedCount === totalAssets && !gameInitialized) {
-            // console.log("All assets reported loaded. Calling init().");
             allAssetsLoaded = true;
-            init(); // Start the game setup now that assets are ready
+            init();
         }
     }
-
     function assetLoadError(assetKey) {
-         console.error(`Failed to load asset: ${assets[assetKey].src}. Check path and file existence.`);
-         // Optionally, provide feedback to the user
-         // For now, the game won't initialize because assetsLoadedCount won't reach totalAssets
-         alert(`Error loading image: ${assets[assetKey].src}\nGame cannot start. Please check the file exists in the repository.`);
+        console.error(`Failed to load asset: ${assets[assetKey].src}.`);
+        alert(`Error loading image: ${assets[assetKey].src}\nGame cannot start.`);
     }
-
-
     function loadAssets() {
         console.log("Starting asset loading...");
-        let imagesExist = true; // Assume they exist initially
-
-        // Pre-check if asset keys are valid before assigning callbacks
         for (const key in assets) {
-            if (!assets.hasOwnProperty(key) || typeof assets[key] !== 'object' || !assets[key].img) {
-                console.error(`Invalid asset definition for key: ${key}`);
-                imagesExist = false; // Mark as problematic
-                continue; // Skip this invalid entry
+            if (assets.hasOwnProperty(key) && assets[key].img) {
+                assets[key].img.onload = () => assetLoaded(key);
+                assets[key].img.onerror = () => assetLoadError(key);
+                assets[key].img.src = assets[key].src; // Start loading
             }
-             // Assign callbacks only if the asset structure seems okay
-            assets[key].img.onload = () => assetLoaded(key);
-            assets[key].img.onerror = () => assetLoadError(key);
-        }
-
-         if (!imagesExist) {
-            console.error("Asset definition errors found. Halting loading.");
-            return; // Don't proceed if definitions are wrong
-        }
-
-        // Now actually set the src to trigger loading
-        for (const key in assets) {
-             if (assets.hasOwnProperty(key) && assets[key].img) { // Check again before setting src
-                 console.log(`Requesting load for: ${assets[key].src}`);
-                 assets[key].img.src = assets[key].src;
-             }
         }
     }
 
     // --- High Score Handling ---
-    function loadHighScore() {
+    function loadHighScore() { /* ... (keep existing function) ... */
         try {
             const savedScore = localStorage.getItem('ritterRunHighScore');
             highScore = savedScore ? parseInt(savedScore, 10) : 0;
@@ -168,8 +149,7 @@
             highScore = 0; // Default to 0 if localStorage fails
         }
     }
-
-    function saveHighScore() {
+    function saveHighScore() { /* ... (keep existing function) ... */
         if (score > highScore) {
             highScore = score;
             try {
@@ -182,387 +162,328 @@
     }
 
     // --- Sound Playing Helper ---
-    function playSound(soundElement) {
-        // Check if the sound element exists in the DOM first
-        if (!soundElement || typeof soundElement.play !== 'function') {
-            // console.log("Sound element missing or invalid, cannot play sound.");
-            return;
-        }
-        soundElement.currentTime = 0; // Rewind to start
+    function playSound(soundElement) { /* ... (keep existing function) ... */
+        if (!soundElement || typeof soundElement.play !== 'function') return;
+        soundElement.currentTime = 0;
         const playPromise = soundElement.play();
-
-        if (playPromise !== undefined) {
-            playPromise.then(_ => {
-                // Automatic playback started!
-            }).catch(error => {
-                // Auto-play was prevented
-                // Show a message asking the user to click?
-                // console.log("Sound playback prevented:", error);
-            });
-        }
+        if (playPromise !== undefined) { playPromise.catch(error => {}); } // Ignore autoplay errors silently
     }
 
     // --- Reset Game Variables ---
-    function resetGame() {
-        // console.log("resetGame called");
-        score = 0;
-        obstacles = [];
-        frameCount = 0;
-        gameSpeed = initialGameSpeed; // Reset speed
-        nextSpeedIncreaseScore = speedIncreaseInterval;
-        bgX = 0;
-
-        // Reset player position and state
-        player.y = canvasHeight - player.height - groundHeight;
-        player.dy = 0;
-        player.grounded = true;
-
-        // Update score display
+    function resetGame() { /* ... (keep existing function) ... */
+        score = 0; obstacles = []; frameCount = 0;
+        gameSpeed = initialGameSpeed; nextSpeedIncreaseScore = speedIncreaseInterval;
+        bgX = 0; player.y = canvasHeight - player.height - groundHeight;
+        player.dy = 0; player.grounded = true;
         if (currentScoreSpan) currentScoreSpan.textContent = score;
+         // Hide POI overlay on reset
+        if (poiTimeoutId) clearTimeout(poiTimeoutId);
+        poiOverlay.classList.remove('visible');
+        nextPoiIndex = 0; // Reset POI cycle
     }
 
     // --- Update Functions ---
-    function updatePlayer() {
-        // Apply gravity
+    function updatePlayer() { /* ... (keep existing function) ... */
         if (!player.grounded) {
             player.dy += player.gravity;
             player.y += player.dy;
         }
-
-        // Ground check - prevent falling through floor
         if (player.y >= canvasHeight - player.height - groundHeight) {
             player.y = canvasHeight - player.height - groundHeight;
             player.dy = 0;
-            if (!player.grounded) {
-                // console.log("Player landed"); // Debug landing
-                player.grounded = true;
-            }
+            player.grounded = true;
         }
     }
 
+    // --- *** MODIFIED: updateObstacles Function *** ---
     function updateObstacles() {
         frameCount++;
-        // Generate new obstacle periodically (adjust frequency based on gameSpeed)
-        const baseFrequency = 120;
-        const speedFactor = Math.max(1, gameSpeed * 3);
-        const spawnFrequency = Math.max(45, baseFrequency - speedFactor); // Min frequency of 45 frames
+        const baseFrequency = 130; // Slightly less frequent spawns overall
+        const speedFactor = Math.max(1, gameSpeed * 2.5); // Less impact from speed
+        const spawnFrequency = Math.max(50, baseFrequency - speedFactor); // Min freq 50
 
         if (frameCount % Math.floor(spawnFrequency) === 0) {
-            const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
-            const type = obstacleTypes[typeIndex];
+            let newObjectData = null;
+            // Decide type: POI (sign) or regular obstacle (stone/tractor)
+            // POI Spawn Chance (e.g., 15-20%? Adjust for desired frequency)
+            const spawnPOI = Math.random() < 0.18 && poiData.length > 0 && assets.sign.loaded;
 
-            // Ensure the asset for this type is loaded before trying to use its image
-            if (assets[type.assetKey] && assets[type.assetKey].loaded) {
-                obstacles.push({
+            if (spawnPOI) {
+                // Spawn a POI sign
+                const poi = poiData[nextPoiIndex % poiData.length];
+                newObjectData = {
+                    isPOI: true, // Mark as POI
+                    poiId: poi.id, // Store which POI this is
+                    passed: false, // Has player passed it yet?
                     x: canvasWidth,
-                    y: canvasHeight - type.height - groundHeight, // Position on ground
-                    width: type.width,
-                    height: type.height,
-                    assetKey: type.assetKey // Store key to access image later
-                });
-                 // console.log(`Spawned obstacle: ${type.assetKey}`);
+                    y: canvasHeight - poiSignDimensions.height - groundHeight, // Use POI sign dimensions
+                    width: poiSignDimensions.width,
+                    height: poiSignDimensions.height,
+                    assetKey: 'sign' // Use the sign asset
+                };
+                nextPoiIndex++; // Prepare for the next POI
+                // console.log(`Spawning POI Sign: ID ${poi.id}`);
             } else {
-                // console.warn(`Asset ${type.assetKey} not loaded, skipping obstacle spawn.`);
+                // Spawn a regular game-ending obstacle
+                if (regularObstacleTypes.length > 0) {
+                    const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
+                    const type = regularObstacleTypes[typeIndex];
+
+                    if (assets[type.assetKey] && assets[type.assetKey].loaded) {
+                        newObjectData = {
+                            isPOI: false, // Not a POI
+                            x: canvasWidth,
+                            y: canvasHeight - type.height - groundHeight,
+                            width: type.width,
+                            height: type.height,
+                            assetKey: type.assetKey
+                        };
+                        // console.log(`Spawning Obstacle: ${type.assetKey}`);
+                    }
+                }
+            }
+
+            // Add the successfully created object to the array
+            if (newObjectData) {
+                obstacles.push(newObjectData);
             }
         }
 
-        // Move obstacles left and remove off-screen ones
+        // Move all objects (obstacles and POIs) left
         for (let i = obstacles.length - 1; i >= 0; i--) {
-            obstacles[i].x -= gameSpeed;
-            if (obstacles[i].x + obstacles[i].width < 0) {
+            const obj = obstacles[i]; // Reference the current object
+            obj.x -= gameSpeed;
+
+            // --- NEW: Check for Passing a POI Sign ---
+            if (obj.isPOI && !obj.passed) {
+                // Check if the player's front (x) is past the POI sign's center
+                 if (player.x > obj.x + obj.width / 2) {
+                    displayPOIInfo(obj.poiId); // Show the info for this POI
+                    obj.passed = true; // Mark as passed to prevent re-triggering
+                    score += 50; // Optional: Score bonus for seeing POI info
+                    if (currentScoreSpan) currentScoreSpan.textContent = score; // Update score display
+                 }
+            }
+            // --- END NEW ---
+
+            // Remove objects that are well off-screen
+            if (obj.x + obj.width < -100) { // Allow extra space for POI text visibility
                 obstacles.splice(i, 1);
             }
         }
     }
+    // --- *** END MODIFIED updateObstacles *** ---
 
+
+    // --- *** MODIFIED: checkCollisions Function *** ---
     function checkCollisions() {
         const playerRect = { x: player.x, y: player.y, width: player.width, height: player.height };
 
         for (const obstacle of obstacles) {
-            const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
+            // --- >>> IMPORTANT: Skip collision check if it's a POI sign <<<---
+            if (obstacle.isPOI) {
+                continue; // Ignore POI signs for game-ending collisions
+            }
+            // --- >>> ---------------------------------------------------- <<<---
 
-            // Simple AABB collision detection
+            // Regular collision check for game-ending obstacles
+            const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
             if (playerRect.x < obstacleRect.x + obstacleRect.width &&
                 playerRect.x + playerRect.width > obstacleRect.x &&
                 playerRect.y < obstacleRect.y + obstacleRect.height &&
                 playerRect.y + playerRect.height > obstacleRect.y)
             {
-                 // console.log("Collision detected!");
-                 // console.log("Player:", playerRect);
-                 // console.log("Obstacle:", obstacleRect);
                 return true; // Collision detected
             }
         }
-        return false; // No collision
+        return false; // No game-ending collision
     }
+    // --- *** END MODIFIED checkCollisions *** ---
 
-    function updateScoreAndSpeed() {
-        score++; // Simple time-based score
+
+    function updateScoreAndSpeed() { /* ... (keep existing function) ... */
+        score++;
         if (currentScoreSpan) currentScoreSpan.textContent = score;
-
-        // Increase game speed based on score
         if (score > 0 && score % speedIncreaseInterval === 0 && score >= nextSpeedIncreaseScore) {
-             gameSpeed += 0.3; // Slower speed increase
-             nextSpeedIncreaseScore += speedIncreaseInterval; // Set the next milestone
-             // console.log(`Score milestone ${score} reached. Speed increased to: ${gameSpeed.toFixed(2)}`);
+            gameSpeed += 0.3;
+            nextSpeedIncreaseScore += speedIncreaseInterval;
         }
     }
 
     // --- Draw Functions ---
-    function drawBackground() {
+    function drawBackground() { /* ... (keep existing function) ... */
         if (!assets.background.loaded) {
-             // Draw a fallback background if image fails
-             ctx.fillStyle = '#87CEEB'; // Sky blue
-             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-             ctx.fillStyle = '#228B22'; // Forest green ground
-             ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight);
-             return;
+             ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+             ctx.fillStyle = '#228B22'; ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight); return;
         }
-
-        // Calculate scrolling speed (adjust multiplier for parallax effect if desired)
-        const scrollSpeed = gameSpeed * 0.8; // Example: Background scrolls slightly slower
+        const scrollSpeed = gameSpeed; // Scroll background at main game speed
         bgX -= scrollSpeed;
-
-        // Reset background position for seamless looping
-        // Use modulo for cleaner looping calculation
         bgX = bgX % canvasWidth;
-        // If bgX became positive due to modulo, adjust (though unlikely with subtraction)
         if (bgX > 0) bgX -= canvasWidth;
-
-
-        // Draw the background image twice for looping
         ctx.drawImage(assets.background.img, bgX, 0, canvasWidth, canvasHeight);
-        // The second image starts exactly where the first one ends
         ctx.drawImage(assets.background.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-
-        // Optional: Draw ground line on top of background if needed for clarity
-        // ctx.fillStyle = 'rgba(0, 80, 0, 0.6)'; // Darker, semi-transparent green
-        // ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight);
     }
-
-    function drawPlayer() {
-        if (!assets.knight.loaded) {
-            // Draw fallback rectangle if knight image fails
-            ctx.fillStyle = 'grey';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            return;
-        }
+    function drawPlayer() { /* ... (keep existing function) ... */
+        if (!assets.knight.loaded) { ctx.fillStyle = 'grey'; ctx.fillRect(player.x, player.y, player.width, player.height); return; }
         ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
-        // Add animation logic here later if you get a spritesheet
     }
-
-    function drawObstacles() {
-        for (const obstacle of obstacles) {
-            // Ensure the asset is loaded before drawing
-            if (assets[obstacle.assetKey] && assets[obstacle.assetKey].loaded) {
-                ctx.drawImage(assets[obstacle.assetKey].img, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    // --- MODIFIED: drawObstacles now draws POIs too ---
+    function drawObstacles() { // Renamed to drawObjects is clearer, but keeping name for now
+        for (const obj of obstacles) { // Changed variable name to 'obj'
+            if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
+                ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
             } else {
-                // Draw fallback rectangle if obstacle image fails
-                ctx.fillStyle = 'red';
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                // Draw fallback rectangle if image fails
+                ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; // Different fallback for POIs
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
             }
         }
     }
+    // --- END MODIFIED ---
+
+    // --- *** NEW: POI Display Function *** ---
+    function displayPOIInfo(poiId) {
+        if (!poiOverlay || !poiNameEl || !poiInfoTextEl) {
+            console.error("POI display elements not found!");
+            return;
+        }
+        const poi = poiData.find(p => p.id === poiId);
+        if (!poi) {
+            console.warn(`POI data not found for ID: ${poiId}`);
+            return;
+        }
+        // console.log(`Displaying POI: ${poi.name}`);
+        poiNameEl.textContent = poi.name;
+        poiInfoTextEl.textContent = poi.info;
+        poiOverlay.classList.add('visible'); // Show with fade-in
+
+        // Clear any previous timeout to ensure the new one runs fully
+        if (poiTimeoutId) {
+            clearTimeout(poiTimeoutId);
+        }
+        // Set timeout to hide the overlay
+        poiTimeoutId = setTimeout(() => {
+            poiOverlay.classList.remove('visible'); // Hide with fade-out
+            poiTimeoutId = null;
+        }, poiDisplayDuration);
+    }
+    // --- *** ------------------------- *** ---
+
 
     // --- Game Loop ---
     let lastTime = 0;
-    function gameLoop(timestamp) {
-        // Calculate delta time (optional, but good for physics consistency if needed later)
-        const deltaTime = timestamp - lastTime;
-        lastTime = timestamp;
-
-        // Request the next frame *early* - ensures loop continues even if errors occur below
-        requestAnimationFrame(gameLoop);
-
-        // Always clear canvas
+    function gameLoop(timestamp) { /* ... (keep existing game loop structure) ... */
+        requestAnimationFrame(gameLoop); // Request next frame early
+        const deltaTime = timestamp - lastTime; lastTime = timestamp;
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        // Always draw background
         drawBackground();
 
-        // --- Game Logic based on State ---
         if (currentGameState === GameState.PLAYING) {
-            // --- Update ---
-            updatePlayer();
-            updateObstacles();
-            updateScoreAndSpeed();
-
-            // --- Draw ---
-            // Background already drawn
-            drawPlayer();
-            drawObstacles();
-
-            // --- Check for Game Over ---
-            if (checkCollisions()) {
-                // console.log("Game Over triggered by collision.");
-                // --- SOUND ---
-                playSound(collisionSound);
-                playSound(gameOverSound);
-                // playSound(bgMusic, 'stop');
-                // ---
+            updatePlayer(); updateObstacles(); updateScoreAndSpeed();
+            drawPlayer(); drawObstacles(); // Draws both obstacles and POIs
+            if (checkCollisions()) { // checkCollisions now ignores POIs
+                playSound(collisionSound); playSound(gameOverSound);
                 currentGameState = GameState.GAME_OVER;
-                saveHighScore(); // Save score check
-                finalScoreSpan.textContent = score; // Update score display
-                gameOverHighScoreSpan.textContent = highScore; // Ensure high score shown
-                gameOverScreen.classList.remove('hidden'); // Show game over screen
-                scoreDisplay.classList.add('hidden'); // Hide in-game score
+                saveHighScore(); finalScoreSpan.textContent = score;
+                gameOverHighScoreSpan.textContent = highScore;
+                gameOverScreen.classList.remove('hidden');
+                scoreDisplay.classList.add('hidden');
+                // Hide POI overlay instantly on game over
+                if (poiTimeoutId) clearTimeout(poiTimeoutId);
+                poiOverlay.classList.remove('visible');
             }
-        } else if (currentGameState === GameState.MENU) {
-            // Draw player standing idle on menu screen
-            drawPlayer();
-        } else if (currentGameState === GameState.GAME_OVER) {
-             // Draw player (maybe in a 'defeated' pose later)
-             drawPlayer();
-             // Also draw the obstacles as they were at the moment of game over
-             drawObstacles();
+        } else { // Menu or Game Over state
+             drawPlayer(); // Draw player standing
+             if (currentGameState === GameState.GAME_OVER) {
+                 drawObstacles(); // Show final state
+             }
         }
     }
 
     // --- Game State Changers / Event Handlers ---
-    function startGame() {
-        if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; // Prevent starting if playing or assets not ready
+    function startGame() { /* ... (keep existing function, ensures POI overlay is hidden on start) ... */
+        if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
         console.log("Attempting to start game...");
-        resetGame(); // Reset variables
+        resetGame(); // Reset includes hiding POI overlay
         currentGameState = GameState.PLAYING;
         startScreen.classList.add('hidden');
         gameOverScreen.classList.add('hidden');
         scoreDisplay.classList.remove('hidden');
-        // --- SOUND ---
-        // playSound(bgMusic, 'play');
-        // ---
         console.log("Game state set to PLAYING.");
     }
-
-    function restartGame() {
-         if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; // Prevent restarting if playing or assets not ready
+    function restartGame() { /* ... (keep existing function, ensures POI overlay is hidden on restart) ... */
+         if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
          console.log("Attempting to restart game...");
-         resetGame();
+         resetGame(); // Reset includes hiding POI overlay
          currentGameState = GameState.PLAYING;
          gameOverScreen.classList.add('hidden');
-         startScreen.classList.add('hidden'); // Ensure start screen is hidden too
+         startScreen.classList.add('hidden');
          scoreDisplay.classList.remove('hidden');
-         // --- SOUND ---
-        // playSound(bgMusic, 'play');
-        // ---
          console.log("Game state set to PLAYING after restart.");
     }
-
-    function handleJumpInput() {
-        // console.log("handleJumpInput called. Grounded:", player.grounded);
+    function handleJumpInput() { /* ... (keep existing function) ... */
         if (currentGameState === GameState.PLAYING && player.grounded) {
-            player.dy = player.jumpPower;
-            player.grounded = false;
-            // console.log("Player Jumped!");
-            // --- SOUND ---
+            player.dy = player.jumpPower; player.grounded = false;
             playSound(jumpSound);
-            // ---
         }
     }
 
-    // --- Initial Setup Function (Called *after* assets load) ---
-    function init() {
+    // --- Initial Setup Function ---
+    function init() { /* ... (keep existing init structure, just attaches listeners) ... */
         console.log("init() function called.");
-        if (gameInitialized) {
-            console.warn("init() called more than once. Skipping.");
-            return; // Prevent re-initialization
-        }
-        gameInitialized = true; // Set flag
-
-        // Final check for UI elements just in case something went wrong before asset loading
-         if (!startScreen || !gameOverScreen || !startButton || !restartButton || !scoreDisplay) {
-             console.error("UI elements missing during init! Cannot attach listeners.");
-             return;
-         }
+        if (gameInitialized) { console.warn("init() called more than once. Skipping."); return; }
+        gameInitialized = true;
 
         loadHighScore();
+        startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden');
+        scoreDisplay.classList.add('hidden'); poiOverlay.classList.add('hidden'); // Ensure POI hidden initially
+        player.y = canvasHeight - player.height - groundHeight; // Place player correctly for menu
 
-        // Set initial visual state (Menu)
-        startScreen.classList.remove('hidden');
-        gameOverScreen.classList.add('hidden');
-        scoreDisplay.classList.add('hidden');
-        // Ensure player starts visually on the ground in the menu
-        player.y = canvasHeight - player.height - groundHeight;
-
-        // --- Attach Event Listeners ---
         console.log("Attaching event listeners...");
-
-        // Remove any potential old listeners before adding new ones (safer)
-        startButton.removeEventListener('click', startGame);
-        restartButton.removeEventListener('click', restartGame);
-        document.removeEventListener('keydown', handleKeyDown); // Use named handler
-        canvas.removeEventListener('touchstart', handleTouchStart); // Use named handler
-        startButton.removeEventListener('touchstart', handleButtonTouchStart); // Use named handler
-        restartButton.removeEventListener('touchstart', handleButtonTouchStart); // Use named handler
-
-
-        // Add listeners using named handlers
-        startButton.addEventListener('click', startGame);
-        restartButton.addEventListener('click', restartGame);
+        // Remove potential old listeners first
+        startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame);
+        document.removeEventListener('keydown', handleKeyDown); canvas.removeEventListener('touchstart', handleTouchStart);
+        startButton.removeEventListener('touchstart', handleButtonTouchStart); restartButton.removeEventListener('touchstart', handleButtonTouchStart);
+        // Add listeners
+        startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame);
         document.addEventListener('keydown', handleKeyDown);
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false }); // Use passive: false if preventDefault is needed
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
         startButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false });
         restartButton.addEventListener('touchstart', handleButtonTouchStart, { passive: false });
-
-
         console.log("Event listeners attached.");
 
-        // Start the game loop *after* listeners are attached
         console.log("Requesting first game loop frame.");
-        requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop); // Start the loop
     }
 
-    // --- Named Event Handlers ---
-    function handleKeyDown(e) {
-        // console.log(`Key Down: ${e.code}`); // Debug key presses
-        if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) { // Check spacebar press robustly
-            e.preventDefault(); // Prevent spacebar from scrolling the page
-            if (!allAssetsLoaded) { // Don't allow actions if assets haven't loaded
-                console.log("Assets not loaded yet, ignoring spacebar.");
-                return;
-            }
-            if (currentGameState === GameState.PLAYING) {
-                handleJumpInput();
-            } else if (currentGameState === GameState.MENU) {
-                startGame();
-            } else if (currentGameState === GameState.GAME_OVER) {
-                restartGame();
-            }
+    // --- Named Event Handlers --- (Keep existing handlers: handleKeyDown, handleTouchStart, handleButtonTouchStart)
+    function handleKeyDown(e) { /* ... (keep existing function) ... */
+        if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+            e.preventDefault();
+            if (!allAssetsLoaded) { return; }
+            if (currentGameState === GameState.PLAYING) { handleJumpInput(); }
+            else if (currentGameState === GameState.MENU) { startGame(); }
+            else if (currentGameState === GameState.GAME_OVER) { restartGame(); }
         }
     }
-
-    function handleTouchStart(e) {
-        // console.log("Canvas Touch Start");
-        e.preventDefault(); // Prevent default touch behavior (scrolling, zooming)
-        if (!allAssetsLoaded) return; // Ignore touch if assets not loaded
-
-         if (currentGameState === GameState.PLAYING) {
-            handleJumpInput();
-        } else if (currentGameState === GameState.MENU) {
-            startGame();
-        } else if (currentGameState === GameState.GAME_OVER) {
-            restartGame();
-        }
-    }
-
-    // Separate handler for buttons to avoid conflicts if needed
-    function handleButtonTouchStart(e) {
-        // console.log(`Button Touch Start: ${e.target.id}`);
-        e.preventDefault(); // Prevent click event firing after touch end sometimes
+    function handleTouchStart(e) { /* ... (keep existing function) ... */
+        e.preventDefault();
         if (!allAssetsLoaded) return;
-
-        if (e.target.id === 'startButton' && currentGameState === GameState.MENU) {
-            startGame();
-        } else if (e.target.id === 'restartButton' && currentGameState === GameState.GAME_OVER) {
-            restartGame();
-        }
+         if (currentGameState === GameState.PLAYING) { handleJumpInput(); }
+         else if (currentGameState === GameState.MENU) { startGame(); }
+         else if (currentGameState === GameState.GAME_OVER) { restartGame(); }
     }
-
+    function handleButtonTouchStart(e) { /* ... (keep existing function) ... */
+        e.preventDefault();
+        if (!allAssetsLoaded) return;
+        if (e.target.id === 'startButton' && currentGameState === GameState.MENU) { startGame(); }
+        else if (e.target.id === 'restartButton' && currentGameState === GameState.GAME_OVER) { restartGame(); }
+    }
 
     // --- Start Loading Assets ---
-    // Add a listener to ensure the DOM is ready before trying to load assets/find elements
     document.addEventListener('DOMContentLoaded', () => {
          console.log("DOM Content Loaded. Starting asset load.");
-         loadAssets();
+         loadAssets(); // This will trigger init() when done
     });
 
 })(); // End of IIFE
