@@ -1,438 +1,301 @@
-// --- Get DOM Elements ---
+// --- Canvas and Context (You likely have this) ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreDisplay = document.getElementById('scoreDisplay');
-const livesDisplay = document.getElementById('livesDisplay');
-const landmarkPopup = document.getElementById('landmarkPopup');
-const landmarkName = document.getElementById('landmarkName');
-const landmarkDescription = document.getElementById('landmarkDescription');
-const continueButton = document.getElementById('continueButton');
+const canvasWidth = canvas.width;
+const canvasHeight = canvas.height;
+
+// --- DOM Element References ---
+const startScreen = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
-const winScreen = document.getElementById('winScreen');
+const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const currentScoreSpan = document.getElementById('currentScore');
+const finalScoreSpan = document.getElementById('finalScore');
+const startHighScoreSpan = document.getElementById('startHighScore');
+const gameOverHighScoreSpan = document.getElementById('gameOverHighScore');
 
-// Error check: Ensure canvas and context were obtained
-if (!canvas || !ctx) {
-    console.error("Fatal Error: Could not get canvas or 2D context.");
-    const errDiv = document.createElement('div');
-    errDiv.textContent = "Error loading game canvas. Please refresh or try a different browser.";
-    errDiv.style.color = 'red'; errDiv.style.position = 'absolute';
-    errDiv.style.top = '50%'; errDiv.style.left = '50%';
-    errDiv.style.transform = 'translate(-50%, -50%)';
-    document.body.appendChild(errDiv);
-    throw new Error("Canvas initialization failed.");
-}
+// --- Audio References ---
+const jumpSound = document.getElementById('jumpSound');
+const collisionSound = document.getElementById('collisionSound');
+const gameOverSound = document.getElementById('gameOverSound');
+// const bgMusic = document.getElementById('bgMusic'); // If you added music
 
-// --- Game Configuration ---
-const config = {
-    canvasWidth: canvas.width, canvasHeight: canvas.height,
-    gravity: 0.45, jumpStrength: -10.5, playerSpeed: 0,
-    obstacleSpeed: 2.2, groundHeight: 50, spawnRate: 160,
-    jumpHoldGravityMultiplier: 0.5, jumpCutGravityMultiplier: 2.0,
-    stompJumpStrength: -8.5, maxGameSpeed: 7, startLives: 5,
-    recoveryDuration: 90,
-    colors: { green: '#0ca644', blue: '#0296c6', yellow: '#f5d306', black: '#151513', white: '#ffffff', ground: '#8b4513' }
+// --- Game States ---
+const GameState = {
+    MENU: 'MENU',
+    PLAYING: 'PLAYING',
+    GAME_OVER: 'GAME_OVER'
 };
+let currentGameState = GameState.MENU;
 
-// --- Game State Variables ---
-let gameState = 'loading';
-let playerState = {};
-let obstacles = [];
-let landmarks = [];
+// --- Game Variables (Adapt to your existing ones) ---
 let score = 0;
-let frameCount = 0;
-let gameSpeed = config.obstacleSpeed;
-let isJumpKeyDown = false;
-let isPointerDownJump = false;
-let playerLives = config.startLives;
-let isRecovering = false;
-let recoveryTimer = 0;
-let backgroundX = 0; // For scrolling background
+let highScore = 0;
+let player = { /* ... your player properties: x, y, width, height, dy, grounded, etc ... */ };
+let obstacles = []; // Array to hold obstacle objects
+let frameCount = 0; // Or however you track time/frames
+let gameSpeed = 5; // Initial speed for obstacles/background
+let speedIncreaseInterval = 500; // Increase speed every 500 score points (example)
+let nextSpeedIncreaseScore = speedIncreaseInterval;
 
-// --- Asset Loading ---
-const assets = {
-    knightPlaceholder: null, stoneObstacle: null, familyObstacle: null,
-    tractorObstacle: null, backgroundImage: null, signImage: null,
-    loaded: 0, total: 0,
-    sources: {
-        knightPlaceholder: 'assets/knight_placeholder.png',
-        stoneObstacle: 'assets/stones.png',
-        familyObstacle: 'assets/family.png', // Assumes stroller is this type
-        tractorObstacle: 'assets/tractor.png',
-        backgroundImage: 'assets/background.png',
-        signImage: 'assets/sign.png'
-    }
-};
+// --- Graphics Assets (Load your images) ---
+const knightImage = new Image();
+knightImage.src = 'assets/knight.png'; // Replace with your actual knight image
 
-function loadImage(key, src) {
-    assets.total++;
-    const img = new Image();
-    img.src = src;
-    img.onerror = () => {
-        console.error(`Failed to load asset: ${key} from ${src}.`);
-        assets.loaded++; assets[key] = null;
-        if (assets.loaded === assets.total) {
-            console.log("Asset loading finished (some may have failed).");
-            setupCanvas(); resetGame();
-        }
-    };
-    img.onload = () => {
-        assets.loaded++; assets[key] = img;
-        if (assets.loaded === assets.total) {
-            console.log("All assets loaded successfully.");
-            setupCanvas(); resetGame();
-        }
-    };
+const rockImage = new Image();
+rockImage.src = 'assets/rock.png'; // Replace with your actual rock image
+
+const backgroundFarImage = new Image();
+backgroundFarImage.src = 'assets/background_far.png';
+let bgFarX = 0;
+
+const backgroundNearImage = new Image();
+backgroundNearImage.src = 'assets/background_near.png';
+let bgNearX = 0;
+
+// --- High Score Handling ---
+function loadHighScore() {
+    const savedScore = localStorage.getItem('ritterRunHighScore');
+    highScore = savedScore ? parseInt(savedScore, 10) : 0;
+    startHighScoreSpan.textContent = highScore;
+    gameOverHighScoreSpan.textContent = highScore;
 }
 
-function loadAllAssets() {
-    console.log("Starting asset loading...");
-    gameState = 'loading';
-    for (const key in assets.sources) { assets[key] = null; }
-    assets.loaded = 0; assets.total = 0;
-    for (const key in assets.sources) { loadImage(key, assets.sources[key]); }
-    if (assets.total === 0) {
-        console.warn("No assets defined.");
-        setupCanvas(); resetGame();
-    }
-}
-// --- END Asset Loading ---
-
-// --- Canvas Setup ---
-function setupCanvas() {
-    const container = document.getElementById('gameContainer');
-    if (!container) { console.error("Game container not found!"); return; }
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    if (canvas.width !== containerWidth || canvas.height !== containerHeight) {
-        canvas.width = containerWidth; canvas.height = containerHeight;
-        console.log(`Canvas resized to: ${canvas.width}x${canvas.height}`);
-    }
-    config.canvasWidth = canvas.width; config.canvasHeight = canvas.height;
-}
-
-window.addEventListener('resize', () => {
-    if (window.matchMedia("(orientation: landscape)").matches) {
-         setupCanvas();
-         if (gameState === 'running' || gameState === 'paused' || gameState === 'loading') {
-             if (gameState === 'loading') { ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight); }
-             else { draw(); }
-         }
-    }
-});
-// --- END Canvas Setup ---
-
-// --- Landmark Data ---
-const landmarkConfig = [
-     { name: "SteinTherme", worldX: 1500, width: 60, height: 90, descEN: "Relax in the SteinTherme! Bad Belzig's unique thermal bath uses warm, salty water (Sole) rich in iodine. This is great for health and relaxation. Besides the pools, there's an extensive sauna world and wellness treatments available year-round.", descDE: "Entspann dich in der SteinTherme! Bad Belzigs einzigartiges Thermalbad nutzt warmes Salzwasser (Sole), reich an Jod. Das ist gut für Gesundheit und Entspannung. Neben den Becken gibt es eine große Saunawelt und Wellnessanwendungen, ganzjährig geöffnet.", isFinal: false },
-     { name: "Frei und Erlebnisbad", worldX: 3000, width: 60, height: 90, descEN: "Cool off at the Freibad! This outdoor pool is popular in summer (usually May-Sept). It features swimming lanes, water slides, and separate areas for children, making it perfect for sunny family days.", descDE: "Kühl dich ab im Freibad! Dieses Freibad ist im Sommer beliebt (meist Mai-Sept). Es gibt Schwimmbahnen, Wasserrutschen und separate Bereiche für Kinder, perfekt für sonnige Familientage.", isFinal: false },
-     { name: "Kulturzentrum & Bibliothek", worldX: 4500, width: 60, height: 90, descEN: "This building at Weitzgrunder Str. 4 houses the town library and the cultural centre.", descDE: "Dieses Gebäude in der Weitzgrunder Str. 4 beherbergt die Stadtbibliothek und das Kulturzentrum..", isFinal: false },
-     { name: "Fläming Bahnhof", worldX: 6000, width: 60, height: 90, descEN: "All aboard at Fläming Bahnhof! The RE7 train line connects Bad Belzig directly to Berlin and Dessau. The station also serves as a gateway for exploring the scenic Hoher Fläming nature park, perhaps by bike.", descDE: "Einsteigen bitte am Fläming Bahnhof! Die Zuglinie RE7 verbindet Bad Belzig direkt mit Berlin und Dessau. Der Bahnhof dient auch als Tor zur Erkundung des malerischen Naturparks Hoher Fläming, vielleicht mit dem Fahrrad.", isFinal: false },
-     { name: "Postmeilensäule", worldX: 7500, width: 60, height: 90, descEN: "See how far? This sandstone Postal Milestone (Postmeilensäule) from 1725 is located on the Marktplatz. Erected under August the Strong of Saxony, it marked postal routes, showing distances and travel times (often in hours) with symbols like the post horn.", descDE: "Schon gesehen? Diese kursächsische Postmeilensäule aus Sandstein von 1725 steht auf dem Marktplatz. Errichtet unter August dem Starken, markierte sie Postrouten und zeigte Distanzen und Reisezeiten (oft in Stunden) mit Symbolen wie dem Posthorn.", isFinal: false },
-     { name: "Rathaus & Tourist-Information", worldX: 9000, width: 60, height: 90, descEN: "The historic Rathaus (Town Hall) sits centrally on the Marktplatz. Inside, you'll find the Tourist Information centre. They offer maps, accommodation booking, tips on events, and guided tour information.", descDE: "Das historische Rathaus befindet sich zentral am Marktplatz. Im Inneren finden Sie die Tourist-Information. Dort erhalten Sie Stadtpläne, Hilfe bei der Zimmervermittlung, Veranstaltungstipps und Informationen zu Führungen.", isFinal: false },
-     { name: "Burg Eisenhardt", worldX: 10500, width: 60, height: 90, descEN: "You made it to Burg Eisenhardt! This impressive medieval castle overlooks the town. Explore the local history museum (Heimatmuseum), climb the 'Butterturm' keep for great views, and check for festivals or concerts held here.", descDE: "Geschafft! Du hast die Burg Eisenhardt erreicht! Diese beeindruckende mittelalterliche Burg überblickt die Stadt. Erkunden Sie das Heimatmuseum, besteigen Sie den Butterturm für eine tolle Aussicht und achten Sie auf Festivals oder Konzerte.", isFinal: true },
-];
-
-function initializeLandmarks() {
-    const currentCanvasHeight = config.canvasHeight;
-    const baseSignHeight = 90;
-    const scaleFactor = currentCanvasHeight / 400;
-    const scaledSignHeight = baseSignHeight * scaleFactor;
-    landmarks = landmarkConfig.map(cfg => ({
-        ...cfg,
-        yPos: currentCanvasHeight - config.groundHeight - scaledSignHeight,
-        hasBeenTriggered: false
-    }));
-}
-// --- END Landmark Data ---
-
-// --- Player State Initialization ---
-function resetPlayer() {
-    const currentCanvasHeight = config.canvasHeight;
-    // **MODIFIED:** Increase player height percentage slightly
-    const playerHeight = currentCanvasHeight * 0.18; // Was 0.15
-    const playerWidth = playerHeight * (60 / 75); // Maintain aspect ratio
-    playerState = {
-        x: 50, y: currentCanvasHeight - config.groundHeight - playerHeight,
-        width: playerWidth, height: playerHeight,
-        vy: 0, isGrounded: true
-    };
-}
-
-// --- Game Reset Function ---
-function resetGame() {
-    console.log("Resetting game...");
-    setupCanvas();
-    resetPlayer();
-    obstacles = [];
-    initializeLandmarks();
-    score = 0; frameCount = 0; gameSpeed = config.obstacleSpeed;
-    isJumpKeyDown = false; isPointerDownJump = false;
-    playerLives = config.startLives; isRecovering = false; recoveryTimer = 0;
-    backgroundX = 0; // Reset background position
-
-    livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
-    scoreDisplay.textContent = `Punkte / Score: 0`;
-    gameOverScreen.style.display = 'none';
-    winScreen.style.display = 'none';
-    landmarkPopup.style.display = 'none';
-
-    gameState = 'running';
-    requestAnimationFrame(gameLoop);
-}
-
-// --- Input Handling ---
-function handleJump() {
-    if (gameState === 'running' && playerState.isGrounded) {
-        playerState.vy = config.jumpStrength * (config.canvasHeight / 400);
-        playerState.isGrounded = false;
-    } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') {
-        resetGame();
-    } else if (gameState === 'win' && winScreen.style.display !== 'none') {
-        resetGame();
+function saveHighScore() {
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('ritterRunHighScore', highScore);
+        // Update display immediately on game over screen
+        gameOverHighScoreSpan.textContent = highScore;
     }
 }
 
-function hideLandmarkPopup() {
-    const popupIsVisible = landmarkPopup.style.display !== 'none';
-    if (!popupIsVisible) return;
-    landmarkPopup.style.display = 'none';
-    if (gameState === 'win') { showWinScreen(); }
-    else if (gameState === 'paused') {
-        gameState = 'running';
-        requestAnimationFrame(gameLoop);
-    }
-}
-
-// Event listeners
-window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); if (!isJumpKeyDown) { handleJump(); } isJumpKeyDown = true; } else if (e.key === 'Enter' || e.code === 'Enter') { e.preventDefault(); if ((gameState === 'paused' || gameState === 'win') && landmarkPopup.style.display !== 'none') { hideLandmarkPopup(); } else if (gameState === 'gameOver' && gameOverScreen.style.display !== 'none') { resetGame(); } else if (gameState === 'win' && winScreen.style.display !== 'none') { resetGame(); } } });
-window.addEventListener('keyup', (e) => { if (e.code === 'Space') { e.preventDefault(); isJumpKeyDown = false; } });
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState === 'running' || gameState === 'paused') { handleJump(); isPointerDownJump = true; } else if (gameState === 'gameOver') { resetGame(); } else if (gameState === 'win') { resetGame(); } });
-canvas.addEventListener('mousedown', (e) => { if (gameState === 'running') { handleJump(); isPointerDownJump = true; } });
-window.addEventListener('touchend', (e) => { isPointerDownJump = false; });
-window.addEventListener('mouseup', (e) => { isPointerDownJump = false; });
-gameOverScreen.addEventListener('click', resetGame);
-winScreen.addEventListener('click', resetGame);
-continueButton.addEventListener('click', hideLandmarkPopup);
-// --- END Input Handling ---
-
-// --- Collision Detection ---
-function checkCollision(rect1, rect2) { return ( rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y ); }
-
-// --- Obstacle Handling ---
-const obstacleTypes = ['stoneObstacle', 'familyObstacle', 'tractorObstacle'];
-
-function spawnObstacle() {
-    const typeIndex = Math.floor(Math.random() * obstacleTypes.length);
-    const selectedTypeKey = obstacleTypes[typeIndex];
-    let baseHeight, baseWidth;
-    switch (selectedTypeKey) {
-        // **MODIFIED:** Adjusted familyObstacle base height
-        case 'familyObstacle': baseHeight = 90; baseWidth = 65; break; // Was H:100, W:70
-        case 'tractorObstacle': baseHeight = 80; baseWidth = 115; break;
-        case 'stoneObstacle': default: baseHeight = 40; baseWidth = 30; break;
-    }
-    const scaleFactor = config.canvasHeight / 400;
-    let obstacleHeight = baseHeight * scaleFactor;
-    let obstacleWidth = baseWidth * scaleFactor;
-
-    obstacles.push({
-        x: config.canvasWidth,
-        y: config.canvasHeight - config.groundHeight - obstacleHeight,
-        width: obstacleWidth, height: obstacleHeight, typeKey: selectedTypeKey
+// --- Sound Playing Helper ---
+function playSound(soundElement) {
+    soundElement.currentTime = 0; // Rewind to start
+    soundElement.play().catch(error => {
+        // Autoplay might be blocked initially, user interaction (like start button) usually enables it.
+        console.log("Sound play failed:", error);
     });
+}
+
+// --- Reset Game Variables ---
+function resetGame() {
+    score = 0;
+    currentScoreSpan.textContent = score;
+    obstacles = [];
+    frameCount = 0;
+    gameSpeed = 5; // Reset speed
+    nextSpeedIncreaseScore = speedIncreaseInterval;
+
+    // Reset player position (adjust to your player object structure)
+    player.y = canvasHeight - player.height - 10; // Example: place on ground
+    player.dy = 0;
+    player.grounded = true;
+
+    // Reset background positions
+    bgFarX = 0;
+    bgNearX = 0;
+}
+
+// --- Update Functions ---
+
+function updatePlayer() {
+    // --- Your existing player update logic (gravity, jump movement) ---
+    // Example:
+    // if (!player.grounded) {
+    //     player.dy += gravity;
+    //     player.y += player.dy;
+    // }
+    // // Ground check logic...
+    // if (player.y >= canvasHeight - player.height - groundHeight) {
+    //    player.y = canvasHeight - player.height - groundHeight;
+    //    player.dy = 0;
+    //    player.grounded = true;
+    // }
 }
 
 function updateObstacles() {
-     const scaledGameSpeed = gameSpeed * (config.canvasWidth / 800);
-    if (frameCount > 100 && frameCount % config.spawnRate === 0) { spawnObstacle(); }
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].x -= scaledGameSpeed;
-        if (obstacles[i].x + obstacles[i].width < 0) { obstacles.splice(i, 1); }
-    }
-}
-// --- END Obstacle Handling ---
-
-// --- Landmark Display ---
-function showLandmarkPopup(landmark) { landmarkName.textContent = landmark.name; landmarkDescription.innerHTML = `${landmark.descEN}<br><br>${landmark.descDE}`; landmarkPopup.style.display = 'flex'; }
-
-// --- Update Game State ---
-function update() {
-    if (gameState !== 'running') return;
+    // --- Your existing obstacle generation and movement logic ---
     frameCount++;
-    if (isRecovering) { if (--recoveryTimer <= 0) { isRecovering = false; } }
+    // Example: Generate new obstacle periodically
+    // if (frameCount % 100 === 0) { // Adjust frequency
+    //     obstacles.push({ x: canvasWidth, y: canvasHeight - rockHeight - groundHeight, width: rockWidth, height: rockHeight });
+    // }
 
-    // Player physics
-    let currentGravity = config.gravity * (config.canvasHeight / 400);
-    if (!playerState.isGrounded && playerState.vy < 0) {
-        if (isJumpKeyDown || isPointerDownJump) { currentGravity *= config.jumpHoldGravityMultiplier; }
-        else { currentGravity *= config.jumpCutGravityMultiplier; }
-    }
-    playerState.vy += currentGravity; playerState.y += playerState.vy;
-
-    // Ground collision
-    const groundLevel = config.canvasHeight - config.groundHeight - playerState.height;
-    if (playerState.y >= groundLevel) { playerState.y = groundLevel; playerState.vy = 0; playerState.isGrounded = true; }
-    else { playerState.isGrounded = false; }
-
-    updateObstacles();
-
-    // Collision Checks
-    if (!isRecovering) {
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obstacle = obstacles[i];
-            if (checkCollision(playerState, obstacle)) {
-                const isFalling = playerState.vy > 0;
-                const previousPlayerBottom = playerState.y + playerState.height - playerState.vy;
-                const obstacleTop = obstacle.y;
-                if (isFalling && previousPlayerBottom <= obstacleTop + 1) { // Stomp
-                    playerState.vy = config.stompJumpStrength * (config.canvasHeight / 400);
-                    playerState.y = obstacle.y - playerState.height;
-                    playerState.isGrounded = false; score += 50; obstacles.splice(i, 1); continue;
-                } else { // Hit
-                     playerLives--; livesDisplay.textContent = `Leben / Lives: ${playerLives}`;
-                     score -= 75; if (score < 0) { score = 0; }
-                     if (playerLives <= 0) { gameState = 'gameOver'; showGameOverScreen(); return; }
-                     else { isRecovering = true; recoveryTimer = config.recoveryDuration; playerState.vy = -3 * (config.canvasHeight / 400); playerState.isGrounded = false; break; }
-                }
-            }
+    // Move obstacles left
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= gameSpeed;
+        // Remove obstacles that are off-screen
+        if (obstacles[i].x + obstacles[i].width < 0) {
+            obstacles.splice(i, 1);
+            // Maybe increase score here when obstacle is passed? Or use time-based score
         }
     }
-
-    // Landmark Triggers
-    const scaledGameSpeed = gameSpeed * (config.canvasWidth / 800);
-    for (let landmark of landmarks) {
-        landmark.worldX -= scaledGameSpeed;
-        const scaleFactor = config.canvasHeight / 400;
-        const signW = (landmark.width || 60) * scaleFactor;
-        if (!landmark.hasBeenTriggered && landmark.worldX < playerState.x + playerState.width && landmark.worldX + signW > playerState.x) {
-            landmark.hasBeenTriggered = true; showLandmarkPopup(landmark);
-            if (landmark.isFinal) { gameState = 'win'; } else { gameState = 'paused'; }
-            return;
-        }
-    }
-
-    // Score update
-    score++; scoreDisplay.textContent = `Punkte / Score: ${Math.floor(score / 5)}`;
-
-    // Speed increase
-    if (frameCount > 0 && frameCount % 240 === 0) {
-        if (gameSpeed < config.maxGameSpeed) { gameSpeed += 0.07; gameSpeed = parseFloat(gameSpeed.toFixed(2)); }
-    }
-
-     // Background Scroll Update
-     backgroundX -= scaledGameSpeed * 0.5; // Adjust 0.5 for parallax speed
-     // **MODIFIED:** Use native image width for looping calculation
-     if (assets.backgroundImage && assets.backgroundImage.width > 0 && backgroundX <= -assets.backgroundImage.width) {
-         backgroundX += assets.backgroundImage.width;
-     }
 }
 
+function checkCollisions() {
+    // --- Your existing collision detection logic ---
+    for (const obstacle of obstacles) {
+        // Example AABB collision detection:
+        // if (player.x < obstacle.x + obstacle.width &&
+        //     player.x + player.width > obstacle.x &&
+        //     player.y < obstacle.y + obstacle.height &&
+        //     player.y + player.height > obstacle.y)
+        // {
+        //     return true; // Collision detected
+        // }
+    }
+    return false; // No collision
+}
 
-// --- Draw Game ---
-function draw() {
-    const canvasW = config.canvasWidth;
-    const canvasH = config.canvasHeight;
-    ctx.clearRect(0, 0, canvasW, canvasH);
+function updateScoreAndSpeed() {
+    // Update score (e.g., based on time/distance)
+    score++; // Simple time-based score
+    currentScoreSpan.textContent = score;
 
-     // --- Draw Background (Scrolling Tiled - Native Size) ---
-     // **MODIFIED:** Draw background without scaling, aligned to ground
-     const destH = canvasH - config.groundHeight; // Max height available
-     if (assets.backgroundImage && assets.backgroundImage.height > 0 && destH > 0) {
-         const img = assets.backgroundImage;
-         const imgW = img.width;
-         const imgH = img.height;
+    // Increase game speed based on score
+    if (score >= nextSpeedIncreaseScore) {
+        gameSpeed += 0.5; // Increase speed slightly
+        nextSpeedIncreaseScore += speedIncreaseInterval;
+        console.log("Speed increased to:", gameSpeed);
+    }
+}
 
-         // Calculate Y position to align bottom of image with ground line
-         // Clamp Y so image top doesn't go below canvas top
-         const drawY = Math.max(0, destH - imgH);
-         const drawH = Math.min(imgH, destH); // Height to actually draw (clipped by canvas top)
-         const sourceY = Math.max(0, imgH - destH); // Corresponding source Y offset
-         const sourceH = drawH; // Source height matches draw height
+// --- Draw Functions ---
 
-         // Calculate starting X position for seamless looping
-         let currentX = imgW > 0 ? (backgroundX % imgW) : backgroundX;
-         if (currentX > 0 && imgW > 0) currentX -= imgW;
+function drawBackground() {
+    // Parallax effect
+    const farSpeed = gameSpeed * 0.3; // Background moves slower
+    const nearSpeed = gameSpeed;      // Foreground moves at game speed
 
-         // Draw background image tiles to cover the canvas width
-         if (imgW > 0) {
-             while (currentX < canvasW) {
-                 ctx.drawImage(
-                     img, // Source image
-                     0, sourceY, imgW, sourceH, // Source rect (full width, potentially clipped height)
-                     currentX, drawY, imgW, drawH // Destination rect (positioned, potentially clipped height)
-                 );
-                 currentX += imgW; // Move to next tile position
-             }
-         } else { // Fallback if image width is 0
-              ctx.fillStyle = config.colors.blue;
-              ctx.fillRect(0, 0, canvasW, destH);
-         }
+    bgFarX -= farSpeed;
+    bgNearX -= nearSpeed;
 
-     } else if (destH > 0) {
-         // Fallback: Draw solid blue sky if background image failed or destH is 0
-         ctx.fillStyle = config.colors.blue;
-         ctx.fillRect(0, 0, canvasW, destH);
-     }
-
-     // --- Draw Visual Ground ---
-     ctx.fillStyle = config.colors.ground;
-     ctx.fillRect(0, canvasH - config.groundHeight, canvasW, config.groundHeight);
-
-     // --- Draw Game Title (Example - REMOVE IF NOT NEEDED) ---
-     // Check if you added code like this and remove it if unwanted
-     /*
-     if (frameCount < 180) { // Example: Show for 3 seconds
-         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-         ctx.font = 'bold 24px "Press Start 2P"'; // Example font
-         ctx.textAlign = 'center';
-         ctx.fillText("Ritter Run - Bad Belzig", canvasW / 2, 60); // Example position
-     }
-     */
-     // --- End Example Title ---
-
-
-    // --- Draw Player ---
-    let drawPlayer = true;
-    if (isRecovering && frameCount % 10 < 5) { drawPlayer = false; }
-    if (drawPlayer) {
-        if (assets.knightPlaceholder) { ctx.drawImage(assets.knightPlaceholder, playerState.x, playerState.y, playerState.width, playerState.height); }
-        else { ctx.fillStyle = config.colors.green; ctx.fillRect(playerState.x, playerState.y, playerState.width, playerState.height); }
+    // Reset background position for seamless looping
+    if (bgFarX <= -canvasWidth) {
+        bgFarX = 0;
+    }
+    if (bgNearX <= -canvasWidth) {
+        bgNearX = 0;
     }
 
-    // --- Draw Obstacles ---
-    obstacles.forEach(obstacle => {
-        const obstacleImage = assets[obstacle.typeKey];
-        if (obstacleImage) { ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
-        else { ctx.fillStyle = config.colors.black; ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height); }
-    });
+    // Draw each background image twice for looping
+    ctx.drawImage(backgroundFarImage, bgFarX, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(backgroundFarImage, bgFarX + canvasWidth, 0, canvasWidth, canvasHeight);
 
-    // --- Draw Landmark Signs ---
-    landmarks.forEach(landmark => {
-         const scaleFactor = config.canvasHeight / 400;
-         const signW = (landmark.width || 60) * scaleFactor;
-         const signH = (landmark.height || 90) * scaleFactor;
-         const signY = config.canvasHeight - config.groundHeight - signH;
-         if (landmark.worldX < canvasW && landmark.worldX + signW > 0) {
-             if (assets.signImage) { ctx.drawImage(assets.signImage, landmark.worldX, signY, signW, signH); }
-             else { ctx.fillStyle = config.colors.ground; ctx.fillRect(landmark.worldX, signY, signW, signH); }
-         }
-    });
+    ctx.drawImage(backgroundNearImage, bgNearX, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(backgroundNearImage, bgNearX + canvasWidth, 0, canvasWidth, canvasHeight);
 }
-// --- END Draw Game ---
 
-// --- UI Updates ---
-function showGameOverScreen() { gameOverScreen.style.display = 'flex'; }
-function showWinScreen() { winScreen.style.display = 'flex'; }
+function drawPlayer() {
+    // --- Your existing player drawing logic ---
+    // Example: ctx.drawImage(knightImage, player.x, player.y, player.width, player.height);
+    // Consider adding animation frames here later
+}
 
-// --- Main Game Loop ---
+function drawObstacles() {
+    // --- Your existing obstacle drawing logic ---
+    // Example:
+    // ctx.fillStyle = 'red'; // Or use rockImage
+    // for (const obstacle of obstacles) {
+    //     ctx.drawImage(rockImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    // }
+}
+
+// --- Game Loop ---
 function gameLoop() {
-    if (gameState !== 'running') { return; }
-    update();
-    draw();
+    if (currentGameState === GameState.PLAYING) {
+        // --- Clear Canvas ---
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // --- Update ---
+        updatePlayer();
+        updateObstacles();
+        updateScoreAndSpeed(); // Update score continuously
+
+        // --- Draw ---
+        drawBackground();
+        drawPlayer();
+        drawObstacles();
+
+        // --- Check for Game Over ---
+        if (checkCollisions()) {
+            playSound(collisionSound);
+            playSound(gameOverSound);
+            // bgMusic.pause(); // Pause music if playing
+            currentGameState = GameState.GAME_OVER;
+            saveHighScore();
+            finalScoreSpan.textContent = score;
+            gameOverHighScoreSpan.textContent = highScore; // Ensure high score is updated
+            gameOverScreen.classList.remove('hidden');
+            scoreDisplay.classList.add('hidden'); // Hide in-game score
+        }
+    }
+
+    // Continue the loop regardless of state (unless you want to stop updates entirely on menu/game over)
     requestAnimationFrame(gameLoop);
 }
 
-// --- Start Game ---
-loadAllAssets(); // Start loading assets, which calls setupCanvas and resetGame
-// --- END Start Game ---
+// --- Event Listeners ---
 
+// Jump Input (adapt to your existing jump logic)
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && currentGameState === GameState.PLAYING && player.grounded) {
+        // player.dy = -jumpPower; // Apply jump force
+        // player.grounded = false;
+        playSound(jumpSound);
+        // Add your specific jump code here
+    }
+});
+
+// Start Button
+startButton.addEventListener('click', () => {
+    currentGameState = GameState.PLAYING;
+    startScreen.classList.add('hidden');
+    scoreDisplay.classList.remove('hidden');
+    resetGame();
+    // playSound(bgMusic); // Start music if you have it
+    // Ensure the game loop is running - if it wasn't started before
+    // requestAnimationFrame(gameLoop); // Usually started once outside
+});
+
+// Restart Button
+restartButton.addEventListener('click', () => {
+    currentGameState = GameState.PLAYING;
+    gameOverScreen.classList.add('hidden');
+    scoreDisplay.classList.remove('hidden');
+    resetGame();
+    // playSound(bgMusic); // Restart music if you have it
+});
+
+
+// --- Initial Setup ---
+function init() {
+    loadHighScore();
+    // Show only start screen initially
+    startScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('hidden');
+    scoreDisplay.classList.add('hidden');
+
+    // Draw initial state (optional, e.g., just the background on menu)
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawBackground(); // Draw background even on menu
+
+    // Start the game loop (it will only run game logic when state is PLAYING)
+    gameLoop();
+}
+
+// Wait for assets to load (basic example, might need more robust loading for many assets)
+window.addEventListener('load', init);
+
+// Or if images loading causes issues, use Promises:
+/*
+Promise.all([
+    new Promise(resolve => knightImage.onload = resolve),
+    new Promise(resolve => rockImage.onload = resolve),
+    new Promise(resolve => backgroundFarImage.onload = resolve),
+    new Promise(resolve => backgroundNearImage.onload = resolve)
+]).then(init);
+*/
