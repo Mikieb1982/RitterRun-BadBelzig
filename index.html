@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Larger Landing Tolerance)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Verify POI Collision Skip)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -281,8 +281,7 @@
             const POI_DISPLAY_DURATION_MS = 6000;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
-            // --- MODIFIED: Increased Landing Tolerance ---
-            const COLLISION_LANDING_TOLERANCE = 18; // Was 12
+            const COLLISION_LANDING_TOLERANCE = 18;
 
             // --- Game Variables ---
             let score = 0;
@@ -498,7 +497,8 @@
                 }
             }
 
-            function checkCollisions() { /* ... (no changes) ... */
+            // --- MODIFIED: checkCollisions (Added console log) ---
+            function checkCollisions() {
                 const playerRect = {
                     x: player.x + 5, y: player.y + 5,
                     width: player.width - 10, height: player.height - 10,
@@ -507,21 +507,29 @@
                 };
 
                 for (const obstacle of obstacles) {
+                    // --- Skip POIs and already knocked obstacles ---
                     if (obstacle.isPOI || obstacle.isKnocked) {
-                        continue;
+                        // --- NEW: Log to confirm skipping ---
+                        if (obstacle.isPOI) {
+                             // console.log(`checkCollisions: Skipping POI (ID: ${obstacle.poiId})`); // Optional: uncomment for verbose logging
+                        }
+                        continue; // Skip to the next obstacle
                     }
 
+                    // --- Collision check for regular obstacles ---
                     const obstacleRect = {
                         x: obstacle.x, y: obstacle.y,
                         width: obstacle.width, height: obstacle.height,
                         top: obstacle.y, right: obstacle.x + obstacle.width
                     };
 
+                    // Broad Phase AABB Check
                     if (playerRect.x < obstacleRect.right &&
                         playerRect.right > obstacleRect.x &&
                         playerRect.y < obstacleRect.y + obstacleRect.height &&
                         playerRect.bottom > obstacleRect.top)
                     {
+                        // Collision Detected - Determine Type
                         const isFalling = player.dy >= 0;
                         const landedOnTop = playerRect.bottom >= obstacleRect.top &&
                                             playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
@@ -531,11 +539,13 @@
                              return { type: CollisionType.TOP, obstacle: obstacle };
                         }
 
+                        // If not a clear top landing, consider it a side collision
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
                         playSound('hit');
                         return { type: CollisionType.SIDE };
                     }
                 }
+                // No collision detected with any relevant obstacle
                 return { type: CollisionType.NONE };
             }
 
@@ -628,8 +638,9 @@
                 let collisionHandled = false;
 
                 if (currentGameState === GameState.PLAYING) {
-                    const collisionResult = checkCollisions();
+                    const collisionResult = checkCollisions(); // Checks collisions, skips POIs
 
+                    // Handle results of collision check (only TOP or SIDE possible now)
                     if (collisionResult.type === CollisionType.SIDE) {
                         currentGameState = GameState.GAME_OVER;
                         saveHighScore();
@@ -648,14 +659,16 @@
                         playSound('bounce');
                         collisionResult.obstacle.isKnocked = true;
                         console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
-                        updatePlayer(dt);
+                        updatePlayer(dt); // Update player needed after bounce
                         collisionHandled = true;
                     }
 
+                    // Update player normally if no collision was handled
                     if (!collisionHandled) {
                         updatePlayer(dt);
                     }
 
+                    // Update obstacles (includes POI trigger logic) and score if still playing
                     if (currentGameState === GameState.PLAYING) {
                         updateObstacles(dt, timestamp);
                         updateScoreAndSpeed();
@@ -664,10 +677,11 @@
                     }
                 }
 
+                 // Draw non-playing states
                  if (currentGameState === GameState.MENU || currentGameState === GameState.GAME_OVER) {
                      drawPlayer();
                      if (currentGameState === GameState.GAME_OVER) {
-                         drawObstacles();
+                         drawObstacles(); // Draw final state
                      }
                  } else if (currentGameState === GameState.LOADING) {
                      ctx.fillStyle = 'white';
@@ -676,12 +690,14 @@
                      ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
                  }
 
+                // Request next frame ONLY if playing
                 if (currentGameState === GameState.PLAYING) {
                      requestAnimationFrame(gameLoop);
                 } else {
                     console.log(`Game loop stopped. State: ${currentGameState}`);
                 }
             }
+
 
             // --- Game State Changers / Event Handlers ---
             function startGame() { /* ... (no changes) ... */
