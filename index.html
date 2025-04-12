@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Adjust Jump & Test GIF)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Updated POI Data)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -197,8 +197,7 @@
             const PLAYER_WIDTH_PERCENT = 0.05;
             const PLAYER_HEIGHT_PERCENT = 0.10;
             const PLAYER_GRAVITY_FACTOR = 1300;
-            // --- MODIFIED: Jump Factor (Reduced jump height) ---
-            const PLAYER_JUMP_FACTOR = -40; // Was -28
+            const PLAYER_JUMP_FACTOR = -40; // Adjusted jump height
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
             const OBSTACLE_STONE_WIDTH_PERCENT = 0.044;
             const OBSTACLE_STONE_HEIGHT_PERCENT = 0.088;
@@ -210,7 +209,7 @@
             const SPEED_INCREASE_INTERVAL_SCORE = 400;
             const SPEED_INCREASE_AMOUNT_FACTOR = 0.025;
             const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
-            const POI_SPAWN_CHANCE = 0.15;
+            const POI_SPAWN_CHANCE = 0.15; // Adjust this probability (0.0 to 1.0)
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
             const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045;
@@ -228,7 +227,7 @@
             let currentBackgroundIndex = 0;
             let nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
             let nextObstacleSpawnTime = 0;
-            let nextPoiIndex = 0;
+            let nextPoiIndex = 0; // Index for the *next* POI to spawn
             let lastTime = 0;
             let gameInitialized = false;
             let isPaused = false;
@@ -256,8 +255,18 @@
             const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT } ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
-            // --- POI Data Structure ---
-            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "..." }, { id: 2, name: "SteinTherme", info: "..." }, { id: 3, name: "Historisches Stadtzentrum", info: "..." }, { id: 4, name: "Hagelberg Memorial", info: "..." }, { id: 5, name: "Roger Loewig Museum", info: "..." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "..." }, ];
+            // --- MODIFIED: POI Data Structure (Updated Info) ---
+            const poiData = [
+                 // Sequence: Therme, Freibad, Kulturzentrum, Bahnhof, Postmeilensäule, Rathaus, Burg
+                 { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile." },
+                 { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage." },
+                 { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern." },
+                 { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet." },
+                 { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt." },
+                 { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation." },
+                 { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region." }
+                 // Add more if needed, ensure IDs are unique and sequential if order matters
+            ];
 
             // --- Asset Loading Functions ---
             function assetLoaded(assetKey) { /* ... */
@@ -330,7 +339,7 @@
                 player.y = canvasHeight - groundHeightPx - player.height;
                 player.dy = 0;
                 player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR;
-                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR; // Uses new factor
+                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
                 player.grounded = true;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
                 bgX = 0;
@@ -339,7 +348,7 @@
                 currentScoreSpan.textContent = score;
                 currentLivesSpan.textContent = playerLives;
                 nextObstacleSpawnTime = 0;
-                nextPoiIndex = 0;
+                nextPoiIndex = 0; // Reset POI sequence index
                 isPaused = false;
                 poiOverlay.classList.remove('visible');
                 knightImageEl.style.display = 'none';
@@ -361,19 +370,31 @@
                 }
             }
 
-             function updateObstacles(dt, currentTime) { /* ... */
-                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
+             // --- MODIFIED: updateObstacles (Uses nextPoiIndex correctly) ---
+             function updateObstacles(dt, currentTime) {
+                 // --- Obstacle Spawning ---
+                 if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
                     const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
-                    const canSpawnPOI = poiData.length > nextPoiIndex && assets.sign.loaded;
+                    // Check if there are still POIs left in the sequence
+                    const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded;
                     const spawnPOI = willSpawnPOI && canSpawnPOI;
+
                     if (spawnPOI) {
+                        console.log(`Spawning POI: Index ${nextPoiIndex}`);
+                        // Get the POI using the current nextPoiIndex
                         const poi = poiData[nextPoiIndex];
                         const objWidth = canvasWidth * poiSignDimensions.widthPercent;
                         const objHeight = canvasHeight * poiSignDimensions.heightPercent;
-                        newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' };
-                        nextPoiIndex++;
+                        newObjectData = {
+                            isPOI: true, poiId: poi.id, // Use the ID from the data
+                            passed: false,
+                            x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight,
+                            width: objWidth, height: objHeight, assetKey: 'sign'
+                        };
+                        nextPoiIndex++; // Increment index for the *next* spawn attempt
                     } else {
+                        // Spawn regular obstacle
                         if (regularObstacleTypes.length > 0) {
                             const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
                             const type = regularObstacleTypes[typeIndex];
@@ -385,21 +406,36 @@
                         }
                     }
                     if (newObjectData) { obstacles.push(newObjectData); }
+
+                    // Calculate next spawn time
                     const speedFactor = gameSpeed / (canvasWidth * INITIAL_GAME_SPEED_FACTOR);
                     const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / Math.max(1, speedFactor);
                     const nextSpawnDelay = Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, currentSpawnTime) + (Math.random() * 300 - 150);
                     nextObstacleSpawnTime = currentTime + nextSpawnDelay;
                  }
+
+                 // --- Obstacle Movement, POI Triggering & Knock Off ---
                  const movement = gameSpeed * dt;
-                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger, removal ... */
+                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i];
                     if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
+                    // POI Trigger check
                     if (obj.isPOI && !obj.passed) {
                          const triggerPoint = obj.x;
                          const playerRightEdge = player.x + player.width;
-                         if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); obj.passed = true; score += 50; currentScoreSpan.textContent = score; playSound('poi'); }
+                         if (playerRightEdge > triggerPoint) {
+                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); // Log the ID from the object
+                            displayPOIInfo(obj.poiId); // Pass the correct ID
+                            obj.passed = true;
+                            score += 50;
+                            currentScoreSpan.textContent = score;
+                            playSound('poi');
+                        }
                     }
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
+                    // Remove if off-screen
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
+                         obstacles.splice(i, 1);
+                    }
                  }
              }
 
@@ -449,67 +485,38 @@
                 }
             }
 
-            // --- MODIFIED: updateKnightVisuals (Forced run GIF for testing) ---
-            function updateKnightVisuals() {
+            function updateKnightVisuals() { /* ... */
                 const now = performance.now();
-                // --- Temporarily force run animation for testing ---
-                let targetState = 'run'; // Force 'run' state
-                let targetSrc = assets.knight_run.src; // Force run src
-
-                // --- Original logic (commented out for test) ---
-                // let targetState = player.grounded ? 'run' : 'jump';
-                // let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
-                // --- End Original logic ---
-
-
-                // Only change src if the state is different or image not set yet
-                if (targetState !== currentKnightVisualState || knightImageEl.src === '') {
-                     // Check if the target asset is loaded before changing src
+                let targetState = player.grounded ? 'run' : 'jump';
+                let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
+                if (targetState !== currentKnightVisualState || !knightImageEl.src) {
                     if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) {
-                        knightImageEl.src = targetSrc;
+                        if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); }
                         currentKnightVisualState = targetState;
-                        console.log(`Set knight visual state to: ${targetState}`); // Log state change
-                    } else {
-                         // console.warn(`Knight asset for state '${targetState}' not loaded yet.`);
                     }
                 }
-
-
-                // Handle invincibility flashing
                 let currentOpacity = 1;
-                if (now < playerInvincibleUntil) {
-                    if (Math.floor(now / 100) % 2 !== 0) {
-                        currentOpacity = 0.4;
-                    }
-                }
+                if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } }
                 knightImageEl.style.opacity = currentOpacity;
-
-                // Update position and size
                 knightImageEl.style.left = `${player.x}px`;
                 knightImageEl.style.top = `${player.y}px`;
                 knightImageEl.style.width = `${player.width}px`;
                 knightImageEl.style.height = `${player.height}px`;
-
-                // Ensure visibility based on game state
                  if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                      if (knightImageEl.style.display === 'none') {
-                           knightImageEl.style.display = 'block';
-                      }
-                 } else {
-                      knightImageEl.style.display = 'none';
-                 }
+                      if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; }
+                 } else { knightImageEl.style.display = 'none'; }
             }
 
 
             function displayPOIInfo(poiId) { /* ... */
-                 const poi = poiData.find(p => p.id === poiId);
+                 const poi = poiData.find(p => p.id === poiId); // Find based on passed ID
                  if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
                  isPaused = true;
                  console.log(`>>> Game PAUSED for POI ID: ${poiId}`);
-                 poiNameEl.textContent = poi.name;
+                 poiNameEl.textContent = poi.name; // Use found POI name
                  const infoParts = poi.info.split('|').map(s => s.trim());
                  const formattedInfo = infoParts.join('<br><br>');
-                 poiInfoTextEl.innerHTML = formattedInfo;
+                 poiInfoTextEl.innerHTML = formattedInfo; // Use found POI info
                  poiOverlay.classList.add('visible');
                  console.log(">>> Added 'visible' class to poiOverlay.");
             }
