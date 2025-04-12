@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Bounce)</title>
+    <title>RitterRun Enhanced - Bad Belzig (Bounce & Knock Off)</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
@@ -186,10 +186,11 @@
 </head>
 <body>
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas> <div id="poiInfoOverlay" class="poi-overlay hidden">
+        <canvas id="gameCanvas"></canvas>
+        <div id="poiInfoOverlay" class="poi-overlay hidden">
             <h3 id="poiName">POI Name</h3>
             <p id="poiInfoText">POI information will appear here.</p>
-            </div>
+        </div>
 
         <div id="startScreen" class="ui-screen">
             <h1>RitterRun</h1>
@@ -210,7 +211,7 @@
     </div>
 
     <script>
-        // --- Strict mode and IIFE (Immediately Invoked Function Expression) ---
+        // --- Strict mode and IIFE ---
         (function() {
             'use strict';
 
@@ -231,7 +232,7 @@
             const poiInfoTextEl = document.getElementById('poiInfoText');
 
             // --- Canvas and Context ---
-            let ctx; // Initialized after checking canvas
+            let ctx;
             let canvasWidth;
             let canvasHeight;
 
@@ -239,7 +240,7 @@
             if (!canvas || !canvas.getContext || !gameContainer) {
                 console.error("Fatal Error: Canvas or Game Container not found or canvas context not supported!");
                 alert("Fatal Error: Cannot initialize the game. Try a different browser or check the HTML structure.");
-                return; // Stop execution
+                return;
             }
             ctx = canvas.getContext('2d');
 
@@ -253,20 +254,11 @@
             }
 
             // --- Game States ---
-            const GameState = Object.freeze({
-                MENU: 'MENU',
-                PLAYING: 'PLAYING',
-                GAME_OVER: 'GAME_OVER',
-                LOADING: 'LOADING'
-            });
+            const GameState = Object.freeze({ MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', LOADING: 'LOADING' });
             let currentGameState = GameState.LOADING;
 
-            // --- NEW: Collision Types ---
-            const CollisionType = Object.freeze({
-                NONE: 0,
-                TOP: 1,  // Landed on top
-                SIDE: 2  // Hit the side
-            });
+            // --- Collision Types ---
+            const CollisionType = Object.freeze({ NONE: 0, TOP: 1, SIDE: 2 });
 
             // --- Game Constants ---
             const GROUND_HEIGHT = 30;
@@ -275,7 +267,7 @@
             const PLAYER_HEIGHT = 40;
             const PLAYER_GRAVITY = 0.65;
             const PLAYER_JUMP_POWER = -14;
-            const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; // Bounce is 80% of jump power
+            const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
             const OBSTACLE_STONE_WIDTH = 35;
             const OBSTACLE_STONE_HEIGHT = 35;
             const OBSTACLE_TRACTOR_WIDTH = 70;
@@ -290,15 +282,12 @@
             const POI_DISPLAY_DURATION_MS = 6000;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
-            const COLLISION_LANDING_TOLERANCE = 8; // Pixels tolerance for landing on top
+            const COLLISION_LANDING_TOLERANCE = 12; // Increased tolerance
 
             // --- Game Variables ---
             let score = 0;
             let highScore = 0;
-            let player = {
-                x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT,
-                dx: 0, dy: 0, grounded: true
-            };
+            let player = { x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dx: 0, dy: 0, grounded: true };
             let obstacles = [];
             let gameSpeed = INITIAL_GAME_SPEED;
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
@@ -344,7 +333,7 @@
             ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) { /* ... (no changes needed) ... */
+            function assetLoaded(assetKey) { /* ... (no changes) ... */
                 console.log(`Asset loaded: ${assetKey}`);
                 assets[assetKey].loaded = true;
                 assetsLoadedCount++;
@@ -356,7 +345,7 @@
                     }
                 }
             }
-            function assetLoadError(assetKey) { /* ... (no changes needed) ... */
+            function assetLoadError(assetKey) { /* ... (no changes) ... */
                 console.error(`Failed to load asset: ${assets[assetKey].src}.`);
                 alert(`Error loading image: ${assets[assetKey].src}\nGame might not display correctly.`);
                  assetsLoadedCount++;
@@ -367,7 +356,7 @@
                      }
                  }
             }
-            function loadAssets() { /* ... (no changes needed) ... */
+            function loadAssets() { /* ... (no changes) ... */
                 console.log("Starting asset loading...");
                 currentGameState = GameState.LOADING;
                 for (const key in assets) {
@@ -380,7 +369,7 @@
             }
 
             // --- High Score Handling ---
-            function loadHighScore() { /* ... (no changes needed) ... */
+            function loadHighScore() { /* ... (no changes) ... */
                 try {
                     const savedScore = localStorage.getItem('ritterRunHighScore');
                     highScore = savedScore ? parseInt(savedScore, 10) : 0;
@@ -392,7 +381,7 @@
                     highScore = 0;
                 }
             }
-            function saveHighScore() { /* ... (no changes needed) ... */
+            function saveHighScore() { /* ... (no changes) ... */
                 if (score > highScore) {
                     highScore = score;
                     try {
@@ -406,12 +395,11 @@
 
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) {
-                 console.log(`Playing sound: ${soundId}`); // Placeholder
-                 // Add actual sound implementation here
+                 console.log(`Playing sound: ${soundId}`);
             }
 
             // --- Reset Game Variables ---
-            function resetGame() { /* ... (no changes needed) ... */
+            function resetGame() { /* ... (no changes) ... */
                 score = 0;
                 obstacles = [];
                 gameSpeed = INITIAL_GAME_SPEED;
@@ -430,14 +418,11 @@
             }
 
             // --- Update Functions ---
-            function updatePlayer(dt) {
-                // Apply gravity only if not grounded
+            function updatePlayer(dt) { /* ... (no changes) ... */
                 if (!player.grounded) {
-                    player.dy += PLAYER_GRAVITY; // Apply gravity acceleration
-                    player.y += player.dy * dt * 60; // Update position based on velocity
+                    player.dy += PLAYER_GRAVITY;
+                    player.y += player.dy * dt * 60;
                 }
-
-                // Check for ground collision AFTER potential obstacle bounce
                 const groundLevel = canvasHeight - GROUND_HEIGHT - player.height;
                 if (player.y >= groundLevel) {
                     player.y = groundLevel;
@@ -446,7 +431,8 @@
                 }
             }
 
-            function updateObstacles(dt, currentTime) { /* ... (no changes needed in spawning/movement logic) ... */
+            // --- MODIFIED: updateObstacles (Handles Knock Off) ---
+            function updateObstacles(dt, currentTime) {
                  // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
@@ -468,7 +454,8 @@
                                 newObjectData = {
                                     isPOI: false,
                                     x: canvasWidth, y: canvasHeight - type.height - GROUND_HEIGHT,
-                                    width: type.width, height: type.height, assetKey: type.assetKey
+                                    width: type.width, height: type.height, assetKey: type.assetKey,
+                                    isKnocked: false // NEW: Add knocked flag
                                 };
                             } else { console.warn(`Asset not loaded for obstacle type: ${type.assetKey}, skipping spawn.`); }
                         }
@@ -481,14 +468,23 @@
                     nextObstacleSpawnTime = currentTime + nextSpawnDelay;
                 }
 
-                // --- Obstacle Movement & POI Triggering ---
+                // --- Obstacle Movement, POI Triggering & Knock Off ---
                 const speedPxPerMs = gameSpeed / 1000;
                 const movement = speedPxPerMs * (dt * 1000);
 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i];
-                    obj.x -= movement;
 
+                    // --- NEW: Handle Knocked Obstacles ---
+                    if (obj.isKnocked) {
+                        // If knocked, move it down quickly off-screen
+                        obj.y += 500 * dt; // Move down rapidly (adjust speed as needed)
+                    } else {
+                        // Otherwise, move horizontally as normal
+                        obj.x -= movement;
+                    }
+
+                    // --- POI Triggering ---
                     if (obj.isPOI && !obj.passed) {
                          const triggerPoint = obj.x + obj.width / 2;
                          if (player.x > triggerPoint) {
@@ -500,35 +496,32 @@
                             playSound('poi');
                         }
                     }
-                    if (obj.x + obj.width < -100) { obstacles.splice(i, 1); }
+
+                    // --- Remove obstacles off-screen (left or bottom if knocked) ---
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height) {
+                         obstacles.splice(i, 1);
+                    }
                 }
             }
 
-            // --- MODIFIED: Collision Checking ---
+            // --- MODIFIED: Collision Checking (Refined Top Check) ---
             function checkCollisions() {
-                // Player's bounding box (slightly inset for better feel)
                 const playerRect = {
-                    x: player.x + 5,
-                    y: player.y + 5,
-                    width: player.width - 10,
-                    height: player.height - 10,
-                    bottom: player.y + player.height, // Cache bottom edge
-                    right: player.x + player.width // Cache right edge
+                    x: player.x + 5, y: player.y + 5,
+                    width: player.width - 10, height: player.height - 10,
+                    bottom: player.y + player.height,
+                    right: player.x + player.width
                 };
 
                 for (const obstacle of obstacles) {
-                    // Skip POI signs for collision checks
-                    if (obstacle.isPOI) {
+                    if (obstacle.isPOI || obstacle.isKnocked) { // Ignore POIs and already knocked obstacles
                         continue;
                     }
 
                     const obstacleRect = {
-                        x: obstacle.x,
-                        y: obstacle.y,
-                        width: obstacle.width,
-                        height: obstacle.height,
-                        top: obstacle.y, // Cache top edge
-                        right: obstacle.x + obstacle.width // Cache right edge
+                        x: obstacle.x, y: obstacle.y,
+                        width: obstacle.width, height: obstacle.height,
+                        top: obstacle.y, right: obstacle.x + obstacle.width
                     };
 
                     // --- Broad Phase AABB Check ---
@@ -538,47 +531,36 @@
                         playerRect.bottom > obstacleRect.top)
                     {
                         // --- Collision Detected - Determine Type ---
-
-                        // Check for TOP collision (landing on obstacle)
-                        // Conditions:
-                        // 1. Player is moving downwards (or was very recently)
-                        // 2. Player's bottom edge is near the obstacle's top edge
-                        // 3. Player was above the obstacle in the previous frame (implied by dy > 0 and current overlap)
-                        const isFalling = player.dy >= 0; // Check if player is falling or stationary vertically
+                        const isFalling = player.dy >= 0;
+                        // Check if player's bottom is within tolerance *above or at* the obstacle top
                         const landedOnTop = playerRect.bottom >= obstacleRect.top &&
                                             playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
+                        // Check horizontal alignment
+                        const playerCenterX = player.x + player.width / 2;
+                        const horizontallyAligned = playerCenterX > obstacleRect.x && playerCenterX < obstacleRect.right;
 
-                        if (isFalling && landedOnTop) {
-                             // Ensure player's horizontal center is somewhat over the obstacle
-                             const playerCenterX = player.x + player.width / 2;
-                             if (playerCenterX > obstacleRect.x && playerCenterX < obstacleRect.right) {
-                                console.log(`Collision: TOP on ${obstacle.assetKey}`);
-                                return { type: CollisionType.TOP, obstacle: obstacle }; // Return TOP collision type and the obstacle
-                             }
+                        if (isFalling && landedOnTop && horizontallyAligned) {
+                             console.log(`Collision: TOP on ${obstacle.assetKey}`);
+                             return { type: CollisionType.TOP, obstacle: obstacle };
                         }
 
-                        // If not a TOP collision, it must be a SIDE collision
+                        // If not a clear top landing, consider it a side collision
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
                         playSound('hit');
-                        return { type: CollisionType.SIDE }; // Return SIDE collision type
+                        return { type: CollisionType.SIDE };
                     }
                 }
-
-                // No collision detected with any obstacle
                 return { type: CollisionType.NONE };
             }
 
-
-            function updateScoreAndSpeed() { /* ... (no changes needed) ... */
+            function updateScoreAndSpeed() { /* ... (no changes) ... */
                 score++;
                 currentScoreSpan.textContent = score;
-
                 if (score >= nextSpeedIncreaseScore) {
                     gameSpeed += SPEED_INCREASE_AMOUNT;
                     nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE;
                     console.log(`Speed increased to: ${gameSpeed}`);
                 }
-
                 if (score >= nextBackgroundSwitchScore) {
                     currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds;
                     nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL;
@@ -587,7 +569,7 @@
             }
 
             // --- Draw Functions ---
-            function drawBackground(dt) { /* ... (no changes needed) ... */
+            function drawBackground(dt) { /* ... (no changes) ... */
                 const currentBgIndex = currentBackgroundIndex + 1;
                 const currentAssetKey = `background${currentBgIndex}`;
                 const currentAsset = assets[currentAssetKey];
@@ -605,7 +587,7 @@
                 ctx.fillStyle = '#228B22';
                 ctx.fillRect(0, canvasHeight - GROUND_HEIGHT, canvasWidth, GROUND_HEIGHT);
             }
-            function drawPlayer() { /* ... (no changes needed) ... */
+            function drawPlayer() { /* ... (no changes) ... */
                 if (assets.knight.loaded) {
                     ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
                 } else {
@@ -613,7 +595,7 @@
                     ctx.fillRect(player.x, player.y, player.width, player.height);
                 }
             }
-            function drawObstacles() { /* ... (no changes needed) ... */
+            function drawObstacles() { /* ... (no changes) ... */
                 for (const obj of obstacles) {
                     if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
                         ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
@@ -625,8 +607,8 @@
             }
 
             // --- Display POI Info ---
-            function displayPOIInfo(poiId) { /* ... (no changes needed) ... */
-                const poi = poiData.find(p => p.id === poiId);
+            function displayPOIInfo(poiId) { /* ... (no changes) ... */
+                 const poi = poiData.find(p => p.id === poiId);
                 if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
                 console.log(`Displaying POI: ${poi.name}`);
                 poiNameEl.textContent = poi.name;
@@ -640,13 +622,15 @@
                 }, POI_DISPLAY_DURATION_MS);
             }
 
-            // --- MODIFIED: Game Loop ---
+            // --- MODIFIED: Game Loop (Handles Knock Off, Simplified End) ---
             function gameLoop(timestamp) {
-                 const dt = (timestamp - lastTime) / 1000;
+                 const dt = (timestamp - lastTime) / 1000 || 0; // Prevent NaN on first frame
                  lastTime = timestamp;
 
                  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                  drawBackground(dt);
+
+                let collisionHandled = false; // Flag to track if collision logic ran
 
                 if (currentGameState === GameState.PLAYING) {
                     // --- Collision Check FIRST ---
@@ -654,8 +638,8 @@
 
                     // --- Handle Collisions ---
                     if (collisionResult.type === CollisionType.SIDE) {
-                        // --- Game Over on Side Collision ---
-                        currentGameState = GameState.GAME_OVER;
+                        currentGameState = GameState.GAME_OVER; // Change state first
+                        playSound('hit'); // Play hit sound immediately
                         saveHighScore();
                         finalScoreSpan.textContent = score;
                         gameOverHighScoreSpan.textContent = highScore;
@@ -663,64 +647,59 @@
                         scoreDisplay.classList.add('hidden');
                         if (poiTimeoutId) clearTimeout(poiTimeoutId);
                         poiOverlay.classList.remove('visible');
-                        // Draw final frame elements
-                        drawPlayer();
-                        drawObstacles();
+                        collisionHandled = true; // Collision determines the next step
 
                     } else if (collisionResult.type === CollisionType.TOP) {
-                        // --- Bounce on Top Collision ---
-                        // Place player exactly on top of the obstacle
-                        player.y = collisionResult.obstacle.y - player.height;
-                        // Apply bounce force (reduced jump power)
-                        player.dy = PLAYER_JUMP_POWER * PLAYER_BOUNCE_POWER_MULTIPLIER;
-                        player.grounded = false; // Player is now airborne
-                        playSound('bounce'); // Play bounce sound
+                        player.y = collisionResult.obstacle.y - player.height; // Position on top
+                        player.dy = PLAYER_JUMP_POWER * PLAYER_BOUNCE_POWER_MULTIPLIER; // Bounce
+                        player.grounded = false;
+                        playSound('bounce');
 
-                        // Update player position *after* bounce applied for this frame
-                        updatePlayer(dt); // Apply gravity/movement for next frame based on bounce
+                        // --- NEW: Knock off the obstacle ---
+                        collisionResult.obstacle.isKnocked = true;
+                        console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
 
-                    } else {
-                        // --- No Obstacle Collision: Normal Update ---
+                        updatePlayer(dt); // Update player after bounce
+                        collisionHandled = true; // Collision determines the next step
+                    }
+
+                    // --- Normal Update if No Collision Handled Above ---
+                    if (!collisionHandled) {
                         updatePlayer(dt);
                     }
 
-                    // --- Continue Updates if Not Game Over ---
+                    // --- Continue Updates & Drawing if Still Playing ---
                     if (currentGameState === GameState.PLAYING) {
-                        updateObstacles(dt, timestamp);
+                        updateObstacles(dt, timestamp); // Update obstacles (handles knocked ones)
                         updateScoreAndSpeed();
-
-                        // --- Drawing ---
                         drawPlayer();
                         drawObstacles();
                     }
+                }
 
-                } else if (currentGameState === GameState.MENU || currentGameState === GameState.GAME_OVER) {
-                     // Draw static elements for menu/game over screens
-                     drawPlayer();
+                // --- Draw Screens if Not Playing ---
+                 if (currentGameState === GameState.MENU || currentGameState === GameState.GAME_OVER) {
+                     drawPlayer(); // Draw player on menu/game over
                      if (currentGameState === GameState.GAME_OVER) {
-                         drawObstacles(); // Show obstacles at the point of game over
+                         drawObstacles(); // Draw obstacles in their final position
                      }
                  } else if (currentGameState === GameState.LOADING) {
-                     // Draw loading indicator
                      ctx.fillStyle = 'white';
                      ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel');
                      ctx.textAlign = 'center';
                      ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
                  }
 
-                // Request the next frame (unless game over handled drawing)
-                if (currentGameState !== GameState.GAME_OVER || collisionResult?.type !== CollisionType.SIDE) {
+                // --- Request Next Frame ONLY if Playing ---
+                if (currentGameState === GameState.PLAYING) {
                      requestAnimationFrame(gameLoop);
                 } else {
-                    // Ensure final frame is drawn on game over before stopping loop
-                     requestAnimationFrame(gameLoop); // Request one more frame to show final state
-                     console.log("Game Over - Loop stopping soon.");
+                    console.log(`Game loop stopped. State: ${currentGameState}`);
                 }
             }
 
-
             // --- Game State Changers / Event Handlers ---
-            function startGame() { /* ... (no changes needed) ... */
+            function startGame() {
                 if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
                 console.log("Starting Game...");
                 resetGame();
@@ -729,16 +708,15 @@
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.remove('hidden');
                 playSound('start');
-                lastTime = performance.now();
-                 // Restart the loop if it was stopped by game over
-                 requestAnimationFrame(gameLoop);
+                lastTime = performance.now(); // Reset time for dt calculation
+                requestAnimationFrame(gameLoop); // Start the loop
             }
-            function restartGame() { /* ... (no changes needed) ... */
+            function restartGame() {
                 if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
                 console.log("Restarting Game...");
-                startGame();
+                startGame(); // Restarting is the same as starting a new game
             }
-            function handleJumpInput() { /* ... (no changes needed) ... */
+            function handleJumpInput() { /* ... (no changes) ... */
                 if (currentGameState === GameState.PLAYING && player.grounded) {
                     player.dy = PLAYER_JUMP_POWER;
                     player.grounded = false;
@@ -747,8 +725,8 @@
             }
 
             // --- Input Event Handlers ---
-            function handleKeyDown(e) { /* ... (no changes needed) ... */
-                if (e.key === ' ' || e.code === 'Space' || e.keyCode === 32) {
+            function handleKeyDown(e) { /* ... (no changes) ... */
+                 if (e.key === ' ' || e.code === 'Space' || e.keyCode === 32) {
                     e.preventDefault();
                     if (!allAssetsLoaded) return;
                     switch (currentGameState) {
@@ -758,7 +736,7 @@
                     }
                 }
             }
-            function handleScreenTouch(e) { /* ... (no changes needed) ... */
+            function handleScreenTouch(e) { /* ... (no changes) ... */
                  e.preventDefault();
                  if (!allAssetsLoaded) return;
                  switch (currentGameState) {
@@ -773,7 +751,7 @@
             }
 
              // --- Resize Handling ---
-             function resizeCanvas() { /* ... (no changes needed) ... */
+             function resizeCanvas() { /* ... (no changes) ... */
                  const containerWidth = gameContainer.clientWidth;
                  const containerHeight = gameContainer.clientHeight;
                  canvasWidth = containerWidth;
@@ -787,7 +765,7 @@
              }
 
             // --- Initial Setup ---
-            function initGame() { /* ... (no changes needed) ... */
+            function initGame() { /* ... (no changes) ... */
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
@@ -813,11 +791,11 @@
                  console.log("Event listeners attached.");
                  currentGameState = GameState.MENU;
                  lastTime = performance.now();
-                 requestAnimationFrame(gameLoop);
+                 requestAnimationFrame(gameLoop); // Start loop only once initialized
             }
 
             // --- Start Asset Loading ---
-            document.addEventListener('DOMContentLoaded', () => { /* ... (no changes needed) ... */
+            document.addEventListener('DOMContentLoaded', () => { /* ... (no changes) ... */
                 console.log("DOM Ready. Starting asset load.");
                 loadAssets();
             });
