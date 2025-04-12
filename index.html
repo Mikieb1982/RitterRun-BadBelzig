@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Animated GIF Knight)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Conditional Animation & Sizing)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -37,19 +37,36 @@
             font-family: var(--font-sans);
         }
 
-        /* Game Container for Responsive Sizing */
+        /* --- MODIFIED: Game Container Sizing --- */
         #game-container {
             position: relative;
             border: 3px solid #555;
             overflow: hidden;
             background-color: var(--bb-blue);
-            width: 100vw;
-            height: 50vw; /* height = width / 2 */
-            max-height: 100vh;
-            max-width: 200vh; /* width = height * 2 */
+            /* Default fixed size (Desktop) */
+            width: 800px;
+            height: 400px;
+            max-width: 100%; /* Prevent overflow if viewport is narrower */
             box-sizing: border-box;
             display: block;
         }
+
+        /* --- NEW: Media Query for Mobile/Smaller Screens --- */
+        /* Apply responsive sizing only below this width */
+        @media (max-width: 850px) { /* Adjust breakpoint as needed */
+             #game-container {
+                 /* Use viewport units, maintain 2:1 aspect ratio */
+                 width: 100vw;
+                 height: 50vw; /* height = width / 2 */
+                 /* Constrain dimensions to viewport */
+                 max-height: 100vh;
+                 max-width: 200vh; /* width = height * 2 */
+                 /* Override fixed dimensions */
+                 max-width: 100vw; /* Ensure it doesn't exceed screen width */
+             }
+        }
+        /* --- END NEW --- */
+
 
         canvas {
             display: block;
@@ -57,18 +74,14 @@
             height: 100%;
         }
 
-        /* --- NEW: Knight Image Styling --- */
+        /* Knight Image Styling */
         #knightImage {
             position: absolute;
-            display: none; /* Hidden initially */
-            /* Prevent image from interfering with clicks/touches on canvas */
+            display: none;
             pointer-events: none;
-            /* Adjust z-index as needed, should be above canvas, below overlays */
             z-index: 10;
-            /* Optional: Improve rendering on some browsers */
-            image-rendering: pixelated; /* or crisp-edges */
+            image-rendering: pixelated;
         }
-        /* --- END NEW --- */
 
         /* UI Screen Styling */
         .ui-screen { /* ... */ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-pixel); line-height: 1.6; }
@@ -105,7 +118,7 @@
 
         /* Media Queries for Orientation */
         @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } }
-        @media (orientation: landscape) { #game-container { display: block; } #orientationMessage { display: none; } }
+        @media (orientation: landscape) { /* #game-container { display: block; } */ #orientationMessage { display: none; } } /* Game container shown by default unless portrait */
 
     </style>
 </head>
@@ -162,7 +175,7 @@
             const closePoiButton = document.getElementById('closePoiButton');
             const livesDisplay = document.getElementById('livesDisplay');
             const currentLivesSpan = document.getElementById('currentLives');
-            const knightImageEl = document.getElementById('knightImage'); // NEW: Knight Image Element
+            const knightImageEl = document.getElementById('knightImage');
 
             // --- Canvas and Context ---
             let ctx;
@@ -172,7 +185,6 @@
             // --- Essential Element Check ---
             if (!canvas || !canvas.getContext || !gameContainer) { /* ... */ return; }
             ctx = canvas.getContext('2d');
-            // Add knightImageEl to the check
             const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl };
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
@@ -227,10 +239,13 @@
             let isPaused = false;
             let groundHeightPx = 0;
             let collisionLandingTolerancePx = 0;
+            let currentKnightVisualState = null; // NEW: Track 'run' or 'jump'
 
-            // --- MODIFIED: Graphics Assets (Updated knight src) ---
+            // --- MODIFIED: Graphics Assets (Separate run/jump knight) ---
             const assets = {
-                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' }, // USE THE GIF
+                // Use different keys for run and jump states
+                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, // Assumes you have this looping GIF
+                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, // Assumes you have this static PNG/GIF
                 stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
                 sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
                 tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
@@ -240,7 +255,8 @@
             };
             const numBackgrounds = 3;
             let assetsLoadedCount = 0;
-            let totalAssets = Object.keys(assets).length;
+            // Recalculate total assets based on new structure
+            totalAssets = Object.keys(assets).length;
             let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
@@ -306,8 +322,8 @@
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- MODIFIED: Reset Game Variables (Hide knight img) ---
-            function resetGame() {
+            // --- Reset Game Variables ---
+            function resetGame() { /* ... */
                 score = 0;
                 playerLives = LIVES_START_COUNT;
                 playerInvincibleUntil = 0;
@@ -333,7 +349,8 @@
                 nextPoiIndex = 0;
                 isPaused = false;
                 poiOverlay.classList.remove('visible');
-                knightImageEl.style.display = 'none'; // Hide knight image on reset
+                knightImageEl.style.display = 'none';
+                currentKnightVisualState = null; // Reset visual state
                 console.log(`Game Reset - Speed: ${gameSpeed.toFixed(1)}, Player Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
             }
 
@@ -347,7 +364,10 @@
                 if (player.y >= groundLevel) {
                     player.y = groundLevel;
                     player.dy = 0;
-                    if (!player.grounded) { player.grounded = true; }
+                    if (!player.grounded) {
+                        player.grounded = true;
+                        // console.log("Player landed"); // Optional
+                    }
                 }
             }
 
@@ -433,7 +453,6 @@
             }
 
             // --- REMOVED: drawPlayer function ---
-            // function drawPlayer() { ... }
 
             function drawObstacles() { /* ... */
                 for (const obj of obstacles) {
@@ -442,26 +461,41 @@
                 }
             }
 
-            // --- NEW: Function to update the knight image element ---
+            // --- MODIFIED: Function to update the knight image element (Switches src) ---
             function updateKnightVisuals() {
                 const now = performance.now();
-                let currentOpacity = 1;
+                let targetState = player.grounded ? 'run' : 'jump';
+                let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
 
-                // Set flashing opacity if invincible
-                if (now < playerInvincibleUntil) {
-                    if (Math.floor(now / 100) % 2 !== 0) {
-                        currentOpacity = 0.4; // Make semi-transparent
+                // Only change src if the state is different or image not set yet
+                if (targetState !== currentKnightVisualState || knightImageEl.src === '') {
+                     // Check if the target asset is loaded before changing src
+                    if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) {
+                        knightImageEl.src = targetSrc;
+                        currentKnightVisualState = targetState;
+                        // console.log(`Set knight visual state to: ${targetState}`); // Optional log
+                    } else {
+                         // console.warn(`Knight asset for state '${targetState}' not loaded yet.`); // Optional log
                     }
                 }
 
-                // Update styles
+
+                // Handle invincibility flashing
+                let currentOpacity = 1;
+                if (now < playerInvincibleUntil) {
+                    if (Math.floor(now / 100) % 2 !== 0) {
+                        currentOpacity = 0.4;
+                    }
+                }
                 knightImageEl.style.opacity = currentOpacity;
+
+                // Update position and size
                 knightImageEl.style.left = `${player.x}px`;
                 knightImageEl.style.top = `${player.y}px`;
                 knightImageEl.style.width = `${player.width}px`;
                 knightImageEl.style.height = `${player.height}px`;
 
-                // Ensure visible if game is playing/over/menu
+                // Ensure visibility based on game state
                  if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
                       if (knightImageEl.style.display === 'none') {
                            knightImageEl.style.display = 'block';
@@ -493,91 +527,38 @@
             }
 
 
-            // --- MODIFIED: Game Loop (Calls updateKnightVisuals) ---
-            function gameLoop(timestamp) {
+            function gameLoop(timestamp) { /* ... */
                  const dt = (timestamp - lastTime) / 1000 || 0;
-                 if (!isPaused) {
-                    lastTime = timestamp;
-                 }
+                 if (!isPaused) { lastTime = timestamp; }
 
-                 // --- Updates (Run if PLAYING and not PAUSED) ---
-                 if (currentGameState === GameState.PLAYING && !isPaused) {
+                 if (currentGameState === GameState.PLAYING && !isPaused) { /* ... collision checks, updates ... */
                     let collisionHandledThisFrame = false;
                     const collisionResult = checkCollisions();
-
                     if (collisionResult.type === CollisionType.SIDE) {
-                        playSound('hit');
-                        playerLives--;
-                        currentLivesSpan.textContent = playerLives;
-                        collisionHandledThisFrame = true;
-                        if (playerLives > 0) {
-                            console.log(`Life lost! ${playerLives} remaining.`);
-                            player.y = canvasHeight - groundHeightPx - player.height;
-                            player.dy = 0;
-                            player.grounded = true;
-                            playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS;
-                            console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`);
-                        } else {
-                            console.warn("GAME OVER - No lives left.");
-                            currentGameState = GameState.GAME_OVER;
-                            saveHighScore();
-                            finalScoreSpan.textContent = score;
-                            gameOverHighScoreSpan.textContent = highScore;
-                            gameOverScreen.classList.remove('hidden');
-                            scoreDisplay.classList.add('hidden');
-                            livesDisplay.classList.add('hidden');
-                            knightImageEl.style.display = 'none'; // Hide knight on game over screen
-                            if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); }
-                        }
+                        playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; collisionHandledThisFrame = true;
+                        if (playerLives > 0) { console.log(`Life lost! ${playerLives} remaining.`); player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`); }
+                        else { console.warn("GAME OVER - No lives left."); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } }
                     } else if (collisionResult.type === CollisionType.TOP) {
-                        player.y = collisionResult.obstacle.y - player.height;
-                        player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER;
-                        player.grounded = false;
-                        playSound('bounce');
-                        collisionResult.obstacle.isKnocked = true;
-                        console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
-                        updatePlayer(dt);
-                        collisionHandledThisFrame = true;
+                        player.y = collisionResult.obstacle.y - player.height; player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; player.grounded = false; playSound('bounce'); collisionResult.obstacle.isKnocked = true; console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`); updatePlayer(dt); collisionHandledThisFrame = true;
                     }
-
-                    if (!collisionHandledThisFrame) {
-                        updatePlayer(dt);
-                    }
-
-                    // Update obstacles and score only if still playing
-                    if (currentGameState === GameState.PLAYING) {
-                        updateObstacles(dt, timestamp);
-                        updateScoreAndSpeed();
-                    }
-                 } // End of PLAYING and NOT PAUSED block
-
-                 // --- Drawing ---
-                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                 drawBackground(dt); // Draw canvas background/ground
-                 drawObstacles();    // Draw obstacles onto canvas
-
-                 // --- Update HTML Knight Image ---
-                 updateKnightVisuals(); // Position and style the HTML img element
-
-                 // Draw loading text if applicable
-                 if (currentGameState === GameState.LOADING) {
-                     ctx.fillStyle = 'white';
-                     ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel');
-                     ctx.textAlign = 'center';
-                     ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
+                    if (!collisionHandledThisFrame) { updatePlayer(dt); }
+                    if (currentGameState === GameState.PLAYING) { updateObstacles(dt, timestamp); updateScoreAndSpeed(); }
                  }
+
+                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                 drawBackground(dt);
+                 drawObstacles();
+                 updateKnightVisuals(); // Update HTML knight image
+
+                 if (currentGameState === GameState.LOADING) { /* ... draw loading ... */ ctx.fillStyle = 'white'; ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel'); ctx.textAlign = 'center'; ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2); }
 
                 requestAnimationFrame(gameLoop);
             }
 
 
-            // --- MODIFIED: startGame (Show knight img) ---
-            function startGame() {
+            function startGame() { /* ... */
                 console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
-                if (currentGameState === GameState.PLAYING || !allAssetsLoaded) {
-                    console.log("startGame() aborted. State:", currentGameState, "Assets loaded?", allAssetsLoaded);
-                    return;
-                }
+                if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; }
                 console.log("Executing startGame()...");
                 resetGame();
                 currentGameState = GameState.PLAYING;
@@ -585,8 +566,10 @@
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.remove('hidden');
                 livesDisplay.classList.remove('hidden');
-                knightImageEl.style.display = 'block'; // Make sure knight is visible
-                knightImageEl.style.opacity = '1'; // Ensure full opacity
+                knightImageEl.style.display = 'block'; // Show knight
+                knightImageEl.style.opacity = '1';
+                currentKnightVisualState = null; // Force visual update on first frame
+                updateKnightVisuals(); // Set initial visual state
                 playSound('start');
                 lastTime = performance.now();
             }
@@ -601,8 +584,9 @@
             function handleJumpInput() { /* ... */
                 if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) {
                     player.dy = player.jumpPower;
-                    player.grounded = false;
+                    player.grounded = false; // Player is no longer grounded
                     playSound('jump');
+                    // Visual state will be updated in updateKnightVisuals
                 }
             }
 
@@ -647,27 +631,24 @@
                      gameOverScreen.classList.add('hidden');
                      scoreDisplay.classList.add('hidden');
                      livesDisplay.classList.add('hidden');
-                     knightImageEl.style.display = 'none'; // Ensure hidden after resize reset
+                     knightImageEl.style.display = 'none';
                  }
              }
 
 
-            // --- MODIFIED: Initial Setup (Set knight img src) ---
+            // --- MODIFIED: Initial Setup (Checks both knight assets) ---
             function initGame() {
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
 
-                // Set the src for the knight image element now that assets are loaded
-                if (assets.knight.loaded) {
-                    knightImageEl.src = assets.knight.src;
-                    console.log("Knight image source set to:", knightImageEl.src);
-                } else {
-                    console.error("Knight asset failed to load, cannot set image source.");
-                    // Optionally hide the image element or show a placeholder color/div
-                    knightImageEl.style.display = 'none';
+                // Check if required knight assets loaded
+                if (!assets.knight_run.loaded || !assets.knight_jump.loaded) {
+                     console.error("Knight run/jump assets failed to load! Cannot start.");
+                     // Display a more permanent error message on screen?
+                     alert("Error: Essential knight images failed to load. Please check paths or refresh.");
+                     return; // Stop initialization
                 }
-
 
                 loadHighScore();
                 resizeCanvas(); // Sets initial sizes and calls resetGame
