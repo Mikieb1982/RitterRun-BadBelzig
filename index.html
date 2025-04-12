@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Enter Key to Close POI)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Invincibility Frames)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -285,6 +285,7 @@
 
             // --- Game Constants ---
             const LIVES_START_COUNT = 5;
+            const INVINCIBILITY_DURATION_MS = 1000; // NEW: 1 second invincibility
             const GROUND_HEIGHT = 30;
             const PLAYER_INITIAL_X = 60;
             const PLAYER_WIDTH = 40;
@@ -311,6 +312,7 @@
             let score = 0;
             let highScore = 0;
             let playerLives = LIVES_START_COUNT;
+            let playerInvincibleUntil = 0; // NEW: Timestamp for invincibility end
             let player = { x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dx: 0, dy: 0, grounded: true };
             let obstacles = [];
             let gameSpeed = INITIAL_GAME_SPEED;
@@ -422,10 +424,11 @@
                  console.log(`Playing sound: ${soundId}`);
             }
 
-            // --- Reset Game Variables ---
-            function resetGame() { /* ... */
+            // --- MODIFIED: Reset Game Variables (Includes Invincibility) ---
+            function resetGame() {
                 score = 0;
                 playerLives = LIVES_START_COUNT;
+                playerInvincibleUntil = 0; // Reset invincibility timer
                 obstacles = [];
                 gameSpeed = INITIAL_GAME_SPEED;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
@@ -530,7 +533,15 @@
             }
 
 
-            function checkCollisions() { /* ... */
+            // --- MODIFIED: checkCollisions (Adds invincibility check) ---
+            function checkCollisions() {
+                // --- NEW: Skip check if player is invincible ---
+                const now = performance.now();
+                if (now < playerInvincibleUntil) {
+                    return { type: CollisionType.NONE };
+                }
+
+                // --- Existing collision logic ---
                 const playerRect = {
                     x: player.x + 5, y: player.y + 5,
                     width: player.width - 10, height: player.height - 10,
@@ -560,7 +571,6 @@
                              return { type: CollisionType.TOP, obstacle: obstacle };
                         }
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
-                        // playSound('hit'); // Sound moved to gameLoop
                         return { type: CollisionType.SIDE };
                     }
                 }
@@ -602,14 +612,40 @@
                 ctx.fillStyle = '#228B22';
                 ctx.fillRect(0, canvasHeight - GROUND_HEIGHT, canvasWidth, GROUND_HEIGHT);
             }
-            function drawPlayer() { /* ... */
-                if (assets.knight.loaded) {
-                    ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
-                } else {
-                    ctx.fillStyle = 'grey';
-                    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // --- MODIFIED: drawPlayer (Adds flashing effect) ---
+            function drawPlayer() {
+                const now = performance.now();
+                let isVisible = true;
+
+                // Check if invincible and determine if flashing should hide the player
+                if (now < playerInvincibleUntil) {
+                    // Flash roughly 5 times per second (1000ms / 200ms cycle = 5)
+                    // Hide every other 100ms interval
+                    if (Math.floor(now / 100) % 2 !== 0) {
+                        isVisible = false;
+                    }
+                    // --- Alternative: Use alpha ---
+                    // ctx.save(); // Save current context state
+                    // ctx.globalAlpha = 0.5; // Make semi-transparent
                 }
+
+                // Draw player only if visible (for flashing effect)
+                if (isVisible) {
+                    if (assets.knight.loaded) {
+                        ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
+                    } else {
+                        ctx.fillStyle = 'grey';
+                        ctx.fillRect(player.x, player.y, player.width, player.height);
+                    }
+                }
+
+                // Restore alpha if it was changed
+                // if (now < playerInvincibleUntil) {
+                //     ctx.restore(); // Restore context state (including alpha)
+                // }
             }
+
             function drawObstacles() { /* ... */
                 for (const obj of obstacles) {
                     let drawWidth, drawHeight;
@@ -653,7 +689,8 @@
             }
 
 
-            function gameLoop(timestamp) { /* ... */
+            // --- MODIFIED: Game Loop (Sets invincibility on life lost) ---
+            function gameLoop(timestamp) {
                  const dt = (timestamp - lastTime) / 1000 || 0;
                  if (!isPaused) {
                     lastTime = timestamp;
@@ -665,7 +702,7 @@
                 let collisionHandledThisFrame = false;
 
                 if (currentGameState === GameState.PLAYING && !isPaused) {
-                    const collisionResult = checkCollisions();
+                    const collisionResult = checkCollisions(); // Skips check if invincible
 
                     if (collisionResult.type === CollisionType.SIDE) {
                         playSound('hit');
@@ -674,12 +711,17 @@
                         collisionHandledThisFrame = true;
 
                         if (playerLives > 0) {
+                            // --- Lost a life, continue playing ---
                             console.log(`Life lost! ${playerLives} remaining.`);
                             player.y = canvasHeight - PLAYER_HEIGHT - GROUND_HEIGHT;
                             player.dy = 0;
                             player.grounded = true;
+                            // --- NEW: Set invincibility period ---
+                            playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS;
+                            console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`);
 
                         } else {
+                            // --- No lives left: GAME OVER ---
                             console.warn("GAME OVER - No lives left.");
                             currentGameState = GameState.GAME_OVER;
                             saveHighScore();
@@ -716,7 +758,7 @@
                 } // End of PLAYING and NOT PAUSED block
 
                 if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                     drawPlayer();
+                     drawPlayer(); // Will flash if invincible
                      drawObstacles();
                 } else if (currentGameState === GameState.LOADING) {
                      ctx.fillStyle = 'white';
@@ -741,7 +783,7 @@
                 startScreen.classList.add('hidden');
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.remove('hidden');
-                livesDisplay.classList.remove('hidden'); // Show lives display
+                livesDisplay.classList.remove('hidden');
                 playSound('start');
                 lastTime = performance.now();
             }
@@ -761,17 +803,14 @@
                 }
             }
 
-            // --- MODIFIED: Input Event Handlers (Add Enter key check) ---
-            function handleKeyDown(e) {
-                 // --- NEW: Check for Enter key to close POI ---
+            // --- Input Event Handlers ---
+            function handleKeyDown(e) { /* ... */
                  if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) {
-                    e.preventDefault(); // Prevent potential default Enter actions
+                    e.preventDefault();
                     console.log("Enter key pressed while POI visible. Closing POI.");
-                    closePoiOverlay(); // Close the overlay and resume game
-                    return; // Stop further processing for this key press
+                    closePoiOverlay();
+                    return;
                  }
-
-                 // --- Existing Spacebar check ---
                  if (e.key === ' ' || e.code === 'Space') {
                     e.preventDefault();
                     console.log("Spacebar pressed. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
@@ -779,7 +818,7 @@
                     switch (currentGameState) {
                         case GameState.PLAYING:
                             console.log("Spacebar: Calling handleJumpInput()");
-                            handleJumpInput(); // Will only jump if not paused
+                            handleJumpInput();
                             break;
                         case GameState.MENU:
                             console.log("Spacebar: Calling startGame()");
@@ -797,17 +836,14 @@
                  e.preventDefault();
                  console.log("Screen touch detected. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded, "Target:", e.target.id);
                  if (!allAssetsLoaded) return;
-
-                 // --- IMPORTANT: Ignore touches if POI overlay is visible (use button instead) ---
                  if (isPaused && poiOverlay.classList.contains('visible')) {
                      console.log("Touch ignored: POI overlay is visible.");
                      return;
                  }
-
                  switch (currentGameState) {
                      case GameState.PLAYING:
                          console.log("Touch: Calling handleJumpInput()");
-                         handleJumpInput(); // Will only jump if not paused
+                         handleJumpInput();
                          break;
                      case GameState.MENU:
                          console.log("Touch: Checking if should start game...");
