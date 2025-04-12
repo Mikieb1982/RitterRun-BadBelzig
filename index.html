@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Conditional Animation & Sizing)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Fix totalAssets Error)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -37,7 +37,7 @@
             font-family: var(--font-sans);
         }
 
-        /* --- MODIFIED: Game Container Sizing --- */
+        /* Game Container Sizing */
         #game-container {
             position: relative;
             border: 3px solid #555;
@@ -46,27 +46,21 @@
             /* Default fixed size (Desktop) */
             width: 800px;
             height: 400px;
-            max-width: 100%; /* Prevent overflow if viewport is narrower */
+            max-width: 100%;
             box-sizing: border-box;
             display: block;
         }
 
-        /* --- NEW: Media Query for Mobile/Smaller Screens --- */
-        /* Apply responsive sizing only below this width */
-        @media (max-width: 850px) { /* Adjust breakpoint as needed */
+        /* Media Query for Mobile/Smaller Screens */
+        @media (max-width: 850px) {
              #game-container {
-                 /* Use viewport units, maintain 2:1 aspect ratio */
                  width: 100vw;
-                 height: 50vw; /* height = width / 2 */
-                 /* Constrain dimensions to viewport */
+                 height: 50vw;
                  max-height: 100vh;
-                 max-width: 200vh; /* width = height * 2 */
-                 /* Override fixed dimensions */
-                 max-width: 100vw; /* Ensure it doesn't exceed screen width */
+                 max-width: 200vh;
+                 max-width: 100vw;
              }
         }
-        /* --- END NEW --- */
-
 
         canvas {
             display: block;
@@ -118,7 +112,7 @@
 
         /* Media Queries for Orientation */
         @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } }
-        @media (orientation: landscape) { /* #game-container { display: block; } */ #orientationMessage { display: none; } } /* Game container shown by default unless portrait */
+        @media (orientation: landscape) { /* #game-container { display: block; } */ #orientationMessage { display: none; } }
 
     </style>
 </head>
@@ -239,13 +233,12 @@
             let isPaused = false;
             let groundHeightPx = 0;
             let collisionLandingTolerancePx = 0;
-            let currentKnightVisualState = null; // NEW: Track 'run' or 'jump'
+            let currentKnightVisualState = null;
 
-            // --- MODIFIED: Graphics Assets (Separate run/jump knight) ---
+            // --- Graphics Assets ---
             const assets = {
-                // Use different keys for run and jump states
-                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, // Assumes you have this looping GIF
-                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, // Assumes you have this static PNG/GIF
+                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' },
+                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' },
                 stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
                 sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
                 tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
@@ -255,8 +248,8 @@
             };
             const numBackgrounds = 3;
             let assetsLoadedCount = 0;
-            // Recalculate total assets based on new structure
-            totalAssets = Object.keys(assets).length;
+            // --- FIXED: Declare totalAssets with let ---
+            let totalAssets = Object.keys(assets).length;
             let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
@@ -264,13 +257,14 @@
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
-            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "..." }, { id: 2, name: "SteinTherme", info: "..." }, { id: 3, name: "Historisches Stadtzentrum", info: "..." }, { id: 4, name: "Hagelberg Memorial", info: "..." }, { id: 5, name: "Roger Loewig Museum", info: "..." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "..." }, ];
+            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. | Eine gut erhaltene mittelalterliche Burg über Bad Belzig." }, { id: 2, name: "SteinTherme", info: "Modern thermal baths known for their saltwater pools. | Moderne Thermalbäder, bekannt für ihre Solebecken." }, { id: 3, name: "Historisches Stadtzentrum", info: "Explore the charming old town with its historic buildings. | Erkunden Sie die charmante Altstadt mit ihren historischen Gebäuden." }, { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813). | Erinnert an die Schlacht bei Hagelberg (1813)." }, { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig. | Museum gewidmet dem Künstler Roger Loewig." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "Information center for the Hoher Fläming nature park. | Infozentrum für den Naturpark Hoher Fläming." }, ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) { /* ... */
+            function assetLoaded(assetKey) {
                 console.log(`Asset loaded: ${assetKey}`);
                 assets[assetKey].loaded = true;
                 assetsLoadedCount++;
+                // Use the correctly declared totalAssets variable
                 if (assetsLoadedCount === totalAssets) {
                     console.log("All assets loaded.");
                     allAssetsLoaded = true;
@@ -350,7 +344,7 @@
                 isPaused = false;
                 poiOverlay.classList.remove('visible');
                 knightImageEl.style.display = 'none';
-                currentKnightVisualState = null; // Reset visual state
+                currentKnightVisualState = null;
                 console.log(`Game Reset - Speed: ${gameSpeed.toFixed(1)}, Player Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
             }
 
@@ -364,10 +358,7 @@
                 if (player.y >= groundLevel) {
                     player.y = groundLevel;
                     player.dy = 0;
-                    if (!player.grounded) {
-                        player.grounded = true;
-                        // console.log("Player landed"); // Optional
-                    }
+                    if (!player.grounded) { player.grounded = true; }
                 }
             }
 
@@ -452,8 +443,6 @@
                 ctx.fillStyle = '#228B22'; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
             }
 
-            // --- REMOVED: drawPlayer function ---
-
             function drawObstacles() { /* ... */
                 for (const obj of obstacles) {
                     if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); }
@@ -461,48 +450,26 @@
                 }
             }
 
-            // --- MODIFIED: Function to update the knight image element (Switches src) ---
-            function updateKnightVisuals() {
+            function updateKnightVisuals() { /* ... */
                 const now = performance.now();
                 let targetState = player.grounded ? 'run' : 'jump';
                 let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
-
-                // Only change src if the state is different or image not set yet
                 if (targetState !== currentKnightVisualState || knightImageEl.src === '') {
-                     // Check if the target asset is loaded before changing src
                     if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) {
                         knightImageEl.src = targetSrc;
                         currentKnightVisualState = targetState;
-                        // console.log(`Set knight visual state to: ${targetState}`); // Optional log
-                    } else {
-                         // console.warn(`Knight asset for state '${targetState}' not loaded yet.`); // Optional log
                     }
                 }
-
-
-                // Handle invincibility flashing
                 let currentOpacity = 1;
-                if (now < playerInvincibleUntil) {
-                    if (Math.floor(now / 100) % 2 !== 0) {
-                        currentOpacity = 0.4;
-                    }
-                }
+                if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } }
                 knightImageEl.style.opacity = currentOpacity;
-
-                // Update position and size
                 knightImageEl.style.left = `${player.x}px`;
                 knightImageEl.style.top = `${player.y}px`;
                 knightImageEl.style.width = `${player.width}px`;
                 knightImageEl.style.height = `${player.height}px`;
-
-                // Ensure visibility based on game state
                  if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                      if (knightImageEl.style.display === 'none') {
-                           knightImageEl.style.display = 'block';
-                      }
-                 } else {
-                      knightImageEl.style.display = 'none';
-                 }
+                      if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; }
+                 } else { knightImageEl.style.display = 'none'; }
             }
 
 
@@ -566,10 +533,10 @@
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.remove('hidden');
                 livesDisplay.classList.remove('hidden');
-                knightImageEl.style.display = 'block'; // Show knight
+                knightImageEl.style.display = 'block';
                 knightImageEl.style.opacity = '1';
-                currentKnightVisualState = null; // Force visual update on first frame
-                updateKnightVisuals(); // Set initial visual state
+                currentKnightVisualState = null;
+                updateKnightVisuals();
                 playSound('start');
                 lastTime = performance.now();
             }
@@ -584,9 +551,8 @@
             function handleJumpInput() { /* ... */
                 if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) {
                     player.dy = player.jumpPower;
-                    player.grounded = false; // Player is no longer grounded
+                    player.grounded = false;
                     playSound('jump');
-                    // Visual state will be updated in updateKnightVisuals
                 }
             }
 
@@ -636,39 +602,30 @@
              }
 
 
-            // --- MODIFIED: Initial Setup (Checks both knight assets) ---
-            function initGame() {
+            function initGame() { /* ... */
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
-
-                // Check if required knight assets loaded
                 if (!assets.knight_run.loaded || !assets.knight_jump.loaded) {
                      console.error("Knight run/jump assets failed to load! Cannot start.");
-                     // Display a more permanent error message on screen?
                      alert("Error: Essential knight images failed to load. Please check paths or refresh.");
-                     return; // Stop initialization
+                     return;
                 }
-
                 loadHighScore();
-                resizeCanvas(); // Sets initial sizes and calls resetGame
-
+                resizeCanvas();
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.add('hidden');
                 livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
-                knightImageEl.style.display = 'none'; // Start hidden
+                knightImageEl.style.display = 'none';
 
-
-                 // Attach Event Listeners
                  startButton.removeEventListener('click', startGame);
                  restartButton.removeEventListener('click', restartGame);
                  document.removeEventListener('keydown', handleKeyDown);
                  gameContainer.removeEventListener('touchstart', handleScreenTouch);
                  window.removeEventListener('resize', resizeCanvas);
                  closePoiButton.removeEventListener('click', closePoiOverlay);
-
                  console.log("Attaching listeners...");
                  startButton.addEventListener('click', startGame);
                  restartButton.addEventListener('click', restartGame);
