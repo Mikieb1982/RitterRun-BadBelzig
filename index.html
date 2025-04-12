@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Test POI Display CSS)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Higher Jump)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -90,8 +90,8 @@
             margin: 10px 0;
         }
 
-        /* Improved Button Styling */
-        .ui-screen button {
+        /* General Button Styling (used for Start/Restart) */
+        .ui-button {
             padding: 15px 30px;
             font-size: 1.1em; /* Adjusted for pixel font */
             font-family: var(--font-pixel); /* Ensure pixel font */
@@ -105,11 +105,11 @@
             box-shadow: 4px 4px 0px var(--bb-black); /* Pixel shadow */
         }
 
-        .ui-screen button:hover {
+        .ui-button:hover {
             background-color: #ddd;
         }
 
-        .ui-screen button:active {
+        .ui-button:active {
             background-color: #ccc;
             transform: translate(2px, 2px); /* Button press effect */
             box-shadow: 2px 2px 0px var(--bb-black);
@@ -134,7 +134,7 @@
             z-index: 20;
         }
 
-        /* --- MODIFIED: POI Overlay Styling (Using display none/block) --- */
+        /* POI Overlay Styling */
         .poi-overlay {
             position: absolute;
             top: 20px;
@@ -145,30 +145,18 @@
             background-color: rgba(0, 0, 0, 0.85);
             border: 3px solid var(--bb-yellow);
             border-radius: 0;
-            z-index: 50; /* Should be highest */
+            z-index: 50;
             color: var(--bb-white);
             padding: 15px 20px;
             text-align: center;
             font-family: var(--font-pixel);
             box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
-            /* Hide by default using display: none */
-            display: none;
-            /* Remove opacity/visibility/transition for this test */
-            /* opacity: 0; */
-            /* visibility: hidden; */
-            /* transition: opacity 0.4s ease, visibility 0.4s ease; */
-            /* pointer-events: none; */
+            display: none; /* Hidden by default */
         }
 
         .poi-overlay.visible {
-            /* Show by setting display: block */
-            display: block !important; /* Use !important to ensure override */
-             /* Remove opacity/visibility changes */
-            /* opacity: 1; */
-            /* visibility: visible; */
-            /* pointer-events: auto; */
+            display: block !important; /* Show when visible class is added */
         }
-        /* --- END MODIFICATION --- */
 
         .poi-overlay h3 {
             margin-bottom: 10px;
@@ -179,9 +167,31 @@
 
         .poi-overlay p {
             font-size: 0.9em;
-            line-height: 1.5;
+            line-height: 1.6; /* Increased line height */
             color: var(--bb-white);
+            margin-bottom: 15px; /* Add space before button */
         }
+
+        /* Styling for the new Close button */
+        #closePoiButton {
+             padding: 8px 15px;
+             font-size: 0.9em; /* Slightly smaller */
+             font-family: var(--font-pixel);
+             cursor: pointer;
+             background-color: #ccc;
+             border: 2px solid var(--bb-black);
+             color: var(--bb-black);
+             margin-top: 10px; /* Space above button */
+             box-shadow: 2px 2px 0px var(--bb-black);
+        }
+         #closePoiButton:hover {
+             background-color: #bbb;
+         }
+         #closePoiButton:active {
+             background-color: #aaa;
+             transform: translate(1px, 1px);
+             box-shadow: 1px 1px 0px var(--bb-black);
+         }
 
         /* Utility class to hide elements reliably */
         .hidden {
@@ -192,15 +202,17 @@
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <div id="poiInfoOverlay" class="poi-overlay"> <h3 id="poiName">POI Name</h3>
+
+        <div id="poiInfoOverlay" class="poi-overlay">
+            <h3 id="poiName">POI Name</h3>
             <p id="poiInfoText">POI information will appear here.</p>
-        </div>
+            <button id="closePoiButton">Close</button> </div>
 
         <div id="startScreen" class="ui-screen">
             <h1>RitterRun</h1>
             <p>Explore Bad Belzig!</p>
             <p>High Score: <span id="startHighScore">0</span></p>
-            <button id="startButton">Start Game</button>
+            <button id="startButton" class="ui-button">Start Game</button>
             <p class="instructions">Press SPACE or Click Start<br>Press SPACE to Jump</p>
         </div>
 
@@ -208,7 +220,7 @@
             <h2>Game Over!</h2>
             <p>Score: <span id="finalScore">0</span></p>
             <p>High Score: <span id="gameOverHighScore">0</span></p>
-            <button id="restartButton">Restart</button>
+             <button id="restartButton" class="ui-button">Restart</button>
         </div>
 
         <div id="scoreDisplay" class="hidden">Score: <span id="currentScore">0</span></div>
@@ -234,6 +246,7 @@
             const poiOverlay = document.getElementById('poiInfoOverlay');
             const poiNameEl = document.getElementById('poiName');
             const poiInfoTextEl = document.getElementById('poiInfoText');
+            const closePoiButton = document.getElementById('closePoiButton');
 
             // --- Canvas and Context ---
             let ctx;
@@ -248,7 +261,7 @@
             }
             ctx = canvas.getContext('2d');
 
-            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl };
+            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton };
             for (const key in requiredElements) {
                 if (!requiredElements[key]) {
                     console.error(`Fatal Error: UI element with ID '${key}' not found in index.html!`);
@@ -270,544 +283,12 @@
             const PLAYER_WIDTH = 40;
             const PLAYER_HEIGHT = 40;
             const PLAYER_GRAVITY = 0.65;
-            const PLAYER_JUMP_POWER = -14;
+            // --- MODIFIED: Increased Jump Power ---
+            const PLAYER_JUMP_POWER = -16; // Was -14. More negative = higher jump.
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
             const OBSTACLE_STONE_WIDTH = 35;
             const OBSTACLE_STONE_HEIGHT = 35;
             const OBSTACLE_TRACTOR_WIDTH = 70;
             const OBSTACLE_TRACTOR_HEIGHT = 45;
             const POI_SIGN_WIDTH = 90;
-            const POI_SIGN_HEIGHT = 110;
-            const INITIAL_GAME_SPEED = 300;
-            const SPEED_INCREASE_INTERVAL_SCORE = 400;
-            const SPEED_INCREASE_AMOUNT = 20;
-            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
-            const POI_SPAWN_CHANCE = 0.15;
-            const POI_DISPLAY_DURATION_MS = 6000;
-            const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
-            const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
-            const COLLISION_LANDING_TOLERANCE = 18;
-
-            // --- Game Variables ---
-            let score = 0;
-            let highScore = 0;
-            let player = { x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dx: 0, dy: 0, grounded: true };
-            let obstacles = [];
-            let gameSpeed = INITIAL_GAME_SPEED;
-            let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-            let bgX = 0;
-            let currentBackgroundIndex = 0;
-            let nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-            let nextObstacleSpawnTime = 0;
-            let nextPoiIndex = 0;
-            let poiTimeoutId = null;
-            let lastTime = 0;
-            let gameInitialized = false;
-
-            // --- Graphics Assets ---
-            const assets = {
-                knight: { img: new Image(), loaded: false, src: 'assets/knight_placeholder.png' },
-                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-                sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
-                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
-                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
-                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
-                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }
-            };
-            const numBackgrounds = 3;
-            let assetsLoadedCount = 0;
-            let totalAssets = Object.keys(assets).length;
-            let allAssetsLoaded = false;
-
-            // --- Obstacle/POI Definitions ---
-            const regularObstacleTypes = [
-                { assetKey: 'stone', width: OBSTACLE_STONE_WIDTH, height: OBSTACLE_STONE_HEIGHT },
-                { assetKey: 'tractor', width: OBSTACLE_TRACTOR_WIDTH, height: OBSTACLE_TRACTOR_HEIGHT }
-            ];
-            const poiSignDimensions = { width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT };
-
-            // --- POI Data Structure ---
-            const poiData = [
-                { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. | Eine gut erhaltene mittelalterliche Burg über Bad Belzig." },
-                { id: 2, name: "SteinTherme", info: "Modern thermal baths known for their saltwater pools. | Moderne Thermalbäder, bekannt für ihre Solebecken." },
-                { id: 3, name: "Historisches Stadtzentrum", info: "Explore the charming old town with its historic buildings. | Erkunden Sie die charmante Altstadt mit ihren historischen Gebäuden." },
-                { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813). | Erinnert an die Schlacht bei Hagelberg (1813)." },
-                { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig. | Museum gewidmet dem Künstler Roger Loewig." },
-                { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "Information center for the Hoher Fläming nature park. | Infozentrum für den Naturpark Hoher Fläming." },
-            ];
-
-            // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) { /* ... (no changes) ... */
-                console.log(`Asset loaded: ${assetKey}`);
-                assets[assetKey].loaded = true;
-                assetsLoadedCount++;
-                if (assetsLoadedCount === totalAssets) {
-                    console.log("All assets loaded.");
-                    allAssetsLoaded = true;
-                    if (currentGameState === GameState.LOADING) {
-                        initGame();
-                    }
-                }
-            }
-            function assetLoadError(assetKey) { /* ... (no changes) ... */
-                console.error(`Failed to load asset: ${assets[assetKey].src}. Check path and file existence.`);
-                alert(`Error loading image: ${assets[assetKey].src}\nGame might not display correctly.`);
-                 assetsLoadedCount++;
-                 if (assetsLoadedCount === totalAssets) {
-                     allAssetsLoaded = true;
-                     if (currentGameState === GameState.LOADING) {
-                         initGame();
-                     }
-                 }
-            }
-            function loadAssets() { /* ... (no changes) ... */
-                console.log("Starting asset loading...");
-                currentGameState = GameState.LOADING;
-                for (const key in assets) {
-                    if (Object.prototype.hasOwnProperty.call(assets, key) && assets[key].img) {
-                        assets[key].img.src = assets[key].src;
-                        assets[key].img.onload = () => assetLoaded(key);
-                        assets[key].img.onerror = () => assetLoadError(key);
-                    }
-                }
-            }
-
-            // --- High Score Handling ---
-            function loadHighScore() { /* ... (no changes) ... */
-                try {
-                    const savedScore = localStorage.getItem('ritterRunHighScore');
-                    highScore = savedScore ? parseInt(savedScore, 10) : 0;
-                    if (isNaN(highScore)) highScore = 0;
-                    startHighScoreSpan.textContent = highScore;
-                    gameOverHighScoreSpan.textContent = highScore;
-                } catch (e) {
-                    console.error("LocalStorage Error (Load High Score):", e);
-                    highScore = 0;
-                }
-            }
-            function saveHighScore() { /* ... (no changes) ... */
-                if (score > highScore) {
-                    highScore = score;
-                    try {
-                        localStorage.setItem('ritterRunHighScore', highScore.toString());
-                        gameOverHighScoreSpan.textContent = highScore;
-                    } catch (e) {
-                        console.error("LocalStorage Error (Save High Score):", e);
-                    }
-                }
-            }
-
-            // --- Sound Playing Helper (Stub) ---
-            function playSound(soundId) {
-                 console.log(`Playing sound: ${soundId}`);
-            }
-
-            // --- Reset Game Variables ---
-            function resetGame() { /* ... (no changes) ... */
-                score = 0;
-                obstacles = [];
-                gameSpeed = INITIAL_GAME_SPEED;
-                nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-                bgX = 0;
-                currentBackgroundIndex = 0;
-                nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-                player.y = canvasHeight - PLAYER_HEIGHT - GROUND_HEIGHT;
-                player.dy = 0;
-                player.grounded = true;
-                currentScoreSpan.textContent = score;
-                nextObstacleSpawnTime = 0;
-                nextPoiIndex = 0;
-                if (poiTimeoutId) { clearTimeout(poiTimeoutId); poiTimeoutId = null; }
-                poiOverlay.classList.remove('visible'); // Ensure class is removed
-                console.log("Game Reset");
-            }
-
-            // --- Update Functions ---
-            function updatePlayer(dt) { /* ... (no changes) ... */
-                if (!player.grounded) {
-                    player.dy += PLAYER_GRAVITY;
-                    player.y += player.dy * dt * 60;
-                }
-                const groundLevel = canvasHeight - GROUND_HEIGHT - player.height;
-                if (player.y >= groundLevel) {
-                    player.y = groundLevel;
-                    player.dy = 0;
-                    if (!player.grounded) {
-                        player.grounded = true;
-                    }
-                }
-            }
-
-             function updateObstacles(dt, currentTime) { /* ... (no changes, includes debug logs) ... */
-                 // --- Obstacle Spawning ---
-                 if (currentTime >= nextObstacleSpawnTime) {
-                    let newObjectData = null;
-                    const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
-                    const canSpawnPOI = poiData.length > nextPoiIndex && assets.sign.loaded;
-                    // console.log(`Checking POI spawn: willSpawn=${willSpawnPOI}, canSpawn=${canSpawnPOI}`);
-                    const spawnPOI = willSpawnPOI && canSpawnPOI;
-
-                    if (spawnPOI) {
-                        console.log(`Spawning POI: Index ${nextPoiIndex}`);
-                        const poi = poiData[nextPoiIndex];
-                        newObjectData = {
-                            isPOI: true, poiId: poi.id, passed: false,
-                            x: canvasWidth, y: canvasHeight - POI_SIGN_HEIGHT - GROUND_HEIGHT,
-                            width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT, assetKey: 'sign'
-                        };
-                        nextPoiIndex++;
-                    } else {
-                        if (regularObstacleTypes.length > 0) {
-                            const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
-                            const type = regularObstacleTypes[typeIndex];
-                            if (assets[type.assetKey] && assets[type.assetKey].loaded) {
-                                newObjectData = {
-                                    isPOI: false,
-                                    x: canvasWidth, y: canvasHeight - type.height - GROUND_HEIGHT,
-                                    width: type.width, height: type.height, assetKey: type.assetKey,
-                                    isKnocked: false
-                                };
-                            } else { console.warn(`Asset not loaded for obstacle type: ${type.assetKey}, skipping spawn.`); }
-                        }
-                    }
-                    if (newObjectData) {
-                        // console.log("Spawned Object:", JSON.stringify(newObjectData));
-                        obstacles.push(newObjectData);
-                    }
-                    const speedFactor = gameSpeed / INITIAL_GAME_SPEED;
-                    const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / speedFactor;
-                    const nextSpawnDelay = Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, currentSpawnTime) + (Math.random() * 300 - 150);
-                    nextObstacleSpawnTime = currentTime + nextSpawnDelay;
-                }
-
-                // --- Obstacle Movement, POI Triggering & Knock Off ---
-                const speedPxPerMs = gameSpeed / 1000;
-                const movement = speedPxPerMs * (dt * 1000);
-
-                for (let i = obstacles.length - 1; i >= 0; i--) {
-                    const obj = obstacles[i];
-                    if (obj.isKnocked) {
-                        obj.y += 500 * dt;
-                    } else {
-                        obj.x -= movement;
-                    }
-                    if (obj.isPOI && !obj.passed) {
-                         // console.log(`Checking POI trigger for ID ${obj.poiId} at x=${obj.x.toFixed(1)}`);
-                         const triggerPoint = obj.x;
-                         const playerRightEdge = player.x + player.width;
-                         // console.log(`   PlayerRight=${playerRightEdge.toFixed(1)}, TriggerPoint=${triggerPoint.toFixed(1)}`);
-                         if (playerRightEdge > triggerPoint) {
-                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`);
-                            displayPOIInfo(obj.poiId);
-                            obj.passed = true;
-                            score += 50;
-                            currentScoreSpan.textContent = score;
-                            playSound('poi');
-                        }
-                    }
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
-                         // console.log(`Removing obstacle: ${obj.assetKey} (isPOI: ${obj.isPOI}) at x=${obj.x}, y=${obj.y}`);
-                         obstacles.splice(i, 1);
-                    }
-                }
-            }
-
-
-            function checkCollisions() { /* ... (no changes) ... */
-                const playerRect = {
-                    x: player.x + 5, y: player.y + 5,
-                    width: player.width - 10, height: player.height - 10,
-                    bottom: player.y + player.height,
-                    right: player.x + player.width
-                };
-
-                for (const obstacle of obstacles) {
-                    if (obstacle.isPOI || obstacle.isKnocked) {
-                        continue;
-                    }
-                    const obstacleRect = {
-                        x: obstacle.x, y: obstacle.y,
-                        width: obstacle.width, height: obstacle.height,
-                        top: obstacle.y, right: obstacle.x + obstacle.width
-                    };
-                    if (playerRect.x < obstacleRect.right &&
-                        playerRect.right > obstacleRect.x &&
-                        playerRect.y < obstacleRect.y + obstacleRect.height &&
-                        playerRect.bottom > obstacleRect.top)
-                    {
-                        const isFalling = player.dy >= 0;
-                        const landedOnTop = playerRect.bottom >= obstacleRect.top &&
-                                            playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
-                        if (isFalling && landedOnTop) {
-                             console.log(`Collision: TOP on ${obstacle.assetKey}`);
-                             return { type: CollisionType.TOP, obstacle: obstacle };
-                        }
-                        console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
-                        playSound('hit');
-                        return { type: CollisionType.SIDE };
-                    }
-                }
-                return { type: CollisionType.NONE };
-            }
-
-
-            function updateScoreAndSpeed() { /* ... (no changes) ... */
-                score++;
-                currentScoreSpan.textContent = score;
-                if (score >= nextSpeedIncreaseScore) {
-                    gameSpeed += SPEED_INCREASE_AMOUNT;
-                    nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE;
-                    console.log(`Speed increased to: ${gameSpeed.toFixed(1)}`);
-                }
-                if (score >= nextBackgroundSwitchScore) {
-                    currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds;
-                    nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL;
-                    console.log(`Background switched to index: ${currentBackgroundIndex}`);
-                }
-            }
-
-            // --- Draw Functions ---
-            function drawBackground(dt) { /* ... (no changes) ... */
-                const currentBgIndex = currentBackgroundIndex + 1;
-                const currentAssetKey = `background${currentBgIndex}`;
-                const currentAsset = assets[currentAssetKey];
-                const bgMovement = (gameSpeed / 2) * dt;
-                bgX -= bgMovement;
-                if (bgX <= -canvasWidth) { bgX += canvasWidth; }
-
-                if (currentAsset && currentAsset.loaded) {
-                    ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                } else {
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                }
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(0, canvasHeight - GROUND_HEIGHT, canvasWidth, GROUND_HEIGHT);
-            }
-            function drawPlayer() { /* ... (no changes) ... */
-                if (assets.knight.loaded) {
-                    ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
-                } else {
-                    ctx.fillStyle = 'grey';
-                    ctx.fillRect(player.x, player.y, player.width, player.height);
-                }
-            }
-            function drawObstacles() { /* ... (no changes) ... */
-                for (const obj of obstacles) {
-                    let drawWidth, drawHeight;
-                    if (obj.isPOI) {
-                        drawWidth = POI_SIGN_WIDTH;
-                        drawHeight = POI_SIGN_HEIGHT;
-                    } else {
-                        drawWidth = obj.width;
-                        drawHeight = obj.height;
-                    }
-                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, drawWidth, drawHeight);
-                    } else {
-                        ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
-                        ctx.fillRect(obj.x, obj.y, drawWidth, drawHeight);
-                    }
-                }
-            }
-
-            // --- MODIFIED: Display POI Info (Using classList add/remove) ---
-            function displayPOIInfo(poiId) {
-                 const poi = poiData.find(p => p.id === poiId);
-                 if (!poi) {
-                     console.warn(`POI data not found for ID: ${poiId}`);
-                     return;
-                 }
-
-                 console.log(`>>> Called displayPOIInfo for ID: ${poiId}, Name: ${poi.name}`);
-                 poiNameEl.textContent = poi.name;
-                 poiInfoTextEl.textContent = poi.info;
-
-                 // Make overlay visible using CSS class
-                 poiOverlay.classList.add('visible'); // JS adds the class
-                 console.log(">>> Added 'visible' class to poiOverlay. CSS should now make it display: block.");
-
-                 // Clear previous timeout if one exists
-                 if (poiTimeoutId) { clearTimeout(poiTimeoutId); }
-
-                 // Set a timer to automatically hide the overlay by removing the class
-                 poiTimeoutId = setTimeout(() => {
-                     poiOverlay.classList.remove('visible'); // JS removes the class
-                     console.log(`>>> Hiding POI ID: ${poiId} after timeout by removing 'visible' class.`);
-                     poiTimeoutId = null;
-                 }, POI_DISPLAY_DURATION_MS);
-            }
-
-
-            // --- Game Loop ---
-            function gameLoop(timestamp) { /* ... (no changes) ... */
-                 const dt = (timestamp - lastTime) / 1000 || 0;
-                 lastTime = timestamp;
-
-                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                 drawBackground(dt);
-
-                let collisionHandledThisFrame = false;
-
-                if (currentGameState === GameState.PLAYING) {
-                    const collisionResult = checkCollisions();
-
-                    if (collisionResult.type === CollisionType.SIDE) {
-                        currentGameState = GameState.GAME_OVER;
-                        saveHighScore();
-                        finalScoreSpan.textContent = score;
-                        gameOverHighScoreSpan.textContent = highScore;
-                        gameOverScreen.classList.remove('hidden');
-                        scoreDisplay.classList.add('hidden');
-                        if (poiTimeoutId) clearTimeout(poiTimeoutId);
-                        poiOverlay.classList.remove('visible');
-                        collisionHandledThisFrame = true;
-
-                    } else if (collisionResult.type === CollisionType.TOP) {
-                        player.y = collisionResult.obstacle.y - player.height;
-                        player.dy = PLAYER_JUMP_POWER * PLAYER_BOUNCE_POWER_MULTIPLIER;
-                        player.grounded = false;
-                        playSound('bounce');
-                        collisionResult.obstacle.isKnocked = true;
-                        console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
-                        updatePlayer(dt);
-                        collisionHandledThisFrame = true;
-                    }
-
-                    if (!collisionHandledThisFrame) {
-                        updatePlayer(dt);
-                    }
-
-                    if (currentGameState === GameState.PLAYING) {
-                        updateObstacles(dt, timestamp);
-                        updateScoreAndSpeed();
-                        drawPlayer();
-                        drawObstacles();
-                    }
-                }
-
-                 if (currentGameState === GameState.MENU || currentGameState === GameState.GAME_OVER) {
-                     drawPlayer();
-                     if (currentGameState === GameState.GAME_OVER) {
-                         drawObstacles();
-                     }
-                 } else if (currentGameState === GameState.LOADING) {
-                     ctx.fillStyle = 'white';
-                     ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel');
-                     ctx.textAlign = 'center';
-                     ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
-                 }
-
-                requestAnimationFrame(gameLoop); // Keep loop running
-            }
-
-
-            // --- Game State Changers / Event Handlers ---
-            function startGame() { /* ... (no changes) ... */
-                if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
-                console.log("Starting Game...");
-                resetGame();
-                currentGameState = GameState.PLAYING;
-                startScreen.classList.add('hidden');
-                gameOverScreen.classList.add('hidden');
-                scoreDisplay.classList.remove('hidden');
-                playSound('start');
-                lastTime = performance.now();
-                requestAnimationFrame(gameLoop);
-            }
-            function restartGame() { /* ... (no changes) ... */
-                if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
-                console.log("Restarting Game...");
-                startGame();
-            }
-            function handleJumpInput() { /* ... (no changes) ... */
-                if (currentGameState === GameState.PLAYING && player.grounded) {
-                    player.dy = PLAYER_JUMP_POWER;
-                    player.grounded = false;
-                    playSound('jump');
-                }
-            }
-
-            // --- Input Event Handlers ---
-            function handleKeyDown(e) { /* ... (no changes) ... */
-                 if (e.key === ' ' || e.code === 'Space') {
-                    e.preventDefault();
-                    if (!allAssetsLoaded) return;
-                    switch (currentGameState) {
-                        case GameState.PLAYING: handleJumpInput(); break;
-                        case GameState.MENU: startGame(); break;
-                        case GameState.GAME_OVER: restartGame(); break;
-                    }
-                }
-            }
-            function handleScreenTouch(e) { /* ... (no changes) ... */
-                 e.preventDefault();
-                 if (!allAssetsLoaded) return;
-                 switch (currentGameState) {
-                     case GameState.PLAYING: handleJumpInput(); break;
-                     case GameState.MENU:
-                         if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); }
-                         break;
-                     case GameState.GAME_OVER:
-                         if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); }
-                         break;
-                 }
-            }
-
-             // --- Resize Handling ---
-             function resizeCanvas() { /* ... (no changes) ... */
-                 const containerWidth = gameContainer.clientWidth;
-                 const containerHeight = containerWidth / 2;
-                 canvasWidth = containerWidth;
-                 canvasHeight = containerHeight;
-                 canvas.width = canvasWidth;
-                 canvas.height = canvasHeight;
-                 gameContainer.style.height = `${containerHeight}px`;
-                 console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`);
-                 if (gameInitialized) {
-                     resetGame();
-                 }
-             }
-
-
-            // --- Initial Setup ---
-            function initGame() { /* ... (no changes) ... */
-                if (gameInitialized || !allAssetsLoaded) return;
-                console.log("Initializing Game...");
-                gameInitialized = true;
-                loadHighScore();
-                startScreen.classList.remove('hidden');
-                gameOverScreen.classList.add('hidden');
-                scoreDisplay.classList.add('hidden');
-                poiOverlay.classList.remove('visible'); // Ensure hidden initially
-                 resizeCanvas();
-
-                 startButton.removeEventListener('click', startGame);
-                 restartButton.removeEventListener('click', restartGame);
-                 document.removeEventListener('keydown', handleKeyDown);
-                 gameContainer.removeEventListener('touchstart', handleScreenTouch);
-                 window.removeEventListener('resize', resizeCanvas);
-
-                 startButton.addEventListener('click', startGame);
-                 restartButton.addEventListener('click', restartGame);
-                 document.addEventListener('keydown', handleKeyDown);
-                 gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false });
-                 window.addEventListener('resize', resizeCanvas);
-
-                 console.log("Event listeners attached.");
-                 currentGameState = GameState.MENU;
-                 lastTime = performance.now();
-                 requestAnimationFrame(gameLoop); // Start loop only once initialized
-            }
-
-            // --- Start Asset Loading ---
-            document.addEventListener('DOMContentLoaded', () => { /* ... (no changes) ... */
-                console.log("DOM Ready. Starting asset load.");
-                loadAssets();
-            });
-
-        })(); // End of IIFE
-    </script>
-</body>
-</html>
+            const POI_SIGN_HEIGH
