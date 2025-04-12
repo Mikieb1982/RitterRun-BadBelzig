@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Fix totalAssets Error)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Adjust Jump & Test GIF)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -197,7 +197,8 @@
             const PLAYER_WIDTH_PERCENT = 0.05;
             const PLAYER_HEIGHT_PERCENT = 0.10;
             const PLAYER_GRAVITY_FACTOR = 1300;
-            const PLAYER_JUMP_FACTOR = -28;
+            // --- MODIFIED: Jump Factor (Reduced jump height) ---
+            const PLAYER_JUMP_FACTOR = -40; // Was -28
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
             const OBSTACLE_STONE_WIDTH_PERCENT = 0.044;
             const OBSTACLE_STONE_HEIGHT_PERCENT = 0.088;
@@ -248,7 +249,6 @@
             };
             const numBackgrounds = 3;
             let assetsLoadedCount = 0;
-            // --- FIXED: Declare totalAssets with let ---
             let totalAssets = Object.keys(assets).length;
             let allAssetsLoaded = false;
 
@@ -257,14 +257,13 @@
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
-            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. | Eine gut erhaltene mittelalterliche Burg über Bad Belzig." }, { id: 2, name: "SteinTherme", info: "Modern thermal baths known for their saltwater pools. | Moderne Thermalbäder, bekannt für ihre Solebecken." }, { id: 3, name: "Historisches Stadtzentrum", info: "Explore the charming old town with its historic buildings. | Erkunden Sie die charmante Altstadt mit ihren historischen Gebäuden." }, { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813). | Erinnert an die Schlacht bei Hagelberg (1813)." }, { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig. | Museum gewidmet dem Künstler Roger Loewig." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "Information center for the Hoher Fläming nature park. | Infozentrum für den Naturpark Hoher Fläming." }, ];
+            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "..." }, { id: 2, name: "SteinTherme", info: "..." }, { id: 3, name: "Historisches Stadtzentrum", info: "..." }, { id: 4, name: "Hagelberg Memorial", info: "..." }, { id: 5, name: "Roger Loewig Museum", info: "..." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "..." }, ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) {
+            function assetLoaded(assetKey) { /* ... */
                 console.log(`Asset loaded: ${assetKey}`);
                 assets[assetKey].loaded = true;
                 assetsLoadedCount++;
-                // Use the correctly declared totalAssets variable
                 if (assetsLoadedCount === totalAssets) {
                     console.log("All assets loaded.");
                     allAssetsLoaded = true;
@@ -331,7 +330,7 @@
                 player.y = canvasHeight - groundHeightPx - player.height;
                 player.dy = 0;
                 player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR;
-                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
+                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR; // Uses new factor
                 player.grounded = true;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
                 bgX = 0;
@@ -450,26 +449,55 @@
                 }
             }
 
-            function updateKnightVisuals() { /* ... */
+            // --- MODIFIED: updateKnightVisuals (Forced run GIF for testing) ---
+            function updateKnightVisuals() {
                 const now = performance.now();
-                let targetState = player.grounded ? 'run' : 'jump';
-                let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
+                // --- Temporarily force run animation for testing ---
+                let targetState = 'run'; // Force 'run' state
+                let targetSrc = assets.knight_run.src; // Force run src
+
+                // --- Original logic (commented out for test) ---
+                // let targetState = player.grounded ? 'run' : 'jump';
+                // let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src;
+                // --- End Original logic ---
+
+
+                // Only change src if the state is different or image not set yet
                 if (targetState !== currentKnightVisualState || knightImageEl.src === '') {
+                     // Check if the target asset is loaded before changing src
                     if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) {
                         knightImageEl.src = targetSrc;
                         currentKnightVisualState = targetState;
+                        console.log(`Set knight visual state to: ${targetState}`); // Log state change
+                    } else {
+                         // console.warn(`Knight asset for state '${targetState}' not loaded yet.`);
                     }
                 }
+
+
+                // Handle invincibility flashing
                 let currentOpacity = 1;
-                if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } }
+                if (now < playerInvincibleUntil) {
+                    if (Math.floor(now / 100) % 2 !== 0) {
+                        currentOpacity = 0.4;
+                    }
+                }
                 knightImageEl.style.opacity = currentOpacity;
+
+                // Update position and size
                 knightImageEl.style.left = `${player.x}px`;
                 knightImageEl.style.top = `${player.y}px`;
                 knightImageEl.style.width = `${player.width}px`;
                 knightImageEl.style.height = `${player.height}px`;
+
+                // Ensure visibility based on game state
                  if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                      if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; }
-                 } else { knightImageEl.style.display = 'none'; }
+                      if (knightImageEl.style.display === 'none') {
+                           knightImageEl.style.display = 'block';
+                      }
+                 } else {
+                      knightImageEl.style.display = 'none';
+                 }
             }
 
 
