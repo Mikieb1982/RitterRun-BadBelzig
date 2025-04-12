@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <title>RitterRun Enhanced - Bad Belzig (Orientation Lock)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RitterRun Enhanced - Bad Belzig (Animated GIF Knight)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -13,8 +14,8 @@
         html, body {
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Prevent scrollbars on body */
-            background-color: #222; /* Dark background */
+            overflow: hidden;
+            background-color: #222;
         }
 
         /* Define Bad Belzig Color Palette as CSS Variables */
@@ -24,8 +25,8 @@
             --bb-yellow: #f5d306;
             --bb-black: #151513;
             --bb-white: #ffffff;
-            --font-pixel: 'Press Start 2P', cursive; /* Pixel font */
-            --font-sans: 'Arial', sans-serif; /* Fallback font */
+            --font-pixel: 'Press Start 2P', cursive;
+            --font-sans: 'Arial', sans-serif;
         }
 
         body {
@@ -33,7 +34,7 @@
             justify-content: center;
             align-items: center;
             margin: 0;
-            font-family: var(--font-sans); /* Default font */
+            font-family: var(--font-sans);
         }
 
         /* Game Container for Responsive Sizing */
@@ -42,14 +43,12 @@
             border: 3px solid #555;
             overflow: hidden;
             background-color: var(--bb-blue);
-            /* Use viewport units, maintain 2:1 aspect ratio */
             width: 100vw;
             height: 50vw; /* height = width / 2 */
-            /* Constrain dimensions to viewport */
             max-height: 100vh;
             max-width: 200vh; /* width = height * 2 */
             box-sizing: border-box;
-            display: block; /* Default display state */
+            display: block;
         }
 
         canvas {
@@ -58,25 +57,21 @@
             height: 100%;
         }
 
-        /* UI Screen Styling (Start/Game Over) */
-        .ui-screen {
+        /* --- NEW: Knight Image Styling --- */
+        #knightImage {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: var(--bb-white);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 30;
-            padding: 20px;
-            font-family: var(--font-pixel);
-            line-height: 1.6;
+            display: none; /* Hidden initially */
+            /* Prevent image from interfering with clicks/touches on canvas */
+            pointer-events: none;
+            /* Adjust z-index as needed, should be above canvas, below overlays */
+            z-index: 10;
+            /* Optional: Improve rendering on some browsers */
+            image-rendering: pixelated; /* or crisp-edges */
         }
+        /* --- END NEW --- */
+
+        /* UI Screen Styling */
+        .ui-screen { /* ... */ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-pixel); line-height: 1.6; }
         .ui-screen h1 { /* ... */ font-size: 2.5em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 3px 3px 0px var(--bb-black); }
         .ui-screen h2 { /* ... */ font-size: 2.2em; margin-bottom: 20px; color: #DC143C; text-shadow: 3px 3px 0px var(--bb-black); }
         .ui-screen p { /* ... */ font-size: 1em; margin: 10px 0; }
@@ -104,50 +99,13 @@
         /* Utility class to hide elements */
         .hidden { display: none !important; }
 
-        /* --- NEW: Orientation Message Styling --- */
-        #orientationMessage {
-            position: fixed; /* Cover entire viewport */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bb-black);
-            color: var(--bb-white);
-            display: flex; /* Use flex for centering */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 100; /* Ensure it's above everything */
-            font-family: var(--font-pixel);
-            padding: 20px;
-            line-height: 1.8;
-            font-size: 1.2em;
-            display: none; /* Hidden by default */
-        }
-         #orientationMessage p {
-             margin-bottom: 1em; /* Space between languages */
-         }
+        /* Orientation Message Styling */
+        #orientationMessage { /* ... */ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
+        #orientationMessage p { margin-bottom: 1em; }
 
-        /* --- NEW: Media Queries for Orientation --- */
-        @media (orientation: portrait) {
-            #game-container {
-                display: none; /* Hide game in portrait */
-            }
-            #orientationMessage {
-                display: flex; /* Show message in portrait */
-            }
-        }
-
-        @media (orientation: landscape) {
-            #game-container {
-                display: block; /* Ensure game is shown in landscape (or flex/grid if needed) */
-            }
-            #orientationMessage {
-                display: none; /* Hide message in landscape */
-            }
-        }
-        /* --- END NEW --- */
+        /* Media Queries for Orientation */
+        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } }
+        @media (orientation: landscape) { #game-container { display: block; } #orientationMessage { display: none; } }
 
     </style>
 </head>
@@ -159,7 +117,7 @@
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <div id="poiInfoOverlay" class="poi-overlay">
+        <img id="knightImage" src="" alt="Knight"> <div id="poiInfoOverlay" class="poi-overlay">
             <h3 id="poiName">POI Name</h3>
             <p id="poiInfoText">POI information will appear here.</p>
             <button id="closePoiButton">Close</button>
@@ -204,7 +162,7 @@
             const closePoiButton = document.getElementById('closePoiButton');
             const livesDisplay = document.getElementById('livesDisplay');
             const currentLivesSpan = document.getElementById('currentLives');
-            // No reference needed for orientationMessage as it's CSS controlled
+            const knightImageEl = document.getElementById('knightImage'); // NEW: Knight Image Element
 
             // --- Canvas and Context ---
             let ctx;
@@ -214,8 +172,9 @@
             // --- Essential Element Check ---
             if (!canvas || !canvas.getContext || !gameContainer) { /* ... */ return; }
             ctx = canvas.getContext('2d');
-            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan };
-            for (const key in requiredElements) { if (!requiredElements[key]) { /* ... */ return; } }
+            // Add knightImageEl to the check
+            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl };
+            for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
             // --- Game States ---
             const GameState = Object.freeze({ MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', LOADING: 'LOADING' });
@@ -269,9 +228,9 @@
             let groundHeightPx = 0;
             let collisionLandingTolerancePx = 0;
 
-            // --- Graphics Assets ---
+            // --- MODIFIED: Graphics Assets (Updated knight src) ---
             const assets = {
-                knight: { img: new Image(), loaded: false, src: 'assets/knight_placeholder.png' },
+                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' }, // USE THE GIF
                 stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
                 sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
                 tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
@@ -285,21 +244,11 @@
             let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
-            const regularObstacleTypes = [
-                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
-                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }
-            ];
+            const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT } ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
-            const poiData = [
-                { id: 1, name: "Burg Eisenhardt", info: "A well-preserved medieval castle overlooking Bad Belzig. | Eine gut erhaltene mittelalterliche Burg über Bad Belzig." },
-                { id: 2, name: "SteinTherme", info: "Modern thermal baths known for their saltwater pools. | Moderne Thermalbäder, bekannt für ihre Solebecken." },
-                { id: 3, name: "Historisches Stadtzentrum", info: "Explore the charming old town with its historic buildings. | Erkunden Sie die charmante Altstadt mit ihren historischen Gebäuden." },
-                { id: 4, name: "Hagelberg Memorial", info: "Commemorates the Battle of Hagelberg (1813). | Erinnert an die Schlacht bei Hagelberg (1813)." },
-                { id: 5, name: "Roger Loewig Museum", info: "Museum dedicated to the artist Roger Loewig. | Museum gewidmet dem Künstler Roger Loewig." },
-                { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "Information center for the Hoher Fläming nature park. | Infozentrum für den Naturpark Hoher Fläming." },
-            ];
+            const poiData = [ /* ... */ { id: 1, name: "Burg Eisenhardt", info: "..." }, { id: 2, name: "SteinTherme", info: "..." }, { id: 3, name: "Historisches Stadtzentrum", info: "..." }, { id: 4, name: "Hagelberg Memorial", info: "..." }, { id: 5, name: "Roger Loewig Museum", info: "..." }, { id: 6, name: "Naturparkzentrum Hoher Fläming", info: "..." }, ];
 
             // --- Asset Loading Functions ---
             function assetLoaded(assetKey) { /* ... */
@@ -345,30 +294,20 @@
                     if (isNaN(highScore)) highScore = 0;
                     startHighScoreSpan.textContent = highScore;
                     gameOverHighScoreSpan.textContent = highScore;
-                } catch (e) {
-                    console.error("LocalStorage Error (Load High Score):", e);
-                    highScore = 0;
-                }
+                } catch (e) { console.error("LS Error Load HS:", e); highScore = 0; }
             }
             function saveHighScore() { /* ... */
                 if (score > highScore) {
                     highScore = score;
-                    try {
-                        localStorage.setItem('ritterRunHighScore', highScore.toString());
-                        gameOverHighScoreSpan.textContent = highScore;
-                    } catch (e) {
-                        console.error("LocalStorage Error (Save High Score):", e);
-                    }
+                    try { localStorage.setItem('ritterRunHighScore', highScore.toString()); gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Save HS:", e); }
                 }
             }
 
             // --- Sound Playing Helper (Stub) ---
-            function playSound(soundId) {
-                 console.log(`Playing sound: ${soundId}`);
-            }
+            function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- Reset Game Variables ---
-            function resetGame() { /* ... */
+            // --- MODIFIED: Reset Game Variables (Hide knight img) ---
+            function resetGame() {
                 score = 0;
                 playerLives = LIVES_START_COUNT;
                 playerInvincibleUntil = 0;
@@ -394,6 +333,7 @@
                 nextPoiIndex = 0;
                 isPaused = false;
                 poiOverlay.classList.remove('visible');
+                knightImageEl.style.display = 'none'; // Hide knight image on reset
                 console.log(`Game Reset - Speed: ${gameSpeed.toFixed(1)}, Player Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
             }
 
@@ -407,31 +347,21 @@
                 if (player.y >= groundLevel) {
                     player.y = groundLevel;
                     player.dy = 0;
-                    if (!player.grounded) {
-                        player.grounded = true;
-                    }
+                    if (!player.grounded) { player.grounded = true; }
                 }
             }
 
              function updateObstacles(dt, currentTime) { /* ... */
-                 // --- Obstacle Spawning ---
-                 if (currentTime >= nextObstacleSpawnTime) {
+                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null;
                     const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
                     const canSpawnPOI = poiData.length > nextPoiIndex && assets.sign.loaded;
                     const spawnPOI = willSpawnPOI && canSpawnPOI;
-
                     if (spawnPOI) {
-                        console.log(`Spawning POI: Index ${nextPoiIndex}`);
                         const poi = poiData[nextPoiIndex];
                         const objWidth = canvasWidth * poiSignDimensions.widthPercent;
                         const objHeight = canvasHeight * poiSignDimensions.heightPercent;
-                        newObjectData = {
-                            isPOI: true, poiId: poi.id, passed: false,
-                            x: canvasWidth,
-                            y: canvasHeight - groundHeightPx - objHeight,
-                            width: objWidth, height: objHeight, assetKey: 'sign'
-                        };
+                        newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' };
                         nextPoiIndex++;
                     } else {
                         if (regularObstacleTypes.length > 0) {
@@ -440,87 +370,42 @@
                             if (assets[type.assetKey] && assets[type.assetKey].loaded) {
                                 const objWidth = canvasWidth * type.widthPercent;
                                 const objHeight = canvasHeight * type.heightPercent;
-                                newObjectData = {
-                                    isPOI: false,
-                                    x: canvasWidth,
-                                    y: canvasHeight - groundHeightPx - objHeight,
-                                    width: objWidth, height: objHeight, assetKey: type.assetKey,
-                                    isKnocked: false
-                                };
-                            } else { console.warn(`Asset not loaded for obstacle type: ${type.assetKey}, skipping spawn.`); }
+                                newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false };
+                            }
                         }
                     }
-                    if (newObjectData) {
-                        obstacles.push(newObjectData);
-                    }
+                    if (newObjectData) { obstacles.push(newObjectData); }
                     const speedFactor = gameSpeed / (canvasWidth * INITIAL_GAME_SPEED_FACTOR);
                     const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / Math.max(1, speedFactor);
                     const nextSpawnDelay = Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, currentSpawnTime) + (Math.random() * 300 - 150);
                     nextObstacleSpawnTime = currentTime + nextSpawnDelay;
-                }
-
-                // --- Obstacle Movement, POI Triggering & Knock Off ---
-                const movement = gameSpeed * dt;
-
-                for (let i = obstacles.length - 1; i >= 0; i--) {
+                 }
+                 const movement = gameSpeed * dt;
+                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger, removal ... */
                     const obj = obstacles[i];
-                    if (obj.isKnocked) {
-                        obj.y += (canvasHeight * 1.25) * dt;
-                    } else {
-                        obj.x -= movement;
-                    }
+                    if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
                     if (obj.isPOI && !obj.passed) {
                          const triggerPoint = obj.x;
                          const playerRightEdge = player.x + player.width;
-                         if (playerRightEdge > triggerPoint) {
-                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`);
-                            displayPOIInfo(obj.poiId);
-                            obj.passed = true;
-                            score += 50;
-                            currentScoreSpan.textContent = score;
-                            playSound('poi');
-                        }
+                         if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); obj.passed = true; score += 50; currentScoreSpan.textContent = score; playSound('poi'); }
                     }
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
-                         obstacles.splice(i, 1);
-                    }
-                }
-            }
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
+                 }
+             }
 
 
             function checkCollisions() { /* ... */
                 const now = performance.now();
-                if (now < playerInvincibleUntil) {
-                    return { type: CollisionType.NONE };
-                }
-                const playerRect = {
-                    x: player.x + (player.width * 0.1),
-                    y: player.y + (player.height * 0.1),
-                    width: player.width * 0.8, height: player.height * 0.8,
-                    bottom: player.y + player.height,
-                    right: player.x + player.width
-                };
+                if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; }
+                const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width };
                 for (const obstacle of obstacles) {
                     if (obstacle.isPOI || obstacle.isKnocked) { continue; }
-                    const obstacleRect = {
-                        x: obstacle.x, y: obstacle.y,
-                        width: obstacle.width, height: obstacle.height,
-                        top: obstacle.y, right: obstacle.x + obstacle.width
-                    };
-                    if (playerRect.x < obstacleRect.right &&
-                        playerRect.right > obstacleRect.x &&
-                        playerRect.y < obstacleRect.y + obstacleRect.height &&
-                        playerRect.bottom > obstacleRect.top)
-                    {
+                    const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width };
+                    if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) {
                         const isFalling = player.dy >= 0;
-                        const landedOnTop = playerRect.bottom >= obstacleRect.top &&
-                                            playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
-                        if (isFalling && landedOnTop) {
-                             console.log(`Collision: TOP on ${obstacle.assetKey}`);
-                             return { type: CollisionType.TOP, obstacle: obstacle };
-                        }
-                        console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
-                        return { type: CollisionType.SIDE };
+                        const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
+                        if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; }
+                        console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE };
                     }
                 }
                 return { type: CollisionType.NONE };
@@ -530,16 +415,8 @@
             function updateScoreAndSpeed() { /* ... */
                 score++;
                 currentScoreSpan.textContent = score;
-                if (score >= nextSpeedIncreaseScore) {
-                    gameSpeed += canvasWidth * SPEED_INCREASE_AMOUNT_FACTOR;
-                    nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE;
-                    console.log(`Speed increased to: ${gameSpeed.toFixed(1)}`);
-                }
-                if (score >= nextBackgroundSwitchScore) {
-                    currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds;
-                    nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL;
-                    console.log(`Background switched to index: ${currentBackgroundIndex}`);
-                }
+                if (score >= nextSpeedIncreaseScore) { gameSpeed += canvasWidth * SPEED_INCREASE_AMOUNT_FACTOR; nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE; console.log(`Speed increased to: ${gameSpeed.toFixed(1)}`); }
+                if (score >= nextBackgroundSwitchScore) { currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds; nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; console.log(`Background switched to index: ${currentBackgroundIndex}`); }
             }
 
             // --- Draw Functions ---
@@ -550,42 +427,50 @@
                 const bgMovement = isPaused ? 0 : (gameSpeed / 2) * dt;
                 bgX -= bgMovement;
                 if (bgX <= -canvasWidth) { bgX += canvasWidth; }
+                if (currentAsset && currentAsset.loaded) { ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); }
+                else { ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); }
+                ctx.fillStyle = '#228B22'; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
+            }
 
-                if (currentAsset && currentAsset.loaded) {
-                    ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                } else {
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                }
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
-            }
-            function drawPlayer() { /* ... */
-                const now = performance.now();
-                let isVisible = true;
-                if (now < playerInvincibleUntil) {
-                    if (Math.floor(now / 100) % 2 !== 0) { isVisible = false; }
-                }
-                if (isVisible) {
-                    if (assets.knight.loaded) {
-                        ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
-                    } else {
-                        ctx.fillStyle = 'grey';
-                        ctx.fillRect(player.x, player.y, player.width, player.height);
-                    }
-                }
-            }
+            // --- REMOVED: drawPlayer function ---
+            // function drawPlayer() { ... }
+
             function drawObstacles() { /* ... */
                 for (const obj of obstacles) {
-                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
-                    } else {
-                        ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
-                        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                    }
+                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); }
+                    else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); }
                 }
             }
+
+            // --- NEW: Function to update the knight image element ---
+            function updateKnightVisuals() {
+                const now = performance.now();
+                let currentOpacity = 1;
+
+                // Set flashing opacity if invincible
+                if (now < playerInvincibleUntil) {
+                    if (Math.floor(now / 100) % 2 !== 0) {
+                        currentOpacity = 0.4; // Make semi-transparent
+                    }
+                }
+
+                // Update styles
+                knightImageEl.style.opacity = currentOpacity;
+                knightImageEl.style.left = `${player.x}px`;
+                knightImageEl.style.top = `${player.y}px`;
+                knightImageEl.style.width = `${player.width}px`;
+                knightImageEl.style.height = `${player.height}px`;
+
+                // Ensure visible if game is playing/over/menu
+                 if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
+                      if (knightImageEl.style.display === 'none') {
+                           knightImageEl.style.display = 'block';
+                      }
+                 } else {
+                      knightImageEl.style.display = 'none';
+                 }
+            }
+
 
             function displayPOIInfo(poiId) { /* ... */
                  const poi = poiData.find(p => p.id === poiId);
@@ -608,18 +493,16 @@
             }
 
 
-            function gameLoop(timestamp) { /* ... */
+            // --- MODIFIED: Game Loop (Calls updateKnightVisuals) ---
+            function gameLoop(timestamp) {
                  const dt = (timestamp - lastTime) / 1000 || 0;
                  if (!isPaused) {
                     lastTime = timestamp;
                  }
 
-                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                 drawBackground(dt);
-
-                let collisionHandledThisFrame = false;
-
-                if (currentGameState === GameState.PLAYING && !isPaused) {
+                 // --- Updates (Run if PLAYING and not PAUSED) ---
+                 if (currentGameState === GameState.PLAYING && !isPaused) {
+                    let collisionHandledThisFrame = false;
                     const collisionResult = checkCollisions();
 
                     if (collisionResult.type === CollisionType.SIDE) {
@@ -627,7 +510,6 @@
                         playerLives--;
                         currentLivesSpan.textContent = playerLives;
                         collisionHandledThisFrame = true;
-
                         if (playerLives > 0) {
                             console.log(`Life lost! ${playerLives} remaining.`);
                             player.y = canvasHeight - groundHeightPx - player.height;
@@ -635,7 +517,6 @@
                             player.grounded = true;
                             playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS;
                             console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`);
-
                         } else {
                             console.warn("GAME OVER - No lives left.");
                             currentGameState = GameState.GAME_OVER;
@@ -645,11 +526,9 @@
                             gameOverScreen.classList.remove('hidden');
                             scoreDisplay.classList.add('hidden');
                             livesDisplay.classList.add('hidden');
-                            if (poiOverlay.classList.contains('visible')) {
-                                 closePoiOverlay();
-                            }
+                            knightImageEl.style.display = 'none'; // Hide knight on game over screen
+                            if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); }
                         }
-
                     } else if (collisionResult.type === CollisionType.TOP) {
                         player.y = collisionResult.obstacle.y - player.height;
                         player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER;
@@ -665,17 +544,23 @@
                         updatePlayer(dt);
                     }
 
+                    // Update obstacles and score only if still playing
                     if (currentGameState === GameState.PLAYING) {
                         updateObstacles(dt, timestamp);
                         updateScoreAndSpeed();
                     }
+                 } // End of PLAYING and NOT PAUSED block
 
-                } // End of PLAYING and NOT PAUSED block
+                 // --- Drawing ---
+                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                 drawBackground(dt); // Draw canvas background/ground
+                 drawObstacles();    // Draw obstacles onto canvas
 
-                if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                     drawPlayer();
-                     drawObstacles();
-                } else if (currentGameState === GameState.LOADING) {
+                 // --- Update HTML Knight Image ---
+                 updateKnightVisuals(); // Position and style the HTML img element
+
+                 // Draw loading text if applicable
+                 if (currentGameState === GameState.LOADING) {
                      ctx.fillStyle = 'white';
                      ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel');
                      ctx.textAlign = 'center';
@@ -686,7 +571,8 @@
             }
 
 
-            function startGame() { /* ... */
+            // --- MODIFIED: startGame (Show knight img) ---
+            function startGame() {
                 console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
                 if (currentGameState === GameState.PLAYING || !allAssetsLoaded) {
                     console.log("startGame() aborted. State:", currentGameState, "Assets loaded?", allAssetsLoaded);
@@ -699,6 +585,8 @@
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.remove('hidden');
                 livesDisplay.classList.remove('hidden');
+                knightImageEl.style.display = 'block'; // Make sure knight is visible
+                knightImageEl.style.opacity = '1'; // Ensure full opacity
                 playSound('start');
                 lastTime = performance.now();
             }
@@ -720,117 +608,76 @@
 
             // --- Input Event Handlers ---
             function handleKeyDown(e) { /* ... */
-                 if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) {
-                    e.preventDefault();
-                    console.log("Enter key pressed while POI visible. Closing POI.");
-                    closePoiOverlay();
-                    return;
-                 }
+                 if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; }
                  if (e.key === ' ' || e.code === 'Space') {
                     e.preventDefault();
-                    console.log("Spacebar pressed. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
                     if (!allAssetsLoaded) return;
                     switch (currentGameState) {
-                        case GameState.PLAYING:
-                            console.log("Spacebar: Calling handleJumpInput()");
-                            handleJumpInput();
-                            break;
-                        case GameState.MENU:
-                            console.log("Spacebar: Calling startGame()");
-                            startGame();
-                            break;
-                        case GameState.GAME_OVER:
-                             console.log("Spacebar: Calling restartGame()");
-                            restartGame();
-                            break;
+                        case GameState.PLAYING: handleJumpInput(); break;
+                        case GameState.MENU: startGame(); break;
+                        case GameState.GAME_OVER: restartGame(); break;
                     }
                 }
             }
 
             function handleScreenTouch(e) { /* ... */
                  e.preventDefault();
-                 console.log("Screen touch detected. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded, "Target:", e.target.id);
                  if (!allAssetsLoaded) return;
-                 if (isPaused && poiOverlay.classList.contains('visible')) {
-                     console.log("Touch ignored: POI overlay is visible.");
-                     return;
-                 }
+                 if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Touch ignored: POI overlay is visible."); return; }
                  switch (currentGameState) {
-                     case GameState.PLAYING:
-                         console.log("Touch: Calling handleJumpInput()");
-                         handleJumpInput();
-                         break;
-                     case GameState.MENU:
-                         console.log("Touch: Checking if should start game...");
-                         if (e.target === startButton || e.target === canvas || e.target === gameContainer) {
-                             console.log("Touch: Calling startGame()");
-                             startGame();
-                         } else {
-                             console.log("Touch: Target was not button/canvas/container.");
-                         }
-                         break;
-                     case GameState.GAME_OVER:
-                          console.log("Touch: Checking if should restart game...");
-                         if (e.target === restartButton || e.target === canvas || e.target === gameContainer) {
-                             console.log("Touch: Calling restartGame()");
-                             restartGame();
-                         } else {
-                              console.log("Touch: Target was not button/canvas/container.");
-                         }
-                         break;
+                     case GameState.PLAYING: handleJumpInput(); break;
+                     case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break;
+                     case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break;
                  }
             }
 
-             // --- MODIFIED: Resize Handling (Recalculates dynamic values) ---
-             function resizeCanvas() {
-                 // Get the container's current client size (determined by CSS)
+             function resizeCanvas() { /* ... */
                  const containerWidth = gameContainer.clientWidth;
                  const containerHeight = gameContainer.clientHeight;
-
-                 // Update canvas drawing surface size
                  canvasWidth = containerWidth;
                  canvasHeight = containerHeight;
                  canvas.width = canvasWidth;
                  canvas.height = canvasHeight;
-
                  console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`);
-
-                 // Recalculate dynamic game values IF game has already started
-                 // Otherwise, resetGame() called by initGame will handle it
                  if (gameInitialized) {
                      console.log("Recalculating dynamic values on resize...");
-                     // Recalculate ground height, player size/pos, physics etc.
-                     // resetGame() does all this, so just call it.
                      resetGame();
-                     // If the game was playing, we might want to redraw immediately
-                     // or handle the state transition more gracefully, but resetGame
-                     // puts it back to the MENU state implicitly via variable resets.
-                     // For simplicity, resizing resets the current run.
-                     currentGameState = GameState.MENU; // Force back to menu after resize/reset
+                     currentGameState = GameState.MENU;
                      startScreen.classList.remove('hidden');
                      gameOverScreen.classList.add('hidden');
                      scoreDisplay.classList.add('hidden');
                      livesDisplay.classList.add('hidden');
+                     knightImageEl.style.display = 'none'; // Ensure hidden after resize reset
                  }
              }
 
 
-            // --- Initial Setup ---
-            function initGame() { /* ... */
+            // --- MODIFIED: Initial Setup (Set knight img src) ---
+            function initGame() {
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
+
+                // Set the src for the knight image element now that assets are loaded
+                if (assets.knight.loaded) {
+                    knightImageEl.src = assets.knight.src;
+                    console.log("Knight image source set to:", knightImageEl.src);
+                } else {
+                    console.error("Knight asset failed to load, cannot set image source.");
+                    // Optionally hide the image element or show a placeholder color/div
+                    knightImageEl.style.display = 'none';
+                }
+
+
                 loadHighScore();
+                resizeCanvas(); // Sets initial sizes and calls resetGame
 
-                // Initial resize sets canvas size and calculates dynamic values via resetGame
-                resizeCanvas(); // This now calls resetGame internally
-
-                // Set initial UI state (resetGame handles some, but ensure menu is shown)
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.add('hidden');
                 livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
+                knightImageEl.style.display = 'none'; // Start hidden
 
 
                  // Attach Event Listeners
@@ -846,19 +693,19 @@
                  restartButton.addEventListener('click', restartGame);
                  document.addEventListener('keydown', handleKeyDown);
                  gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false });
-                 window.addEventListener('resize', resizeCanvas); // Add resize listener
+                 window.addEventListener('resize', resizeCanvas);
                  closePoiButton.addEventListener('click', closePoiOverlay);
                  console.log("Event listeners attached.");
 
-                 currentGameState = GameState.MENU; // Start at menu
+                 currentGameState = GameState.MENU;
                  console.log("Set gameState to MENU");
                  lastTime = performance.now();
-                 requestAnimationFrame(gameLoop); // Start the main loop
+                 requestAnimationFrame(gameLoop);
                  console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
-            document.addEventListener('DOMContentLoaded', () => { /* ... */
+            document.addEventListener('DOMContentLoaded', () => {
                 console.log("DOM Ready. Starting asset load.");
                 loadAssets();
             });
