@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Invincibility Frames)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Responsive Size)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrollbars on body */
+            background-color: #222; /* Dark background */
         }
 
         /* Define Bad Belzig Color Palette as CSS Variables */
@@ -27,25 +33,33 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #222; /* Dark background */
+            /* min-height: 100vh; NO LONGER NEEDED with height: 100% */
             margin: 0;
             font-family: var(--font-sans); /* Default font */
         }
 
+        /* --- MODIFIED: Game Container for Responsive Sizing --- */
         #game-container {
             position: relative;
-            /* Use max-width for better responsiveness */
-            width: 100%;
-            max-width: 800px; /* Original width */
-            aspect-ratio: 2 / 1; /* Maintain 800x400 ratio */
             border: 3px solid #555;
-            overflow: hidden; /* Hide anything outside the container */
-            background-color: var(--bb-blue); /* Default background if canvas fails */
+            overflow: hidden;
+            background-color: var(--bb-blue);
+
+            /* Use viewport units, maintain 2:1 aspect ratio */
+            width: 100vw;
+            height: 50vw; /* height = width / 2 */
+
+            /* Constrain dimensions to viewport */
+            max-height: 100vh;
+            max-width: 200vh; /* width = height * 2 */
+
+            /* Ensure container itself doesn't cause body scroll */
+            box-sizing: border-box;
         }
+        /* --- END MODIFICATION --- */
 
         canvas {
-            display: block;
+            display: block; /* Prevent extra space below canvas */
             width: 100%;
             height: 100%;
             /* Background color set dynamically or via CSS if needed */
@@ -58,7 +72,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8); /* Darker overlay */
+            background-color: rgba(0, 0, 0, 0.8);
             color: var(--bb-white);
             display: flex;
             flex-direction: column;
@@ -67,84 +81,69 @@
             text-align: center;
             z-index: 30;
             padding: 20px;
-            font-family: var(--font-pixel); /* Use pixel font for UI */
+            font-family: var(--font-pixel);
             line-height: 1.6;
         }
 
         .ui-screen h1 {
-            font-size: 2.5em; /* Adjusted for pixel font */
+            font-size: 2.5em;
             margin-bottom: 20px;
             color: var(--bb-yellow);
-            text-shadow: 3px 3px 0px var(--bb-black); /* Pixel shadow */
+            text-shadow: 3px 3px 0px var(--bb-black);
         }
 
         .ui-screen h2 {
-            font-size: 2.2em; /* Adjusted for pixel font */
+            font-size: 2.2em;
             margin-bottom: 20px;
-            color: #DC143C; /* Keep red for Game Over */
-            text-shadow: 3px 3px 0px var(--bb-black); /* Pixel shadow */
+            color: #DC143C;
+            text-shadow: 3px 3px 0px var(--bb-black);
         }
 
         .ui-screen p {
-            font-size: 1em; /* Adjusted for pixel font */
+            font-size: 1em;
             margin: 10px 0;
         }
 
-        /* General Button Styling (used for Start/Restart) */
+        /* General Button Styling */
         .ui-button {
             padding: 15px 30px;
-            font-size: 1.1em; /* Adjusted for pixel font */
-            font-family: var(--font-pixel); /* Ensure pixel font */
+            font-size: 1.1em;
+            font-family: var(--font-pixel);
             margin-top: 30px;
             cursor: pointer;
             background-color: #eee;
-            border: 3px solid var(--bb-black); /* Solid border */
+            border: 3px solid var(--bb-black);
             color: var(--bb-black);
             text-transform: uppercase;
             transition: background-color 0.15s ease, transform 0.1s ease;
-            box-shadow: 4px 4px 0px var(--bb-black); /* Pixel shadow */
+            box-shadow: 4px 4px 0px var(--bb-black);
         }
-
-        .ui-button:hover {
-            background-color: #ddd;
-        }
-
+        .ui-button:hover { background-color: #ddd; }
         .ui-button:active {
             background-color: #ccc;
-            transform: translate(2px, 2px); /* Button press effect */
+            transform: translate(2px, 2px);
             box-shadow: 2px 2px 0px var(--bb-black);
         }
 
         .instructions {
             margin-top: 25px;
-            font-size: 0.8em !important; /* Adjusted for pixel font */
+            font-size: 0.8em !important;
             color: #ccc;
             line-height: 1.5;
         }
 
-        /* In-Game Score Display */
-        #scoreDisplay {
+        /* In-Game UI Displays */
+        #scoreDisplay, #livesDisplay {
             position: absolute;
             top: 15px;
-            left: 15px;
-            font-size: 1.5em; /* Adjusted for pixel font */
-            font-family: var(--font-pixel);
-            color: var(--bb-white);
-            text-shadow: 2px 2px 0px var(--bb-black); /* Pixel shadow */
-            z-index: 20;
-        }
-
-        /* In-Game Lives Display */
-        #livesDisplay {
-            position: absolute;
-            top: 15px;
-            right: 15px; /* Position top-right */
-            font-size: 1.5em;
+            font-size: 1.5em; /* Adjust based on final size if needed */
             font-family: var(--font-pixel);
             color: var(--bb-white);
             text-shadow: 2px 2px 0px var(--bb-black);
             z-index: 20;
         }
+        #scoreDisplay { left: 15px; }
+        #livesDisplay { right: 15px; }
 
 
         /* POI Overlay Styling */
@@ -164,28 +163,21 @@
             text-align: center;
             font-family: var(--font-pixel);
             box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
-            display: none; /* Hidden by default */
+            display: none;
         }
-
-        .poi-overlay.visible {
-            display: block !important; /* Show when visible class is added */
-        }
-
+        .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 {
             margin-bottom: 10px;
             font-size: 1.1em;
             color: var(--bb-yellow);
             text-shadow: 2px 2px 0px var(--bb-black);
         }
-
         .poi-overlay p {
             font-size: 0.9em;
             line-height: 1.6;
             color: var(--bb-white);
             margin-bottom: 15px;
         }
-
-        /* Styling for the new Close button */
         #closePoiButton {
              padding: 8px 15px;
              font-size: 0.9em;
@@ -197,19 +189,15 @@
              margin-top: 10px;
              box-shadow: 2px 2px 0px var(--bb-black);
         }
-         #closePoiButton:hover {
-             background-color: #bbb;
-         }
+         #closePoiButton:hover { background-color: #bbb; }
          #closePoiButton:active {
              background-color: #aaa;
              transform: translate(1px, 1px);
              box-shadow: 1px 1px 0px var(--bb-black);
          }
 
-        /* Utility class to hide elements reliably */
-        .hidden {
-            display: none !important;
-        }
+        /* Utility class to hide elements */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -285,37 +273,38 @@
 
             // --- Game Constants ---
             const LIVES_START_COUNT = 5;
-            const INVINCIBILITY_DURATION_MS = 1000; // NEW: 1 second invincibility
-            const GROUND_HEIGHT = 30;
-            const PLAYER_INITIAL_X = 60;
-            const PLAYER_WIDTH = 40;
-            const PLAYER_HEIGHT = 40;
-            const PLAYER_GRAVITY = 0.65;
-            const PLAYER_JUMP_POWER = -14;
+            const INVINCIBILITY_DURATION_MS = 1000;
+            const GROUND_HEIGHT_PERCENT = 0.075; // Ground height as % of canvas height
+            const PLAYER_INITIAL_X_PERCENT = 0.075; // Player X as % of canvas width
+            const PLAYER_WIDTH_PERCENT = 0.05; // Player width as % of canvas width
+            const PLAYER_HEIGHT_PERCENT = 0.10; // Player height as % of canvas height (adjust for aspect ratio)
+            const PLAYER_GRAVITY_FACTOR = 1300; // Gravity adjusted for variable height
+            const PLAYER_JUMP_FACTOR = -28;   // Jump power adjusted for variable height
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
-            const OBSTACLE_STONE_WIDTH = 35;
-            const OBSTACLE_STONE_HEIGHT = 35;
-            const OBSTACLE_TRACTOR_WIDTH = 70;
-            const OBSTACLE_TRACTOR_HEIGHT = 45;
-            const POI_SIGN_WIDTH = 90;
-            const POI_SIGN_HEIGHT = 110;
-            const INITIAL_GAME_SPEED = 300;
+            const OBSTACLE_STONE_WIDTH_PERCENT = 0.044; // ~35 / 800
+            const OBSTACLE_STONE_HEIGHT_PERCENT = 0.088; // ~35 / 400
+            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.088; // ~70 / 800
+            const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.113; // ~45 / 400
+            const POI_SIGN_WIDTH_PERCENT = 0.113; // ~90 / 800
+            const POI_SIGN_HEIGHT_PERCENT = 0.275; // ~110 / 400
+            const INITIAL_GAME_SPEED_FACTOR = 0.375; // Speed relative to canvas width (300/800)
             const SPEED_INCREASE_INTERVAL_SCORE = 400;
-            const SPEED_INCREASE_AMOUNT = 20;
+            const SPEED_INCREASE_AMOUNT_FACTOR = 0.025; // Speed increase relative to canvas width (20/800)
             const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
             const POI_SPAWN_CHANCE = 0.15;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
-            const COLLISION_LANDING_TOLERANCE = 18;
+            const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; // Tolerance relative to canvas height (18/400)
 
             // --- Game Variables ---
             let score = 0;
             let highScore = 0;
             let playerLives = LIVES_START_COUNT;
-            let playerInvincibleUntil = 0; // NEW: Timestamp for invincibility end
-            let player = { x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dx: 0, dy: 0, grounded: true };
+            let playerInvincibleUntil = 0;
+            // Player properties will be set relative to canvas size in resize/reset
+            let player = { x: 0, y: 0, width: 0, height: 0, dx: 0, dy: 0, gravity: 0, jumpPower: 0, grounded: true };
             let obstacles = [];
-            let gameSpeed = INITIAL_GAME_SPEED;
+            let gameSpeed = 0; // Will be set based on canvas size
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
             let bgX = 0;
             let currentBackgroundIndex = 0;
@@ -325,6 +314,10 @@
             let lastTime = 0;
             let gameInitialized = false;
             let isPaused = false;
+            // Dynamic calculation variables
+            let groundHeightPx = 0;
+            let collisionLandingTolerancePx = 0;
+
 
             // --- Graphics Assets ---
             const assets = {
@@ -341,12 +334,12 @@
             let totalAssets = Object.keys(assets).length;
             let allAssetsLoaded = false;
 
-            // --- Obstacle/POI Definitions ---
+            // --- Obstacle/POI Definitions (Now using percentages) ---
             const regularObstacleTypes = [
-                { assetKey: 'stone', width: OBSTACLE_STONE_WIDTH, height: OBSTACLE_STONE_HEIGHT },
-                { assetKey: 'tractor', width: OBSTACLE_TRACTOR_WIDTH, height: OBSTACLE_TRACTOR_HEIGHT }
+                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
+                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }
             ];
-            const poiSignDimensions = { width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT };
+            const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
             const poiData = [
@@ -424,36 +417,50 @@
                  console.log(`Playing sound: ${soundId}`);
             }
 
-            // --- MODIFIED: Reset Game Variables (Includes Invincibility) ---
+            // --- MODIFIED: Reset Game Variables (Calculates dynamic sizes/speeds) ---
             function resetGame() {
                 score = 0;
                 playerLives = LIVES_START_COUNT;
-                playerInvincibleUntil = 0; // Reset invincibility timer
+                playerInvincibleUntil = 0;
                 obstacles = [];
-                gameSpeed = INITIAL_GAME_SPEED;
+
+                // Calculate dynamic values based on current canvas size
+                groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT;
+                collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
+                gameSpeed = canvasWidth * INITIAL_GAME_SPEED_FACTOR; // Speed scales with width
+
+                player.width = canvasWidth * PLAYER_WIDTH_PERCENT;
+                player.height = canvasHeight * PLAYER_HEIGHT_PERCENT;
+                player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT;
+                player.y = canvasHeight - groundHeightPx - player.height;
+                player.dy = 0;
+                player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR; // Gravity scales with height
+                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR; // Jump power scales with height
+                player.grounded = true;
+
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
                 bgX = 0;
                 currentBackgroundIndex = 0;
                 nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-                player.y = canvasHeight - PLAYER_HEIGHT - GROUND_HEIGHT;
-                player.dy = 0;
-                player.grounded = true;
+
                 currentScoreSpan.textContent = score;
                 currentLivesSpan.textContent = playerLives;
                 nextObstacleSpawnTime = 0;
                 nextPoiIndex = 0;
                 isPaused = false;
                 poiOverlay.classList.remove('visible');
-                console.log("Game Reset");
+
+                console.log(`Game Reset - Speed: ${gameSpeed.toFixed(1)}, Player Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
             }
 
             // --- Update Functions ---
-            function updatePlayer(dt) { /* ... */
+            function updatePlayer(dt) {
                 if (!player.grounded) {
-                    player.dy += PLAYER_GRAVITY;
-                    player.y += player.dy * dt * 60;
+                    player.dy += player.gravity; // Use calculated gravity
+                    player.y += player.dy * dt * 60; // Apply velocity
                 }
-                const groundLevel = canvasHeight - GROUND_HEIGHT - player.height;
+                // Check ground collision using calculated ground height
+                const groundLevel = canvasHeight - groundHeightPx - player.height;
                 if (player.y >= groundLevel) {
                     player.y = groundLevel;
                     player.dy = 0;
@@ -463,7 +470,8 @@
                 }
             }
 
-             function updateObstacles(dt, currentTime) { /* ... */
+             // --- MODIFIED: updateObstacles (Uses dynamic sizes/positions) ---
+             function updateObstacles(dt, currentTime) {
                  // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
@@ -474,10 +482,13 @@
                     if (spawnPOI) {
                         console.log(`Spawning POI: Index ${nextPoiIndex}`);
                         const poi = poiData[nextPoiIndex];
+                        const objWidth = canvasWidth * poiSignDimensions.widthPercent;
+                        const objHeight = canvasHeight * poiSignDimensions.heightPercent;
                         newObjectData = {
                             isPOI: true, poiId: poi.id, passed: false,
-                            x: canvasWidth, y: canvasHeight - POI_SIGN_HEIGHT - GROUND_HEIGHT,
-                            width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT, assetKey: 'sign'
+                            x: canvasWidth, // Start off-screen right
+                            y: canvasHeight - groundHeightPx - objHeight, // Position based on dynamic ground/height
+                            width: objWidth, height: objHeight, assetKey: 'sign'
                         };
                         nextPoiIndex++;
                     } else {
@@ -485,10 +496,13 @@
                             const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
                             const type = regularObstacleTypes[typeIndex];
                             if (assets[type.assetKey] && assets[type.assetKey].loaded) {
+                                const objWidth = canvasWidth * type.widthPercent;
+                                const objHeight = canvasHeight * type.heightPercent;
                                 newObjectData = {
                                     isPOI: false,
-                                    x: canvasWidth, y: canvasHeight - type.height - GROUND_HEIGHT,
-                                    width: type.width, height: type.height, assetKey: type.assetKey,
+                                    x: canvasWidth,
+                                    y: canvasHeight - groundHeightPx - objHeight,
+                                    width: objWidth, height: objHeight, assetKey: type.assetKey,
                                     isKnocked: false
                                 };
                             } else { console.warn(`Asset not loaded for obstacle type: ${type.assetKey}, skipping spawn.`); }
@@ -497,23 +511,24 @@
                     if (newObjectData) {
                         obstacles.push(newObjectData);
                     }
-                    const speedFactor = gameSpeed / INITIAL_GAME_SPEED;
-                    const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / speedFactor;
+                    // Dynamic spawn timing based on current game speed
+                    const speedFactor = gameSpeed / (canvasWidth * INITIAL_GAME_SPEED_FACTOR); // Compare current speed to initial scaled speed
+                    const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / Math.max(1, speedFactor); // Speed up spawn rate, prevent division by zero
                     const nextSpawnDelay = Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, currentSpawnTime) + (Math.random() * 300 - 150);
                     nextObstacleSpawnTime = currentTime + nextSpawnDelay;
                 }
 
                 // --- Obstacle Movement, POI Triggering & Knock Off ---
-                const speedPxPerMs = gameSpeed / 1000;
-                const movement = speedPxPerMs * (dt * 1000);
+                const movement = gameSpeed * dt; // Movement based on dynamic game speed
 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i];
                     if (obj.isKnocked) {
-                        obj.y += 500 * dt;
+                        obj.y += (canvasHeight * 1.25) * dt; // Knock down speed relative to height
                     } else {
-                        obj.x -= movement;
+                        obj.x -= movement; // Move left based on game speed
                     }
+                    // POI Trigger check
                     if (obj.isPOI && !obj.passed) {
                          const triggerPoint = obj.x;
                          const playerRightEdge = player.x + player.width;
@@ -526,6 +541,7 @@
                             playSound('poi');
                         }
                     }
+                    // Remove if off-screen
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
                          obstacles.splice(i, 1);
                     }
@@ -533,18 +549,17 @@
             }
 
 
-            // --- MODIFIED: checkCollisions (Adds invincibility check) ---
+            // --- MODIFIED: checkCollisions (Uses dynamic tolerance) ---
             function checkCollisions() {
-                // --- NEW: Skip check if player is invincible ---
                 const now = performance.now();
                 if (now < playerInvincibleUntil) {
                     return { type: CollisionType.NONE };
                 }
 
-                // --- Existing collision logic ---
                 const playerRect = {
-                    x: player.x + 5, y: player.y + 5,
-                    width: player.width - 10, height: player.height - 10,
+                    x: player.x + (player.width * 0.1), // Inset slightly based on player width
+                    y: player.y + (player.height * 0.1), // Inset slightly
+                    width: player.width * 0.8, height: player.height * 0.8,
                     bottom: player.y + player.height,
                     right: player.x + player.width
                 };
@@ -564,8 +579,9 @@
                         playerRect.bottom > obstacleRect.top)
                     {
                         const isFalling = player.dy >= 0;
+                        // Use dynamic tolerance
                         const landedOnTop = playerRect.bottom >= obstacleRect.top &&
-                                            playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
+                                            playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
                         if (isFalling && landedOnTop) {
                              console.log(`Collision: TOP on ${obstacle.assetKey}`);
                              return { type: CollisionType.TOP, obstacle: obstacle };
@@ -578,14 +594,17 @@
             }
 
 
-            function updateScoreAndSpeed() { /* ... */
+            // --- MODIFIED: updateScoreAndSpeed (Uses dynamic speed increase) ---
+            function updateScoreAndSpeed() {
                 score++;
                 currentScoreSpan.textContent = score;
+                // Increase game speed based on score
                 if (score >= nextSpeedIncreaseScore) {
-                    gameSpeed += SPEED_INCREASE_AMOUNT;
+                    gameSpeed += canvasWidth * SPEED_INCREASE_AMOUNT_FACTOR; // Scale increase amount
                     nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE;
                     console.log(`Speed increased to: ${gameSpeed.toFixed(1)}`);
                 }
+                // Switch background
                 if (score >= nextBackgroundSwitchScore) {
                     currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds;
                     nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL;
@@ -594,11 +613,12 @@
             }
 
             // --- Draw Functions ---
-            function drawBackground(dt) { /* ... */
+            // --- MODIFIED: drawBackground (Uses dynamic ground height) ---
+            function drawBackground(dt) {
                 const currentBgIndex = currentBackgroundIndex + 1;
                 const currentAssetKey = `background${currentBgIndex}`;
                 const currentAsset = assets[currentAssetKey];
-                const bgMovement = isPaused ? 0 : (gameSpeed / 2) * dt;
+                const bgMovement = isPaused ? 0 : (gameSpeed / 2) * dt; // Background moves slower
                 bgX -= bgMovement;
                 if (bgX <= -canvasWidth) { bgX += canvasWidth; }
 
@@ -609,28 +629,17 @@
                     ctx.fillStyle = '#87CEEB';
                     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 }
+                // Use dynamic ground height
                 ctx.fillStyle = '#228B22';
-                ctx.fillRect(0, canvasHeight - GROUND_HEIGHT, canvasWidth, GROUND_HEIGHT);
+                ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
             }
 
-            // --- MODIFIED: drawPlayer (Adds flashing effect) ---
-            function drawPlayer() {
+            function drawPlayer() { /* ... (No changes needed here, uses player object's w/h) ... */
                 const now = performance.now();
                 let isVisible = true;
-
-                // Check if invincible and determine if flashing should hide the player
                 if (now < playerInvincibleUntil) {
-                    // Flash roughly 5 times per second (1000ms / 200ms cycle = 5)
-                    // Hide every other 100ms interval
-                    if (Math.floor(now / 100) % 2 !== 0) {
-                        isVisible = false;
-                    }
-                    // --- Alternative: Use alpha ---
-                    // ctx.save(); // Save current context state
-                    // ctx.globalAlpha = 0.5; // Make semi-transparent
+                    if (Math.floor(now / 100) % 2 !== 0) { isVisible = false; }
                 }
-
-                // Draw player only if visible (for flashing effect)
                 if (isVisible) {
                     if (assets.knight.loaded) {
                         ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
@@ -639,38 +648,22 @@
                         ctx.fillRect(player.x, player.y, player.width, player.height);
                     }
                 }
-
-                // Restore alpha if it was changed
-                // if (now < playerInvincibleUntil) {
-                //     ctx.restore(); // Restore context state (including alpha)
-                // }
             }
-
-            function drawObstacles() { /* ... */
+            function drawObstacles() { /* ... (No changes needed here, uses obstacle object's w/h) ... */
                 for (const obj of obstacles) {
-                    let drawWidth, drawHeight;
-                    if (obj.isPOI) {
-                        drawWidth = POI_SIGN_WIDTH;
-                        drawHeight = POI_SIGN_HEIGHT;
-                    } else {
-                        drawWidth = obj.width;
-                        drawHeight = obj.height;
-                    }
+                    // Width/height are already calculated and stored in the object
                     if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, drawWidth, drawHeight);
+                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
                     } else {
                         ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
-                        ctx.fillRect(obj.x, obj.y, drawWidth, drawHeight);
+                        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
                     }
                 }
             }
 
             function displayPOIInfo(poiId) { /* ... */
                  const poi = poiData.find(p => p.id === poiId);
-                 if (!poi) {
-                     console.warn(`POI data not found for ID: ${poiId}`);
-                     return;
-                 }
+                 if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
                  isPaused = true;
                  console.log(`>>> Game PAUSED for POI ID: ${poiId}`);
                  poiNameEl.textContent = poi.name;
@@ -689,7 +682,7 @@
             }
 
 
-            // --- MODIFIED: Game Loop (Sets invincibility on life lost) ---
+            // --- MODIFIED: Game Loop (Uses dynamic player reset) ---
             function gameLoop(timestamp) {
                  const dt = (timestamp - lastTime) / 1000 || 0;
                  if (!isPaused) {
@@ -702,7 +695,7 @@
                 let collisionHandledThisFrame = false;
 
                 if (currentGameState === GameState.PLAYING && !isPaused) {
-                    const collisionResult = checkCollisions(); // Skips check if invincible
+                    const collisionResult = checkCollisions();
 
                     if (collisionResult.type === CollisionType.SIDE) {
                         playSound('hit');
@@ -711,17 +704,15 @@
                         collisionHandledThisFrame = true;
 
                         if (playerLives > 0) {
-                            // --- Lost a life, continue playing ---
                             console.log(`Life lost! ${playerLives} remaining.`);
-                            player.y = canvasHeight - PLAYER_HEIGHT - GROUND_HEIGHT;
+                            // Reset player Y using dynamic ground height
+                            player.y = canvasHeight - groundHeightPx - player.height;
                             player.dy = 0;
                             player.grounded = true;
-                            // --- NEW: Set invincibility period ---
                             playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS;
                             console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`);
 
                         } else {
-                            // --- No lives left: GAME OVER ---
                             console.warn("GAME OVER - No lives left.");
                             currentGameState = GameState.GAME_OVER;
                             saveHighScore();
@@ -737,7 +728,7 @@
 
                     } else if (collisionResult.type === CollisionType.TOP) {
                         player.y = collisionResult.obstacle.y - player.height;
-                        player.dy = PLAYER_JUMP_POWER * PLAYER_BOUNCE_POWER_MULTIPLIER;
+                        player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; // Use dynamic jump power
                         player.grounded = false;
                         playSound('bounce');
                         collisionResult.obstacle.isKnocked = true;
@@ -758,7 +749,7 @@
                 } // End of PLAYING and NOT PAUSED block
 
                 if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                     drawPlayer(); // Will flash if invincible
+                     drawPlayer();
                      drawObstacles();
                 } else if (currentGameState === GameState.LOADING) {
                      ctx.fillStyle = 'white';
@@ -778,6 +769,7 @@
                     return;
                 }
                 console.log("Executing startGame()...");
+                // Reset game (calculates dynamic sizes based on current canvas)
                 resetGame();
                 currentGameState = GameState.PLAYING;
                 startScreen.classList.add('hidden');
@@ -795,9 +787,9 @@
                 startGame();
             }
 
-            function handleJumpInput() { /* ... */
+            function handleJumpInput() { /* Uses dynamic jump power */
                 if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) {
-                    player.dy = PLAYER_JUMP_POWER;
+                    player.dy = player.jumpPower; // Use calculated jump power
                     player.grounded = false;
                     playSound('jump');
                 }
@@ -866,18 +858,36 @@
                  }
             }
 
-             // --- Resize Handling ---
-             function resizeCanvas() { /* ... */
+             // --- MODIFIED: Resize Handling (Recalculates dynamic values) ---
+             function resizeCanvas() {
+                 // Get the container's current client size (determined by CSS)
                  const containerWidth = gameContainer.clientWidth;
-                 const containerHeight = containerWidth / 2;
+                 const containerHeight = gameContainer.clientHeight;
+
+                 // Update canvas drawing surface size
                  canvasWidth = containerWidth;
                  canvasHeight = containerHeight;
                  canvas.width = canvasWidth;
                  canvas.height = canvasHeight;
-                 gameContainer.style.height = `${containerHeight}px`;
+
                  console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`);
+
+                 // Recalculate dynamic game values IF game has already started
+                 // Otherwise, resetGame() called by initGame will handle it
                  if (gameInitialized) {
+                     console.log("Recalculating dynamic values on resize...");
+                     // Recalculate ground height, player size/pos, physics etc.
+                     // resetGame() does all this, so just call it.
                      resetGame();
+                     // If the game was playing, we might want to redraw immediately
+                     // or handle the state transition more gracefully, but resetGame
+                     // puts it back to the MENU state implicitly via variable resets.
+                     // For simplicity, resizing resets the current run.
+                     currentGameState = GameState.MENU; // Force back to menu after resize/reset
+                     startScreen.classList.remove('hidden');
+                     gameOverScreen.classList.add('hidden');
+                     scoreDisplay.classList.add('hidden');
+                     livesDisplay.classList.add('hidden');
                  }
              }
 
@@ -888,14 +898,19 @@
                 console.log("Initializing Game...");
                 gameInitialized = true;
                 loadHighScore();
+
+                // Initial resize sets canvas size and calculates dynamic values via resetGame
+                resizeCanvas(); // This now calls resetGame internally
+
+                // Set initial UI state (resetGame handles some, but ensure menu is shown)
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.add('hidden');
                 livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
-                 resizeCanvas();
 
-                 // Remove potentially old listeners first
+
+                 // Attach Event Listeners
                  startButton.removeEventListener('click', startGame);
                  restartButton.removeEventListener('click', restartGame);
                  document.removeEventListener('keydown', handleKeyDown);
@@ -903,20 +918,19 @@
                  window.removeEventListener('resize', resizeCanvas);
                  closePoiButton.removeEventListener('click', closePoiOverlay);
 
-                 // Add listeners
                  console.log("Attaching listeners...");
                  startButton.addEventListener('click', startGame);
                  restartButton.addEventListener('click', restartGame);
                  document.addEventListener('keydown', handleKeyDown);
                  gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false });
-                 window.addEventListener('resize', resizeCanvas);
+                 window.addEventListener('resize', resizeCanvas); // Add resize listener
                  closePoiButton.addEventListener('click', closePoiOverlay);
                  console.log("Event listeners attached.");
 
-                 currentGameState = GameState.MENU;
+                 currentGameState = GameState.MENU; // Start at menu
                  console.log("Set gameState to MENU");
                  lastTime = performance.now();
-                 requestAnimationFrame(gameLoop);
+                 requestAnimationFrame(gameLoop); // Start the main loop
                  console.log("Initial game loop requested.");
             }
 
