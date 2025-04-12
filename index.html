@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Debug POI Text)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Restore POI Text & Debug Tap)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -217,7 +217,7 @@
             function drawObstacles() { /* ... */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
             function updateKnightVisuals() { /* ... */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
-            // --- MODIFIED: Display POI Info (Temporary text for debugging) ---
+            // --- MODIFIED: Display POI Info (Restored original text formatting) ---
             function displayPOIInfo(poiId) {
                  const poi = poiData.find(p => p.id === poiId);
                  if (!poi) {
@@ -228,27 +228,27 @@
                  console.log(`>>> Game PAUSED for POI ID: ${poiId}`);
                  poiNameEl.textContent = poi.name;
 
-                 // --- TEST: Use simple text ---
-                 poiInfoTextEl.textContent = `Info for ${poi.name} (ID: ${poiId}) would go here. English | German`;
-                 console.log(">>> Set POI text using .textContent for testing.");
-                 // --- END TEST ---
-
-                 // --- Original code (commented out for test) ---
-                 // const infoParts = poi.info.split('|').map(s => s.trim());
-                 // const formattedInfo = infoParts.join('<br><br>');
-                 // poiInfoTextEl.innerHTML = formattedInfo;
-                 // --- End Original Code ---
+                 // --- Restore original formatting logic ---
+                 const infoParts = poi.info.split('|').map(s => s.trim());
+                 const formattedInfo = infoParts.join('<br><br>');
+                 poiInfoTextEl.innerHTML = formattedInfo; // Use innerHTML
+                 console.log(">>> Set POI text using .innerHTML");
+                 // --- End Restore ---
 
                  poiOverlay.classList.add('visible');
                  console.log(">>> Added 'visible' class to poiOverlay.");
             }
 
-            function closePoiOverlay() { /* ... */
+            // --- MODIFIED: closePoiOverlay (Add console log) ---
+            function closePoiOverlay() {
+                // --- DEBUG: Log function call ---
+                console.log("closePoiOverlay function called by event");
                 poiOverlay.classList.remove('visible');
                 isPaused = false;
                 lastTime = performance.now();
-                console.log(">>> Closed POI Overlay. Game RESUMED."); // Updated log
+                console.log(">>> Closed POI Overlay. Game RESUMED.");
             }
+
 
             function gameLoop(timestamp) { /* ... */
                  const dt = (timestamp - lastTime) / 1000 || 0;
@@ -269,7 +269,7 @@
 
             // --- Input Event Handlers ---
             function handleKeyDown(e) { /* ... */ if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; } if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!allAssetsLoaded) return; switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } } }
-            function handleScreenTouch(e) { /* ... */ e.preventDefault(); if (!allAssetsLoaded) return; /* Removed check for isPaused here, let overlay listener handle its own close */ switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
+            function handleScreenTouch(e) { /* ... */ e.preventDefault(); if (!allAssetsLoaded) return; /* Removed check for isPaused here */ switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
 
              function resizeCanvas() { /* ... */ const containerWidth = gameContainer.clientWidth; const containerHeight = gameContainer.clientHeight; canvasWidth = containerWidth; canvasHeight = containerHeight; canvas.width = canvasWidth; canvas.height = canvasHeight; console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`); if (gameInitialized) { console.log("Recalculating dynamic values on resize..."); resetGame(); currentGameState = GameState.MENU; startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; } }
 
