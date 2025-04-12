@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (5 Lives System)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Enter Key to Close POI)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -134,7 +134,7 @@
             z-index: 20;
         }
 
-        /* NEW: In-Game Lives Display */
+        /* In-Game Lives Display */
         #livesDisplay {
             position: absolute;
             top: 15px;
@@ -262,8 +262,8 @@
             const poiNameEl = document.getElementById('poiName');
             const poiInfoTextEl = document.getElementById('poiInfoText');
             const closePoiButton = document.getElementById('closePoiButton');
-            const livesDisplay = document.getElementById('livesDisplay'); // NEW: Lives display ref
-            const currentLivesSpan = document.getElementById('currentLives'); // NEW: Lives span ref
+            const livesDisplay = document.getElementById('livesDisplay');
+            const currentLivesSpan = document.getElementById('currentLives');
 
             // --- Canvas and Context ---
             let ctx;
@@ -271,22 +271,10 @@
             let canvasHeight;
 
             // --- Essential Element Check ---
-            if (!canvas || !canvas.getContext || !gameContainer) {
-                console.error("Fatal Error: Canvas or Game Container not found or canvas context not supported!");
-                alert("Fatal Error: Cannot initialize the game. Try a different browser or check the HTML structure.");
-                return;
-            }
+            if (!canvas || !canvas.getContext || !gameContainer) { /* ... */ return; }
             ctx = canvas.getContext('2d');
-
-            // Add new elements to the check
             const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan };
-            for (const key in requiredElements) {
-                if (!requiredElements[key]) {
-                    console.error(`Fatal Error: UI element with ID '${key}' not found in index.html!`);
-                    alert(`Fatal Error: UI element missing (${key})! Check index.html.`);
-                    return;
-                }
-            }
+            for (const key in requiredElements) { if (!requiredElements[key]) { /* ... */ return; } }
 
             // --- Game States ---
             const GameState = Object.freeze({ MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', LOADING: 'LOADING' });
@@ -296,7 +284,7 @@
             const CollisionType = Object.freeze({ NONE: 0, TOP: 1, SIDE: 2 });
 
             // --- Game Constants ---
-            const LIVES_START_COUNT = 5; // NEW: Starting lives
+            const LIVES_START_COUNT = 5;
             const GROUND_HEIGHT = 30;
             const PLAYER_INITIAL_X = 60;
             const PLAYER_WIDTH = 40;
@@ -322,7 +310,7 @@
             // --- Game Variables ---
             let score = 0;
             let highScore = 0;
-            let playerLives = LIVES_START_COUNT; // NEW: Track current lives
+            let playerLives = LIVES_START_COUNT;
             let player = { x: PLAYER_INITIAL_X, y: 0, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dx: 0, dy: 0, grounded: true };
             let obstacles = [];
             let gameSpeed = INITIAL_GAME_SPEED;
@@ -434,10 +422,10 @@
                  console.log(`Playing sound: ${soundId}`);
             }
 
-            // --- MODIFIED: Reset Game Variables (Includes Lives) ---
-            function resetGame() {
+            // --- Reset Game Variables ---
+            function resetGame() { /* ... */
                 score = 0;
-                playerLives = LIVES_START_COUNT; // Reset lives
+                playerLives = LIVES_START_COUNT;
                 obstacles = [];
                 gameSpeed = INITIAL_GAME_SPEED;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
@@ -448,7 +436,7 @@
                 player.dy = 0;
                 player.grounded = true;
                 currentScoreSpan.textContent = score;
-                currentLivesSpan.textContent = playerLives; // Update lives display
+                currentLivesSpan.textContent = playerLives;
                 nextObstacleSpawnTime = 0;
                 nextPoiIndex = 0;
                 isPaused = false;
@@ -571,9 +559,8 @@
                              console.log(`Collision: TOP on ${obstacle.assetKey}`);
                              return { type: CollisionType.TOP, obstacle: obstacle };
                         }
-                        // Side collision sound is now played in gameLoop when handling loss of life/game over
-                        // playSound('hit');
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
+                        // playSound('hit'); // Sound moved to gameLoop
                         return { type: CollisionType.SIDE };
                     }
                 }
@@ -648,7 +635,7 @@
                      console.warn(`POI data not found for ID: ${poiId}`);
                      return;
                  }
-                 isPaused = true; // PAUSE GAME
+                 isPaused = true;
                  console.log(`>>> Game PAUSED for POI ID: ${poiId}`);
                  poiNameEl.textContent = poi.name;
                  const infoParts = poi.info.split('|').map(s => s.trim());
@@ -660,14 +647,13 @@
 
             function closePoiOverlay() { /* ... */
                 poiOverlay.classList.remove('visible');
-                isPaused = false; // RESUME GAME
-                lastTime = performance.now(); // Reset dt calculation
+                isPaused = false;
+                lastTime = performance.now();
                 console.log(">>> Closed POI Overlay via button. Game RESUMED.");
             }
 
 
-            // --- MODIFIED: Game Loop (Handles Lives) ---
-            function gameLoop(timestamp) {
+            function gameLoop(timestamp) { /* ... */
                  const dt = (timestamp - lastTime) / 1000 || 0;
                  if (!isPaused) {
                     lastTime = timestamp;
@@ -678,29 +664,22 @@
 
                 let collisionHandledThisFrame = false;
 
-                // --- Only Update game logic if PLAYING and NOT PAUSED ---
                 if (currentGameState === GameState.PLAYING && !isPaused) {
                     const collisionResult = checkCollisions();
 
                     if (collisionResult.type === CollisionType.SIDE) {
-                        // --- SIDE COLLISION: Lose a life or Game Over ---
-                        playSound('hit'); // Play hit sound
-                        playerLives--; // Decrement lives
-                        currentLivesSpan.textContent = playerLives; // Update display
-                        collisionHandledThisFrame = true; // Collision is handled here
+                        playSound('hit');
+                        playerLives--;
+                        currentLivesSpan.textContent = playerLives;
+                        collisionHandledThisFrame = true;
 
                         if (playerLives > 0) {
-                            // --- Lost a life, continue playing ---
                             console.log(`Life lost! ${playerLives} remaining.`);
-                            // Reset player position slightly (e.g., stumble on ground)
-                            // You might want to add a brief invincibility flash here later
                             player.y = canvasHeight - PLAYER_HEIGHT - GROUND_HEIGHT;
                             player.dy = 0;
                             player.grounded = true;
-                            // Game state remains PLAYING
 
                         } else {
-                            // --- No lives left: GAME OVER ---
                             console.warn("GAME OVER - No lives left.");
                             currentGameState = GameState.GAME_OVER;
                             saveHighScore();
@@ -708,38 +687,34 @@
                             gameOverHighScoreSpan.textContent = highScore;
                             gameOverScreen.classList.remove('hidden');
                             scoreDisplay.classList.add('hidden');
-                            livesDisplay.classList.add('hidden'); // Hide lives display on game over
+                            livesDisplay.classList.add('hidden');
                             if (poiOverlay.classList.contains('visible')) {
                                  closePoiOverlay();
                             }
                         }
 
                     } else if (collisionResult.type === CollisionType.TOP) {
-                        // --- TOP COLLISION: Bounce ---
                         player.y = collisionResult.obstacle.y - player.height;
                         player.dy = PLAYER_JUMP_POWER * PLAYER_BOUNCE_POWER_MULTIPLIER;
                         player.grounded = false;
                         playSound('bounce');
                         collisionResult.obstacle.isKnocked = true;
                         console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
-                        updatePlayer(dt); // Update player immediately after bounce
+                        updatePlayer(dt);
                         collisionHandledThisFrame = true;
                     }
 
-                    // Update player normally if no collision affected them this frame
                     if (!collisionHandledThisFrame) {
                         updatePlayer(dt);
                     }
 
-                    // Update obstacles and score (only run if still playing and not paused)
-                    if (currentGameState === GameState.PLAYING) { // Check state again in case game over happened
+                    if (currentGameState === GameState.PLAYING) {
                         updateObstacles(dt, timestamp);
                         updateScoreAndSpeed();
                     }
 
                 } // End of PLAYING and NOT PAUSED block
 
-                // --- Drawing (Always happens if not loading, even if paused) ---
                 if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
                      drawPlayer();
                      drawObstacles();
@@ -748,21 +723,20 @@
                      ctx.font = '20px ' + getComputedStyle(document.body).getPropertyValue('--font-pixel');
                      ctx.textAlign = 'center';
                      ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
-                }
+                 }
 
                 requestAnimationFrame(gameLoop);
             }
 
 
-            // --- MODIFIED: Game State Changers / Event Handlers (Show/Hide Lives Display) ---
-            function startGame() {
+            function startGame() { /* ... */
                 console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
                 if (currentGameState === GameState.PLAYING || !allAssetsLoaded) {
                     console.log("startGame() aborted. State:", currentGameState, "Assets loaded?", allAssetsLoaded);
                     return;
                 }
                 console.log("Executing startGame()...");
-                resetGame(); // Resets lives and updates display
+                resetGame();
                 currentGameState = GameState.PLAYING;
                 startScreen.classList.add('hidden');
                 gameOverScreen.classList.add('hidden');
@@ -772,11 +746,11 @@
                 lastTime = performance.now();
             }
 
-            function restartGame() {
+            function restartGame() { /* ... */
                  console.log("Attempting restartGame(). Current state:", currentGameState);
                 if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return;
                 console.log("Executing restartGame()...");
-                startGame(); // Restart just calls start, which resets lives
+                startGame();
             }
 
             function handleJumpInput() { /* ... */
@@ -787,8 +761,17 @@
                 }
             }
 
-            // --- Input Event Handlers ---
-            function handleKeyDown(e) { /* ... */
+            // --- MODIFIED: Input Event Handlers (Add Enter key check) ---
+            function handleKeyDown(e) {
+                 // --- NEW: Check for Enter key to close POI ---
+                 if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) {
+                    e.preventDefault(); // Prevent potential default Enter actions
+                    console.log("Enter key pressed while POI visible. Closing POI.");
+                    closePoiOverlay(); // Close the overlay and resume game
+                    return; // Stop further processing for this key press
+                 }
+
+                 // --- Existing Spacebar check ---
                  if (e.key === ' ' || e.code === 'Space') {
                     e.preventDefault();
                     console.log("Spacebar pressed. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded);
@@ -796,7 +779,7 @@
                     switch (currentGameState) {
                         case GameState.PLAYING:
                             console.log("Spacebar: Calling handleJumpInput()");
-                            handleJumpInput();
+                            handleJumpInput(); // Will only jump if not paused
                             break;
                         case GameState.MENU:
                             console.log("Spacebar: Calling startGame()");
@@ -814,10 +797,17 @@
                  e.preventDefault();
                  console.log("Screen touch detected. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded, "Target:", e.target.id);
                  if (!allAssetsLoaded) return;
+
+                 // --- IMPORTANT: Ignore touches if POI overlay is visible (use button instead) ---
+                 if (isPaused && poiOverlay.classList.contains('visible')) {
+                     console.log("Touch ignored: POI overlay is visible.");
+                     return;
+                 }
+
                  switch (currentGameState) {
                      case GameState.PLAYING:
                          console.log("Touch: Calling handleJumpInput()");
-                         handleJumpInput();
+                         handleJumpInput(); // Will only jump if not paused
                          break;
                      case GameState.MENU:
                          console.log("Touch: Checking if should start game...");
@@ -865,7 +855,7 @@
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
                 scoreDisplay.classList.add('hidden');
-                livesDisplay.classList.add('hidden'); // Hide lives initially
+                livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
                  resizeCanvas();
 
