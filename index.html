@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Verify POI Collision Skip)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Debug POI Trigger)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -277,7 +277,7 @@
             const SPEED_INCREASE_INTERVAL_SCORE = 400;
             const SPEED_INCREASE_AMOUNT = 20;
             const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
-            const POI_SPAWN_CHANCE = 0.15;
+            const POI_SPAWN_CHANCE = 0.15; // Chance to spawn POI
             const POI_DISPLAY_DURATION_MS = 6000;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
@@ -430,13 +430,20 @@
                 }
             }
 
-            function updateObstacles(dt, currentTime) { /* ... (no changes) ... */
+             // --- MODIFIED: updateObstacles (Added Debug Logs) ---
+             function updateObstacles(dt, currentTime) {
                  // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    const spawnPOI = Math.random() < POI_SPAWN_CHANCE && poiData.length > nextPoiIndex && assets.sign.loaded;
+                    // --- DEBUG: Log POI spawn chance check ---
+                    const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
+                    // console.log(`Checking POI spawn: random < ${POI_SPAWN_CHANCE}? ${willSpawnPOI}, nextPoiIndex=${nextPoiIndex}, sign loaded? ${assets.sign.loaded}`);
+
+                    const spawnPOI = willSpawnPOI && poiData.length > nextPoiIndex && assets.sign.loaded;
 
                     if (spawnPOI) {
+                        // --- DEBUG: Log POI spawning ---
+                        console.log(`Spawning POI: Index ${nextPoiIndex}`);
                         const poi = poiData[nextPoiIndex];
                         newObjectData = {
                             isPOI: true, poiId: poi.id, passed: false,
@@ -445,6 +452,7 @@
                         };
                         nextPoiIndex++;
                     } else {
+                        // Spawn regular obstacle
                         if (regularObstacleTypes.length > 0) {
                             const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
                             const type = regularObstacleTypes[typeIndex];
@@ -458,8 +466,13 @@
                             } else { console.warn(`Asset not loaded for obstacle type: ${type.assetKey}, skipping spawn.`); }
                         }
                     }
-                    if (newObjectData) { obstacles.push(newObjectData); }
+                    if (newObjectData) {
+                        // --- DEBUG: Log the spawned object ---
+                        // console.log("Spawned Object:", JSON.stringify(newObjectData));
+                        obstacles.push(newObjectData);
+                    }
 
+                    // Calculate next spawn time
                     const speedFactor = gameSpeed / INITIAL_GAME_SPEED;
                     const currentSpawnTime = OBSTACLE_BASE_SPAWN_TIME_MS / speedFactor;
                     const nextSpawnDelay = Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, currentSpawnTime) + (Math.random() * 300 - 150);
@@ -473,32 +486,47 @@
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i];
 
+                    // Move knocked obstacles down
                     if (obj.isKnocked) {
                         obj.y += 500 * dt;
                     } else {
+                        // Move non-knocked obstacles left
                         obj.x -= movement;
                     }
 
+                    // --- POI Triggering Logic ---
                     if (obj.isPOI && !obj.passed) {
-                         const triggerPoint = obj.x;
-                         if (player.x + player.width > triggerPoint) {
-                            console.log(`>>> POI Triggered: ID ${obj.poiId}`);
-                            displayPOIInfo(obj.poiId);
-                            obj.passed = true;
-                            score += 50;
+                         // --- DEBUG: Log check entry ---
+                         // console.log(`Checking POI trigger for ID ${obj.poiId} at x=${obj.x.toFixed(1)}`);
+
+                         const triggerPoint = obj.x; // Front edge of the sign
+                         const playerRightEdge = player.x + player.width;
+
+                         // --- DEBUG: Log values being compared ---
+                         // console.log(`   PlayerRight=${playerRightEdge.toFixed(1)}, TriggerPoint=${triggerPoint.toFixed(1)}`);
+
+                         if (playerRightEdge > triggerPoint) {
+                            // --- DEBUG: Log successful trigger ---
+                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`);
+                            displayPOIInfo(obj.poiId); // Call function to show overlay
+                            obj.passed = true; // Mark as passed so it only triggers once
+                            score += 50; // Optional: Add score for reaching POI
                             currentScoreSpan.textContent = score;
                             playSound('poi');
                         }
                     }
 
+                    // Remove obstacles off-screen
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height) {
+                         // --- DEBUG: Log removal ---
+                         // console.log(`Removing obstacle: ${obj.assetKey} (isPOI: ${obj.isPOI})`);
                          obstacles.splice(i, 1);
                     }
                 }
             }
 
-            // --- MODIFIED: checkCollisions (Added console log) ---
-            function checkCollisions() {
+
+            function checkCollisions() { /* ... (no changes) ... */
                 const playerRect = {
                     x: player.x + 5, y: player.y + 5,
                     width: player.width - 10, height: player.height - 10,
@@ -507,29 +535,22 @@
                 };
 
                 for (const obstacle of obstacles) {
-                    // --- Skip POIs and already knocked obstacles ---
                     if (obstacle.isPOI || obstacle.isKnocked) {
-                        // --- NEW: Log to confirm skipping ---
-                        if (obstacle.isPOI) {
-                             // console.log(`checkCollisions: Skipping POI (ID: ${obstacle.poiId})`); // Optional: uncomment for verbose logging
-                        }
-                        continue; // Skip to the next obstacle
+                        // if (obstacle.isPOI) { console.log(`checkCollisions: Skipping POI (ID: ${obstacle.poiId})`); } // Optional log
+                        continue;
                     }
 
-                    // --- Collision check for regular obstacles ---
                     const obstacleRect = {
                         x: obstacle.x, y: obstacle.y,
                         width: obstacle.width, height: obstacle.height,
                         top: obstacle.y, right: obstacle.x + obstacle.width
                     };
 
-                    // Broad Phase AABB Check
                     if (playerRect.x < obstacleRect.right &&
                         playerRect.right > obstacleRect.x &&
                         playerRect.y < obstacleRect.y + obstacleRect.height &&
                         playerRect.bottom > obstacleRect.top)
                     {
-                        // Collision Detected - Determine Type
                         const isFalling = player.dy >= 0;
                         const landedOnTop = playerRect.bottom >= obstacleRect.top &&
                                             playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
@@ -539,13 +560,11 @@
                              return { type: CollisionType.TOP, obstacle: obstacle };
                         }
 
-                        // If not a clear top landing, consider it a side collision
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
                         playSound('hit');
                         return { type: CollisionType.SIDE };
                     }
                 }
-                // No collision detected with any relevant obstacle
                 return { type: CollisionType.NONE };
             }
 
@@ -614,18 +633,21 @@
             // --- Display POI Info ---
             function displayPOIInfo(poiId) { /* ... (no changes) ... */
                  const poi = poiData.find(p => p.id === poiId);
-                if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
-                console.log(`Displaying POI: ${poi.name}`);
-                poiNameEl.textContent = poi.name;
-                poiInfoTextEl.textContent = poi.info;
-                poiOverlay.classList.add('visible');
-                if (poiTimeoutId) { clearTimeout(poiTimeoutId); }
-                poiTimeoutId = setTimeout(() => {
-                    poiOverlay.classList.remove('visible');
-                    console.log(`Hiding POI ID: ${poiId}`);
-                    poiTimeoutId = null;
-                }, POI_DISPLAY_DURATION_MS);
+                 if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
+                 // --- DEBUG: Log that this function was called ---
+                 console.log(`>>> Called displayPOIInfo for ID: ${poiId}, Name: ${poi.name}`);
+                 poiNameEl.textContent = poi.name;
+                 poiInfoTextEl.textContent = poi.info;
+                 poiOverlay.classList.add('visible'); // Make sure CSS for .visible works
+                 console.log(">>> Added 'visible' class to poiOverlay"); // Confirm class add
+                 if (poiTimeoutId) { clearTimeout(poiTimeoutId); }
+                 poiTimeoutId = setTimeout(() => {
+                     poiOverlay.classList.remove('visible');
+                     console.log(`>>> Hiding POI ID: ${poiId} after timeout`);
+                     poiTimeoutId = null;
+                 }, POI_DISPLAY_DURATION_MS);
             }
+
 
             // --- Game Loop ---
             function gameLoop(timestamp) { /* ... (no changes) ... */
@@ -638,9 +660,8 @@
                 let collisionHandled = false;
 
                 if (currentGameState === GameState.PLAYING) {
-                    const collisionResult = checkCollisions(); // Checks collisions, skips POIs
+                    const collisionResult = checkCollisions();
 
-                    // Handle results of collision check (only TOP or SIDE possible now)
                     if (collisionResult.type === CollisionType.SIDE) {
                         currentGameState = GameState.GAME_OVER;
                         saveHighScore();
@@ -659,16 +680,14 @@
                         playSound('bounce');
                         collisionResult.obstacle.isKnocked = true;
                         console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`);
-                        updatePlayer(dt); // Update player needed after bounce
+                        updatePlayer(dt);
                         collisionHandled = true;
                     }
 
-                    // Update player normally if no collision was handled
                     if (!collisionHandled) {
                         updatePlayer(dt);
                     }
 
-                    // Update obstacles (includes POI trigger logic) and score if still playing
                     if (currentGameState === GameState.PLAYING) {
                         updateObstacles(dt, timestamp);
                         updateScoreAndSpeed();
@@ -677,11 +696,10 @@
                     }
                 }
 
-                 // Draw non-playing states
                  if (currentGameState === GameState.MENU || currentGameState === GameState.GAME_OVER) {
                      drawPlayer();
                      if (currentGameState === GameState.GAME_OVER) {
-                         drawObstacles(); // Draw final state
+                         drawObstacles();
                      }
                  } else if (currentGameState === GameState.LOADING) {
                      ctx.fillStyle = 'white';
@@ -690,14 +708,12 @@
                      ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2);
                  }
 
-                // Request next frame ONLY if playing
                 if (currentGameState === GameState.PLAYING) {
                      requestAnimationFrame(gameLoop);
                 } else {
                     console.log(`Game loop stopped. State: ${currentGameState}`);
                 }
             }
-
 
             // --- Game State Changers / Event Handlers ---
             function startGame() { /* ... (no changes) ... */
