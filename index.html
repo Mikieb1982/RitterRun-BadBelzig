@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RitterRun Enhanced - Bad Belzig (Bounce & Knock Off v2)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Larger POI Signs)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -271,8 +271,9 @@
             const OBSTACLE_STONE_HEIGHT = 35;
             const OBSTACLE_TRACTOR_WIDTH = 70;
             const OBSTACLE_TRACTOR_HEIGHT = 45;
-            const POI_SIGN_WIDTH = 45;
-            const POI_SIGN_HEIGHT = 55;
+            // --- MODIFIED: Increased POI Sign Size ---
+            const POI_SIGN_WIDTH = 90; // Was 45
+            const POI_SIGN_HEIGHT = 110; // Was 55
             const INITIAL_GAME_SPEED = 300;
             const SPEED_INCREASE_INTERVAL_SCORE = 400;
             const SPEED_INCREASE_AMOUNT = 20;
@@ -281,7 +282,7 @@
             const POI_DISPLAY_DURATION_MS = 6000;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
-            const COLLISION_LANDING_TOLERANCE = 12; // Increased tolerance
+            const COLLISION_LANDING_TOLERANCE = 12;
 
             // --- Game Variables ---
             let score = 0;
@@ -319,6 +320,7 @@
                 { assetKey: 'stone', width: OBSTACLE_STONE_WIDTH, height: OBSTACLE_STONE_HEIGHT },
                 { assetKey: 'tractor', width: OBSTACLE_TRACTOR_WIDTH, height: OBSTACLE_TRACTOR_HEIGHT }
             ];
+            // Use the constants directly here
             const poiSignDimensions = { width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT };
 
             // --- POI Data Structure ---
@@ -430,7 +432,8 @@
                 }
             }
 
-            function updateObstacles(dt, currentTime) { /* ... (no changes) ... */
+            // --- MODIFIED: updateObstacles (POI Trigger Logic) ---
+            function updateObstacles(dt, currentTime) {
                  // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
@@ -440,8 +443,9 @@
                         const poi = poiData[nextPoiIndex];
                         newObjectData = {
                             isPOI: true, poiId: poi.id, passed: false,
-                            x: canvasWidth, y: canvasHeight - poiSignDimensions.height - GROUND_HEIGHT,
-                            width: poiSignDimensions.width, height: poiSignDimensions.height, assetKey: 'sign'
+                            // Use the constants for dimensions
+                            x: canvasWidth, y: canvasHeight - POI_SIGN_HEIGHT - GROUND_HEIGHT,
+                            width: POI_SIGN_WIDTH, height: POI_SIGN_HEIGHT, assetKey: 'sign'
                         };
                         nextPoiIndex++;
                     } else {
@@ -479,26 +483,29 @@
                         obj.x -= movement;
                     }
 
+                    // --- MODIFIED: POI Triggering ---
                     if (obj.isPOI && !obj.passed) {
-                         const triggerPoint = obj.x + obj.width / 2;
-                         if (player.x > triggerPoint) {
+                         // Trigger when player's front edge reaches the sign's front edge
+                         const triggerPoint = obj.x;
+                         // Use player's right edge for check to ensure overlap
+                         if (player.x + player.width > triggerPoint) {
                             console.log(`>>> POI Triggered: ID ${obj.poiId}`);
                             displayPOIInfo(obj.poiId);
-                            obj.passed = true;
-                            score += 50;
+                            obj.passed = true; // Mark as passed so it only triggers once
+                            score += 50; // Optional: Add score for reaching POI
                             currentScoreSpan.textContent = score;
                             playSound('poi');
                         }
                     }
 
+                    // Remove obstacles off-screen
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height) {
                          obstacles.splice(i, 1);
                     }
                 }
             }
 
-            // --- MODIFIED: Collision Checking (Simplified Top Check) ---
-            function checkCollisions() {
+            function checkCollisions() { /* ... (no changes from previous version) ... */
                 const playerRect = {
                     x: player.x + 5, y: player.y + 5,
                     width: player.width - 10, height: player.height - 10,
@@ -507,7 +514,7 @@
                 };
 
                 for (const obstacle of obstacles) {
-                    if (obstacle.isPOI || obstacle.isKnocked) { // Ignore POIs and already knocked obstacles
+                    if (obstacle.isPOI || obstacle.isKnocked) {
                         continue;
                     }
 
@@ -517,27 +524,20 @@
                         top: obstacle.y, right: obstacle.x + obstacle.width
                     };
 
-                    // --- Broad Phase AABB Check ---
                     if (playerRect.x < obstacleRect.right &&
                         playerRect.right > obstacleRect.x &&
                         playerRect.y < obstacleRect.y + obstacleRect.height &&
                         playerRect.bottom > obstacleRect.top)
                     {
-                        // --- Collision Detected - Determine Type ---
                         const isFalling = player.dy >= 0;
-                        // Check if player's bottom is within tolerance *above or at* the obstacle top
                         const landedOnTop = playerRect.bottom >= obstacleRect.top &&
                                             playerRect.bottom <= obstacleRect.top + COLLISION_LANDING_TOLERANCE;
 
-                        // *** MODIFICATION: Removed the specific horizontal alignment check ***
-                        // If player is falling and lands within the top tolerance zone,
-                        // consider it a TOP collision. The AABB check already ensures some horizontal overlap.
                         if (isFalling && landedOnTop) {
                              console.log(`Collision: TOP on ${obstacle.assetKey}`);
                              return { type: CollisionType.TOP, obstacle: obstacle };
                         }
 
-                        // If not a clear top landing, consider it a side collision
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
                         playSound('hit');
                         return { type: CollisionType.SIDE };
@@ -589,16 +589,30 @@
                     ctx.fillRect(player.x, player.y, player.width, player.height);
                 }
             }
-            function drawObstacles() { /* ... (no changes) ... */
+            // --- MODIFIED: drawObstacles (Uses constants for POI size) ---
+            function drawObstacles() {
                 for (const obj of obstacles) {
-                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
+                    // Determine width/height based on type
+                    let drawWidth, drawHeight;
+                    if (obj.isPOI) {
+                        drawWidth = POI_SIGN_WIDTH;
+                        drawHeight = POI_SIGN_HEIGHT;
                     } else {
+                        drawWidth = obj.width; // Use stored width for regular obstacles
+                        drawHeight = obj.height; // Use stored height
+                    }
+
+                    // Draw using determined dimensions
+                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
+                        ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, drawWidth, drawHeight);
+                    } else {
+                        // Fallback drawing
                         ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
-                        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                        ctx.fillRect(obj.x, obj.y, drawWidth, drawHeight);
                     }
                 }
             }
+
 
             // --- Display POI Info ---
             function displayPOIInfo(poiId) { /* ... (no changes) ... */
@@ -660,7 +674,7 @@
                         updateObstacles(dt, timestamp);
                         updateScoreAndSpeed();
                         drawPlayer();
-                        drawObstacles();
+                        drawObstacles(); // Draws obstacles using potentially updated POI size
                     }
                 }
 
