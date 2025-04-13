@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Background Fade Transition)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Final POI Text)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -148,8 +148,8 @@
             const MOBILE_BREAKPOINT_WIDTH = 850;
             const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1;
             const backgroundSequence = [0, 1, 2, 1, 0];
-            const FINAL_POI_ID = 7;
-            const BACKGROUND_TRANSITION_DURATION = 1000; // NEW: 1 second fade (in ms)
+            const FINAL_POI_ID = 7; // ID of Burg Eisenhardt
+            const BACKGROUND_TRANSITION_DURATION = 1000;
 
 
             // --- Game Variables ---
@@ -165,10 +165,7 @@
             let gameInitialized = false; let isPaused = false; let groundHeightPx = 0; let collisionLandingTolerancePx = 0;
             let currentKnightVisualState = null;
             let isPressingLeft = false; let isPressingRight = false;
-            // NEW: Background transition state
-            let isTransitioningBackground = false;
-            let transitionStartTime = 0;
-            let previousBackgroundSequenceIndex = 0;
+            let isTransitioningBackground = false; let transitionStartTime = 0; let previousBackgroundSequenceIndex = 0;
 
 
             // --- Graphics Assets ---
@@ -179,8 +176,17 @@
             const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }, { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
-            // --- POI Data Structure ---
-            const poiData = [ /* ... */ { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile." }, { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage." }, { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern." }, { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet." }, { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt." }, { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation." }, { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region." } ];
+            // --- MODIFIED: POI Data Structure (Updated Burg Info) ---
+            const poiData = [
+                 { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile." },
+                 { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage." },
+                 { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern." },
+                 { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet." },
+                 { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt." },
+                 { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation." },
+                 // Updated Burg Info
+                 { id: 7, name: "Burg Eisenhardt", info: "Burg Eisenhardt: A well-preserved medieval castle vital to the region's defense, known for its distinct architecture and historical significance. | Burg Eisenhardt: Eine gut erhaltene mittelalterliche Burg, entscheidend für die Verteidigung der Region, bekannt für ihre markante Architektur und historische Bedeutung." }
+            ];
 
             // --- Asset Loading Functions ---
             function assetLoaded(assetKey) { /* ... */ console.log(`Asset loaded: ${assetKey}`); assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.log("All assets loaded."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
@@ -192,9 +198,9 @@
             function saveHighScore() { /* ... */ if (score > highScore) { highScore = score; try { localStorage.setItem('ritterRunHighScore', highScore.toString()); gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Save HS:", e); } } }
 
             // --- Sound Playing Helper (Stub) ---
-            function playSound(soundId) { console.log(`Playing sound: ${soundId}`); } // Add 'win' case if needed
+            function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- MODIFIED: Reset Game Variables (Resets transition state) ---
+            // --- MODIFIED: Reset Game Variables (Resets game over title) ---
             function resetGame() {
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
@@ -209,18 +215,22 @@
                 bgX = 0; backgroundSequenceIndex = 0; nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
                 currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
                 poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none'; currentKnightVisualState = null;
-                // Reset transition state
-                isTransitioningBackground = false;
-                transitionStartTime = 0;
-                previousBackgroundSequenceIndex = 0; // Or set to initial index
-                // Reset Game Over screen title
-                if(gameOverScreen.querySelector('h2')) { gameOverScreen.querySelector('h2').textContent = "Game Over!"; gameOverScreen.querySelector('h2').style.color = '#f88'; }
+                isTransitioningBackground = false; transitionStartTime = 0; previousBackgroundSequenceIndex = 0;
+                // Reset Game Over screen title and color
+                const titleElement = gameOverScreen.querySelector('h2');
+                if(titleElement) {
+                    titleElement.textContent = "Game Over!";
+                    titleElement.style.color = '#f88'; // Default 'lose' color
+                }
                 console.log(`Game Reset`);
             }
 
             // --- Update Functions ---
             function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            function updateObstacles(dt, currentTime) { /* ... */
+
+            // --- MODIFIED: updateObstacles (Handles win condition text) ---
+             function updateObstacles(dt, currentTime) {
+                 // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
                     if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
@@ -228,115 +238,50 @@
                     if (newObjectData) { obstacles.push(newObjectData); }
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
+
+                 // --- Obstacle Movement, POI Triggering & Knock Off ---
                  const movement = obstacleSpeed * dt;
-                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger, removal ... */
-                    const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
-                    // --- MODIFIED: POI Trigger Check (Handles win condition) ---
+                 for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obj = obstacles[i];
+                    if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
+
+                    // POI Trigger Check
                     if (obj.isPOI && !obj.passed) {
                          const triggerPoint = obj.x; const playerRightEdge = player.x + player.width;
                          if (playerRightEdge > triggerPoint) {
                             obj.passed = true;
+                            // Check if it's the final POI
                             if (obj.poiId === FINAL_POI_ID) {
+                                // --- GAME WON ---
                                 console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore();
-                                const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Castle Reached!"; titleElement.style.color = 'var(--bb-yellow)'; }
+                                // Modify game over screen for winning message
+                                const titleElement = gameOverScreen.querySelector('h2');
+                                if(titleElement) {
+                                    // Set bilingual win message
+                                    titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!";
+                                    titleElement.style.color = 'var(--bb-yellow)'; // Victory color
+                                }
                                 finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); }
                             } else {
+                                // --- Regular POI ---
                                 console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi');
                             }
                         }
                     } // --- End POI Check ---
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
-                 }
-             }
-            function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
 
-            // --- MODIFIED: updateScoreAndSpeed (Triggers background transition) ---
-            function updateScoreAndSpeed() {
-                score++;
-                currentScoreSpan.textContent = score;
-
-                // Check score threshold to advance in the background sequence
-                if (!isTransitioningBackground && score >= nextBackgroundSwitchScore) { // Only trigger if not already transitioning
-                    previousBackgroundSequenceIndex = backgroundSequenceIndex; // Store old index
-                    backgroundSequenceIndex = (backgroundSequenceIndex + 1) % backgroundSequence.length; // Get new index
-                    // Check if index actually changed (it should with the current sequence)
-                    if (previousBackgroundSequenceIndex !== backgroundSequenceIndex) {
-                        isTransitioningBackground = true; // Start transition
-                        transitionStartTime = performance.now();
-                        console.log(`Background transition START: ${previousBackgroundSequenceIndex} -> ${backgroundSequenceIndex}`);
+                    // Remove if off-screen
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
+                         obstacles.splice(i, 1);
                     }
-                    nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; // Set next threshold
-                }
-            }
+                 } // End obstacle loop
+             } // End updateObstacles
+
+
+            function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
+            function updateScoreAndSpeed() { /* ... */ score++; currentScoreSpan.textContent = score; if (!isTransitioningBackground && score >= nextBackgroundSwitchScore) { previousBackgroundSequenceIndex = backgroundSequenceIndex; backgroundSequenceIndex = (backgroundSequenceIndex + 1) % backgroundSequence.length; if (previousBackgroundSequenceIndex !== backgroundSequenceIndex) { isTransitioningBackground = true; transitionStartTime = performance.now(); console.log(`Background transition START: ${previousBackgroundSequenceIndex} -> ${backgroundSequenceIndex}`); } nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; } }
 
             // --- Draw Functions ---
-            // --- MODIFIED: drawBackground (Handles fade transition) ---
-            function drawBackground(dt) {
-                const now = performance.now();
-                // Calculate background scroll offset (pauses if game is paused)
-                const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt;
-                bgX -= bgMovement;
-                if (bgX <= -canvasWidth) { bgX += canvasWidth; }
-
-                // --- Clear canvas ---
-                ctx.fillStyle = '#87CEEB'; // Fallback sky blue
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-                // --- Draw Background Layers ---
-                if (isTransitioningBackground) {
-                    const elapsed = now - transitionStartTime;
-                    const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION);
-
-                    // Get indices and assets for old and new backgrounds
-                    const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex];
-                    const oldAssetKey = `background${oldActualIndex + 1}`;
-                    const oldAsset = assets[oldAssetKey];
-
-                    const newActualIndex = backgroundSequence[backgroundSequenceIndex];
-                    const newAssetKey = `background${newActualIndex + 1}`;
-                    const newAsset = assets[newAssetKey];
-
-                    // Draw old background fading out
-                    if (oldAsset && oldAsset.loaded) {
-                        ctx.globalAlpha = 1 - progress; // Fade out
-                        ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                        ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                    }
-
-                    // Draw new background fading in
-                    if (newAsset && newAsset.loaded) {
-                        ctx.globalAlpha = progress; // Fade in
-                        ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                        ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                    }
-
-                    ctx.globalAlpha = 1.0; // Reset alpha
-
-                    // End transition if duration met
-                    if (progress >= 1) {
-                        isTransitioningBackground = false;
-                        console.log("Background transition END");
-                    }
-                } else {
-                    // --- Draw Current Background Normally ---
-                    const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex];
-                    const currentAssetKey = `background${actualBackgroundIndex + 1}`;
-                    const currentAsset = assets[currentAssetKey];
-
-                    if (currentAsset && currentAsset.loaded) {
-                        ctx.globalAlpha = 1.0;
-                        ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                        ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                    }
-                }
-
-                // --- Draw Ground ---
-                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight);
-                groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423');
-                ctx.fillStyle = groundGradient;
-                ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
-            }
-
+            function drawBackground(dt) { /* ... */ const now = performance.now(); const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt; bgX -= bgMovement; if (bgX <= -canvasWidth) { bgX += canvasWidth; } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); if (isTransitioningBackground) { const elapsed = now - transitionStartTime; const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION); const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex]; const oldAssetKey = `background${oldActualIndex + 1}`; const oldAsset = assets[oldAssetKey]; const newActualIndex = backgroundSequence[backgroundSequenceIndex]; const newAssetKey = `background${newActualIndex + 1}`; const newAsset = assets[newAssetKey]; if (oldAsset && oldAsset.loaded) { ctx.globalAlpha = 1 - progress; ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } if (newAsset && newAsset.loaded) { ctx.globalAlpha = progress; ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } ctx.globalAlpha = 1.0; if (progress >= 1) { isTransitioningBackground = false; console.log("Background transition END"); } } else { const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex]; const currentAssetKey = `background${actualBackgroundIndex + 1}`; const currentAsset = assets[currentAssetKey]; if (currentAsset && currentAsset.loaded) { ctx.globalAlpha = 1.0; ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
             function drawObstacles() { /* Uses updated obstacle size constants */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
             function updateKnightVisuals() { /* Uses updated player size constants */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
@@ -347,7 +292,7 @@
                  const dt = (timestamp - lastTime) / 1000 || 0; if (!isPaused) { lastTime = timestamp; }
                  if (currentGameState === GameState.PLAYING && !isPaused) { /* ... collision checks, updates ... */
                     let collisionHandledThisFrame = false; const collisionResult = checkCollisions();
-                    if (collisionResult.type === CollisionType.SIDE) { playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; collisionHandledThisFrame = true; if (playerLives > 0) { console.log(`Life lost! ${playerLives} remaining.`); player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`); } else { console.warn("GAME OVER - No lives left."); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } }
+                    if (collisionResult.type === CollisionType.SIDE) { playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; collisionHandledThisFrame = true; if (playerLives > 0) { console.log(`Life lost! ${playerLives} remaining.`); player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`); } else { console.warn("GAME OVER - No lives left."); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; } gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } }
                     else if (collisionResult.type === CollisionType.TOP) { player.y = collisionResult.obstacle.y - player.height; player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; player.grounded = false; playSound('bounce'); collisionResult.obstacle.isKnocked = true; console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`); updatePlayer(dt); collisionHandledThisFrame = true; }
                     if (!collisionHandledThisFrame) { updatePlayer(dt); } if (currentGameState === GameState.PLAYING) { updateObstacles(dt, timestamp); updateScoreAndSpeed(); } }
                  ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(dt); drawObstacles(); updateKnightVisuals();
