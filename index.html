@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Parallax Background)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Add Family Obstacle)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -120,35 +120,37 @@
             const INVINCIBILITY_DURATION_MS = 1000;
             const GROUND_HEIGHT_PERCENT = 0.075;
             const PLAYER_INITIAL_X_PERCENT = 0.075;
-            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.05;
-            const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.10;
-            const PLAYER_WIDTH_PERCENT_MOBILE = 0.07;
-            const PLAYER_HEIGHT_PERCENT_MOBILE = 0.14;
+            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10;
+            const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20;
+            const PLAYER_WIDTH_PERCENT_MOBILE = 0.14;
+            const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28;
             const PLAYER_GRAVITY_FACTOR = 1300;
             const PLAYER_JUMP_FACTOR = -40;
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
             const PLAYER_ACCEL_FACTOR = 1.0;
             const PLAYER_MAX_DX_FACTOR = 0.375;
             const PLAYER_FRICTION = 0.90;
-            const OBSTACLE_STONE_WIDTH_PERCENT = 0.044;
-            const OBSTACLE_STONE_HEIGHT_PERCENT = 0.088;
-            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.088;
-            const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.113;
+            const OBSTACLE_STONE_WIDTH_PERCENT = 0.088;
+            const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176;
+            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176;
+            const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226;
+            // NEW: Family obstacle size constants (set similar to doubled stone)
+            const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088;
+            const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
+
             const POI_SIGN_WIDTH_PERCENT = 0.113;
             const POI_SIGN_HEIGHT_PERCENT = 0.275;
             const OBSTACLE_SPEED_FACTOR = 0.375;
-            const SPEED_INCREASE_INTERVAL_SCORE = 400; // Score is independent of speed now
-            // REMOVED: const SPEED_INCREASE_AMOUNT_FACTOR
-            // REMOVED: const BACKGROUND_SWITCH_SCORE_INTERVAL
+            const SPEED_INCREASE_INTERVAL_SCORE = 400;
+            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
             const POI_SPAWN_CHANCE = 0.15;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
             const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045;
             const MOBILE_BREAKPOINT_WIDTH = 850;
-            // NEW: Background scroll speed factors (relative to obstacle speed)
-            const BG1_SCROLL_FACTOR = 0.25; // Closest layer
-            const BG2_SCROLL_FACTOR = 0.15; // Middle layer
-            const BG3_SCROLL_FACTOR = 0.05; // Furthest layer
+            const BG1_SCROLL_FACTOR = 0.25;
+            const BG2_SCROLL_FACTOR = 0.15;
+            const BG3_SCROLL_FACTOR = 0.05;
 
 
             // --- Game Variables ---
@@ -157,24 +159,35 @@
             let obstacles = [];
             let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-            // NEW: Separate background offsets
-            let bg1X = 0;
-            let bg2X = 0;
-            let bg3X = 0;
-            // REMOVED: currentBackgroundIndex, nextBackgroundSwitchScore
+            let bg1X = 0; let bg2X = 0; let bg3X = 0;
             let nextObstacleSpawnTime = 0; let nextPoiIndex = 0; let lastTime = 0;
             let gameInitialized = false; let isPaused = false; let groundHeightPx = 0; let collisionLandingTolerancePx = 0;
             let currentKnightVisualState = null;
             let isPressingLeft = false; let isPressingRight = false;
 
 
-            // --- Graphics Assets ---
-            const assets = { /* ... */ knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' } };
-            // REMOVED: const numBackgrounds
-            let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
+            // --- MODIFIED: Graphics Assets (Added family) ---
+            const assets = {
+                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' },
+                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' },
+                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
+                sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
+                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
+                family: { img: new Image(), loaded: false, src: 'assets/family.png' }, // NEW ASSET
+                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
+                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
+                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }
+            };
+            let assetsLoadedCount = 0;
+            let totalAssets = Object.keys(assets).length; // Automatically includes 'family' now
+            let allAssetsLoaded = false;
 
-            // --- Obstacle/POI Definitions ---
-            const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT } ];
+            // --- MODIFIED: Obstacle/POI Definitions (Added family) ---
+            const regularObstacleTypes = [
+                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
+                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT },
+                { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } // NEW TYPE
+            ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
@@ -192,8 +205,8 @@
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- MODIFIED: Reset Game Variables (Resets multiple bg offsets) ---
-            function resetGame() {
+            // --- Reset Game Variables ---
+            function resetGame() { /* ... */
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
                 obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
@@ -204,11 +217,7 @@
                 else { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP; }
                 player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT; player.y = canvasHeight - groundHeightPx - player.height; player.dx = 0; player.dy = 0; player.grounded = true;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-                // Reset all background offsets
-                bg1X = 0;
-                bg2X = 0;
-                bg3X = 0;
-                // REMOVED: currentBackgroundIndex, nextBackgroundSwitchScore
+                bg1X = 0; bg2X = 0; bg3X = 0;
                 currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
                 poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none'; currentKnightVisualState = null;
                 console.log(`Game Reset - Obstacle Speed: ${obstacleSpeed.toFixed(1)}, Player MaxDX: ${playerMaxDx.toFixed(1)}, Accel: ${playerAccel.toFixed(1)}, Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
@@ -217,7 +226,7 @@
             // --- Update Functions ---
             function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
             function updateObstacles(dt, currentTime) { /* ... */
-                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
+                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic now includes family ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
                     if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
                     else { if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; } } }
@@ -232,65 +241,10 @@
                  }
              }
             function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
-
-            // --- MODIFIED: updateScoreAndSpeed (No background switch) ---
-            function updateScoreAndSpeed() {
-                score++;
-                currentScoreSpan.textContent = score;
-                // Speed increase logic removed
-                // Background switching logic removed
-            }
+            function updateScoreAndSpeed() { /* ... */ score++; currentScoreSpan.textContent = score; /* Speed is constant */ }
 
             // --- Draw Functions ---
-            // --- MODIFIED: drawBackground (Layered parallax scrolling) ---
-            function drawBackground(dt) {
-                // Calculate scroll speeds based on factors and obstacle speed
-                const bgSpeed1 = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt;
-                const bgSpeed2 = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt;
-                const bgSpeed3 = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt;
-
-                // Update offsets
-                bg1X -= bgSpeed1;
-                bg2X -= bgSpeed2;
-                bg3X -= bgSpeed3;
-
-                // Wrap offsets
-                if (bg1X <= -canvasWidth) { bg1X += canvasWidth; }
-                if (bg2X <= -canvasWidth) { bg2X += canvasWidth; }
-                if (bg3X <= -canvasWidth) { bg3X += canvasWidth; }
-
-                // --- Draw layers (furthest first) ---
-                // Fallback clear
-                ctx.fillStyle = '#87CEEB'; // Light Sky Blue fallback
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-                // Layer 3 (Furthest)
-                if (assets.background3 && assets.background3.loaded) {
-                    ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight);
-                }
-                // Layer 2 (Middle)
-                if (assets.background2 && assets.background2.loaded) {
-                    ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight);
-                }
-                // Layer 1 (Closest)
-                if (assets.background1 && assets.background1.loaded) {
-                    ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight);
-                }
-
-                // --- Draw Ground ---
-                // Use a simple gradient for now, replace with texture if available
-                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight);
-                groundGradient.addColorStop(0, '#5a8a36'); // Lighter green top
-                groundGradient.addColorStop(0.3, '#446d20'); // Darker green
-                groundGradient.addColorStop(1, '#6b4423'); // Brown bottom
-
-                ctx.fillStyle = groundGradient;
-                ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
-            }
-
+            function drawBackground(dt) { /* ... */ const bgSpeed1 = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt; const bgSpeed2 = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt; const bgSpeed3 = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt; bg1X -= bgSpeed1; bg2X -= bgSpeed2; bg3X -= bgSpeed3; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; } if (bg2X <= -canvasWidth) { bg2X += canvasWidth; } if (bg3X <= -canvasWidth) { bg3X += canvasWidth; } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); if (assets.background3 && assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background2 && assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background1 && assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
             function drawObstacles() { /* ... */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
             function updateKnightVisuals() { /* ... */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
@@ -326,7 +280,11 @@
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
-                if (!assets.knight_run.loaded || !assets.knight_jump.loaded) { console.error("Knight run/jump assets failed to load! Cannot start."); alert("Error: Essential knight images failed to load. Please check paths or refresh."); return; }
+                if (!assets.knight_run.loaded || !assets.knight_jump.loaded || !assets.family.loaded) { // Check family too
+                     console.error("Essential assets (knight run/jump or family) failed to load! Cannot start.");
+                     alert("Error: Essential character/obstacle images failed to load. Please check paths or refresh.");
+                     return;
+                }
                 loadHighScore(); resizeCanvas(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
                  startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('click', closePoiOverlay);
                  console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas); closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('click', closePoiOverlay);
