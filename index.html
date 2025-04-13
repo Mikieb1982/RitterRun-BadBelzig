@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Custom BG Sequence)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Win Condition)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -62,7 +62,7 @@
         </div>
         <div id="gameOverScreen" class="ui-screen hidden">
             <h2>Game Over!</h2>
-            <p>Score: <span id="finalScore">0</span></p>
+            <p>Score/Punkte: <span id="finalScore">0</span></p>
             <p>High Score: <span id="gameOverHighScore">0</span></p>
             <button id="restartButton" class="ui-button">Restart</button>
         </div>
@@ -140,15 +140,15 @@
             const POI_SIGN_HEIGHT_PERCENT = 0.275;
             const OBSTACLE_SPEED_FACTOR = 0.375;
             const SPEED_INCREASE_INTERVAL_SCORE = 400;
-            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; // Score interval for BG change
+            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
             const POI_SPAWN_CHANCE = 0.15;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
             const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045;
             const MOBILE_BREAKPOINT_WIDTH = 850;
             const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1;
-            // NEW: Background sequence array (0=bg1, 1=bg2, 2=bg3)
             const backgroundSequence = [0, 1, 2, 1, 0];
+            const FINAL_POI_ID = 7; // NEW: ID of the winning POI (Burg Eisenhardt)
 
 
             // --- Game Variables ---
@@ -158,10 +158,8 @@
             let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
             let bgX = 0;
-            // NEW: Index for the background sequence array
             let backgroundSequenceIndex = 0;
             let nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-            // REMOVED: currentBackgroundIndex (replaced by sequence index)
             let nextObstacleSpawnTime = 0; let nextPoiIndex = 0; let lastTime = 0;
             let gameInitialized = false; let isPaused = false; let groundHeightPx = 0; let collisionLandingTolerancePx = 0;
             let currentKnightVisualState = null;
@@ -170,7 +168,6 @@
 
             // --- Graphics Assets ---
             const assets = { /* ... */ knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' }, family: { img: new Image(), loaded: false, src: 'assets/family.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' } };
-            // REMOVED: numBackgrounds
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
@@ -192,31 +189,35 @@
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- MODIFIED: Reset Game Variables (Resets background sequence index) ---
+            // --- MODIFIED: Reset Game Variables (Resets game over title) ---
             function resetGame() {
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
                 obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
                 player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR; player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
                 const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_WIDTH;
-                console.log(`isMobile check (width <= ${MOBILE_BREAKPOINT_WIDTH}): ${isMobile}`);
+                // console.log(`isMobile check (width <= ${MOBILE_BREAKPOINT_WIDTH}): ${isMobile}`); // Less verbose log
                 if (isMobile) { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_MOBILE; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_MOBILE; }
                 else { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP; }
                 player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT; player.y = canvasHeight - groundHeightPx - player.height; player.dx = 0; player.dy = 0; player.grounded = true;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-                // Reset single background offset and sequence index
-                bgX = 0;
-                backgroundSequenceIndex = 0; // Reset sequence position
-                nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-                // REMOVED: currentBackgroundIndex
+                bgX = 0; backgroundSequenceIndex = 0; nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
                 currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
                 poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none'; currentKnightVisualState = null;
-                console.log(`Game Reset - Obstacle Speed: ${obstacleSpeed.toFixed(1)}, Player MaxDX: ${playerMaxDx.toFixed(1)}, Accel: ${playerAccel.toFixed(1)}, Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
+                // NEW: Reset Game Over screen title
+                if(gameOverScreen.querySelector('h2')) {
+                    gameOverScreen.querySelector('h2').textContent = "Game Over!";
+                    gameOverScreen.querySelector('h2').style.color = '#f88'; // Reset color too
+                }
+                console.log(`Game Reset`); // Simplified log
             }
 
             // --- Update Functions ---
             function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            function updateObstacles(dt, currentTime) { /* Uses updated obstacle size constants */
+
+            // --- MODIFIED: updateObstacles (Handles win condition on POI trigger) ---
+             function updateObstacles(dt, currentTime) {
+                 // --- Obstacle Spawning ---
                  if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
                     if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
@@ -224,16 +225,64 @@
                     if (newObjectData) { obstacles.push(newObjectData); }
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
+
+                 // --- Obstacle Movement, POI Triggering & Knock Off ---
                  const movement = obstacleSpeed * dt;
-                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger, removal ... */
-                    const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
-                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); obj.passed = true; score += 50; currentScoreSpan.textContent = score; playSound('poi'); } }
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
-                 }
-             }
+                 for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obj = obstacles[i];
+                    if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
+
+                    // --- MODIFIED: POI Trigger Check ---
+                    if (obj.isPOI && !obj.passed) {
+                         const triggerPoint = obj.x;
+                         const playerRightEdge = player.x + player.width;
+                         if (playerRightEdge > triggerPoint) {
+                            obj.passed = true; // Mark as passed immediately
+
+                            // --- Check if it's the final POI ---
+                            if (obj.poiId === FINAL_POI_ID) {
+                                // --- GAME WON ---
+                                console.log(">>> GAME WON! Reached Burg Eisenhardt!");
+                                playSound('win');
+                                currentGameState = GameState.GAME_OVER; // Use game over state
+                                saveHighScore();
+                                // Modify game over screen for winning message
+                                const titleElement = gameOverScreen.querySelector('h2');
+                                if(titleElement) {
+                                    titleElement.textContent = "Castle Reached!"; // Victory message
+                                    titleElement.style.color = 'var(--bb-yellow)'; // Victory color
+                                }
+                                finalScoreSpan.textContent = score;
+                                gameOverHighScoreSpan.textContent = highScore; // Show final high score
+                                // Show screen, hide game UI
+                                gameOverScreen.classList.remove('hidden');
+                                scoreDisplay.classList.add('hidden');
+                                livesDisplay.classList.add('hidden');
+                                knightImageEl.style.display = 'none';
+                                if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } // Close POI if open
+
+                            } else {
+                                // --- Regular POI ---
+                                console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`);
+                                displayPOIInfo(obj.poiId); // Pause and display info
+                                score += 50;
+                                currentScoreSpan.textContent = score;
+                                playSound('poi');
+                            }
+                        }
+                    } // --- End POI Check ---
+
+                    // Remove if off-screen
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
+                         obstacles.splice(i, 1);
+                    }
+                 } // End obstacle loop
+             } // End updateObstacles
+
+
             function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
 
-            // --- MODIFIED: updateScoreAndSpeed (Uses background sequence) ---
+            // --- MODIFIED: updateScoreAndSpeed (Uses background sequence index) ---
             function updateScoreAndSpeed() {
                 score++;
                 currentScoreSpan.textContent = score;
@@ -249,37 +298,15 @@
             // --- Draw Functions ---
             // --- MODIFIED: drawBackground (Uses sequence index) ---
             function drawBackground(dt) {
-                // Get the actual index (0, 1, or 2) from the sequence array
                 const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex];
-                const currentAssetKey = `background${actualBackgroundIndex + 1}`; // Asset keys are 1-based
+                const currentAssetKey = `background${actualBackgroundIndex + 1}`;
                 const currentAsset = assets[currentAssetKey];
-
-                // Scroll speed based on obstacle speed
                 const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt;
                 bgX -= bgMovement;
-
-                // Wrap background offset
-                if (bgX <= -canvasWidth) {
-                    bgX += canvasWidth;
-                }
-
-                // Draw the current background image twice for wrapping
-                if (currentAsset && currentAsset.loaded) {
-                    ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight);
-                    ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight);
-                } else {
-                    // Fallback color if image not loaded
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                }
-
-                // Draw Ground (using gradient)
-                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight);
-                groundGradient.addColorStop(0, '#5a8a36');
-                groundGradient.addColorStop(0.3, '#446d20');
-                groundGradient.addColorStop(1, '#6b4423');
-                ctx.fillStyle = groundGradient;
-                ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
+                if (bgX <= -canvasWidth) { bgX += canvasWidth; }
+                if (currentAsset && currentAsset.loaded) { ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); }
+                else { ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); }
+                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
             }
 
             function drawObstacles() { /* Uses updated obstacle size constants */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
