@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Add Family Obstacle)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (POI Tap Close Fix)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +25,7 @@
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
-        .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
+        .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; /* No cursor pointer needed if whole thing closes on tap */ }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .poi-overlay p { font-size: 1em; line-height: 1.6; color: var(--bb-white); margin-bottom: 20px; }
@@ -120,10 +120,10 @@
             const INVINCIBILITY_DURATION_MS = 1000;
             const GROUND_HEIGHT_PERCENT = 0.075;
             const PLAYER_INITIAL_X_PERCENT = 0.075;
-            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10;
-            const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20;
-            const PLAYER_WIDTH_PERCENT_MOBILE = 0.14;
-            const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28;
+            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.08;
+            const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.16;
+            const PLAYER_WIDTH_PERCENT_MOBILE = 0.112;
+            const PLAYER_HEIGHT_PERCENT_MOBILE = 0.224;
             const PLAYER_GRAVITY_FACTOR = 1300;
             const PLAYER_JUMP_FACTOR = -40;
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
@@ -134,10 +134,8 @@
             const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176;
             const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176;
             const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226;
-            // NEW: Family obstacle size constants (set similar to doubled stone)
             const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088;
             const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
-
             const POI_SIGN_WIDTH_PERCENT = 0.113;
             const POI_SIGN_HEIGHT_PERCENT = 0.275;
             const OBSTACLE_SPEED_FACTOR = 0.375;
@@ -166,28 +164,12 @@
             let isPressingLeft = false; let isPressingRight = false;
 
 
-            // --- MODIFIED: Graphics Assets (Added family) ---
-            const assets = {
-                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' },
-                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' },
-                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-                sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
-                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
-                family: { img: new Image(), loaded: false, src: 'assets/family.png' }, // NEW ASSET
-                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
-                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
-                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }
-            };
-            let assetsLoadedCount = 0;
-            let totalAssets = Object.keys(assets).length; // Automatically includes 'family' now
-            let allAssetsLoaded = false;
+            // --- Graphics Assets ---
+            const assets = { /* ... */ knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' }, family: { img: new Image(), loaded: false, src: 'assets/family.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' } };
+            let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
-            // --- MODIFIED: Obstacle/POI Definitions (Added family) ---
-            const regularObstacleTypes = [
-                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
-                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT },
-                { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } // NEW TYPE
-            ];
+            // --- Obstacle/POI Definitions ---
+            const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }, { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
@@ -206,7 +188,7 @@
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
             // --- Reset Game Variables ---
-            function resetGame() { /* ... */
+            function resetGame() { /* Uses updated player size constants */
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
                 obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
@@ -225,8 +207,8 @@
 
             // --- Update Functions ---
             function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            function updateObstacles(dt, currentTime) { /* ... */
-                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic now includes family ... */
+            function updateObstacles(dt, currentTime) { /* Uses updated obstacle size constants */
+                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
                     if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
                     else { if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; } } }
@@ -245,8 +227,8 @@
 
             // --- Draw Functions ---
             function drawBackground(dt) { /* ... */ const bgSpeed1 = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt; const bgSpeed2 = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt; const bgSpeed3 = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt; bg1X -= bgSpeed1; bg2X -= bgSpeed2; bg3X -= bgSpeed3; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; } if (bg2X <= -canvasWidth) { bg2X += canvasWidth; } if (bg3X <= -canvasWidth) { bg3X += canvasWidth; } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); if (assets.background3 && assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background2 && assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background1 && assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
-            function drawObstacles() { /* ... */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
-            function updateKnightVisuals() { /* ... */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
+            function drawObstacles() { /* Uses updated obstacle size constants */ for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
+            function updateKnightVisuals() { /* Uses updated player size constants */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
             function displayPOIInfo(poiId) { /* ... */ const poi = poiData.find(p => p.id === poiId); if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; } isPaused = true; console.log(`>>> Game PAUSED for POI ID: ${poiId}`); poiNameEl.textContent = poi.name; const infoParts = poi.info.split('|').map(s => s.trim()); const formattedInfo = infoParts.join('<br><br>'); poiInfoTextEl.innerHTML = formattedInfo; poiOverlay.classList.add('visible'); console.log(">>> Added 'visible' class to poiOverlay."); }
             function closePoiOverlay() { /* ... */ console.log("closePoiOverlay function called by event"); poiOverlay.classList.remove('visible'); isPaused = false; lastTime = performance.now(); console.log(">>> Closed POI Overlay. Game RESUMED."); }
@@ -276,19 +258,48 @@
              function resizeCanvas() { /* ... */ const containerWidth = gameContainer.clientWidth; const containerHeight = gameContainer.clientHeight; canvasWidth = containerWidth; canvasHeight = containerHeight; canvas.width = canvasWidth; canvas.height = canvasHeight; console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`); if (gameInitialized) { console.log("Recalculating dynamic values on resize..."); resetGame(); currentGameState = GameState.MENU; startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; } }
 
             // --- Initial Setup ---
-            function initGame() { /* ... */
+            function initGame() { /* Adds touchstart listener to POI overlay */
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
-                if (!assets.knight_run.loaded || !assets.knight_jump.loaded || !assets.family.loaded) { // Check family too
+                if (!assets.knight_run.loaded || !assets.knight_jump.loaded || !assets.family.loaded) {
                      console.error("Essential assets (knight run/jump or family) failed to load! Cannot start.");
                      alert("Error: Essential character/obstacle images failed to load. Please check paths or refresh.");
                      return;
                 }
                 loadHighScore(); resizeCanvas(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
-                 startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('click', closePoiOverlay);
-                 console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas); closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('click', closePoiOverlay);
-                 console.log("Event listeners attached."); currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
+
+                 // Remove potentially old listeners first
+                 startButton.removeEventListener('click', startGame);
+                 restartButton.removeEventListener('click', restartGame);
+                 document.removeEventListener('keydown', handleKeyDown);
+                 document.removeEventListener('keyup', handleKeyUp);
+                 gameContainer.removeEventListener('touchstart', handleScreenTouch);
+                 gameContainer.removeEventListener('click', handleMouseClick);
+                 window.removeEventListener('resize', resizeCanvas);
+                 closePoiButton.removeEventListener('click', closePoiOverlay);
+                 poiOverlay.removeEventListener('click', closePoiOverlay); // Remove old click listener
+                 poiOverlay.removeEventListener('touchstart', closePoiOverlay); // Remove touchstart listener just in case
+
+                 // Add listeners
+                 console.log("Attaching listeners...");
+                 startButton.addEventListener('click', startGame);
+                 restartButton.addEventListener('click', restartGame);
+                 document.addEventListener('keydown', handleKeyDown);
+                 document.addEventListener('keyup', handleKeyUp);
+                 gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false });
+                 gameContainer.addEventListener('click', handleMouseClick);
+                 window.addEventListener('resize', resizeCanvas);
+                 closePoiButton.addEventListener('click', closePoiOverlay);
+                 // Use touchstart for the overlay for better mobile responsiveness
+                 poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false });
+                 console.log("Event listeners attached.");
+
+                 currentGameState = GameState.MENU;
+                 console.log("Set gameState to MENU");
+                 lastTime = performance.now();
+                 requestAnimationFrame(gameLoop);
+                 console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
