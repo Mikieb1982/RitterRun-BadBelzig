@@ -3,40 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Debug Mouse Click)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <style>
-        /* All CSS remains the same */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
-        :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-pixel: 'Press Start 2P', cursive; --font-sans: 'Arial', sans-serif; }
-        body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
-        #game-container { position: relative; border: 3px solid #555; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; }
-        @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
-        canvas { display: block; width: 100%; height: 100%; }
-        #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; image-rendering: pixelated; }
-        .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-pixel); line-height: 1.6; }
-        .ui-screen h1 { font-size: 2.5em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 3px 3px 0px var(--bb-black); }
-        .ui-screen h2 { font-size: 2.2em; margin-bottom: 20px; color: #DC143C; text-shadow: 3px 3px 0px var(--bb-black); }
-        .ui-screen p { font-size: 1em; margin: 10px 0; }
-        .ui-button { padding: 15px 30px; font-size: 1.1em; font-family: var(--font-pixel); margin-top: 30px; cursor: pointer; background-color: #eee; border: 3px solid var(--bb-black); color: var(--bb-black); text-transform: uppercase; transition: background-color 0.15s ease, transform 0.1s ease; box-shadow: 4px 4px 0px var(--bb-black); }
-        .ui-button:hover { background-color: #ddd; }
-        .ui-button:active { background-color: #ccc; transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--bb-black); }
-        .instructions { margin-top: 25px; font-size: 0.8em !important; color: #ccc; line-height: 1.5; }
-        #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.5em; font-family: var(--font-pixel); color: var(--bb-white); text-shadow: 2px 2px 0px var(--bb-black); z-index: 20; }
+    <title>RitterRun Enhanced - Bad Belzig (Updated Visual Feel)</title> <style>
+        /* Basic Reset & Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #222;
+        }
+
+        /* Define Bad Belzig Color Palette as CSS Variables */
+        :root {
+            --bb-green: #0ca644;
+            --bb-blue: #0296c6;
+            --bb-yellow: #f5d306;
+            --bb-black: #151513;
+            --bb-white: #ffffff;
+            /* --font-pixel: 'Press Start 2P', cursive; */ /* REMOVED */
+            --font-sans: 'Arial', sans-serif; /* Default font */
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: var(--font-sans); /* Use standard font by default */
+        }
+
+        /* Game Container Sizing */
+        #game-container {
+            position: relative;
+            border: 3px solid #444; /* Slightly lighter border */
+            overflow: hidden;
+            background-color: var(--bb-blue);
+            /* Default fixed size (Desktop) */
+            width: 800px;
+            height: 400px;
+            max-width: 100%;
+            box-sizing: border-box;
+            display: block;
+            border-radius: 8px; /* Rounded corners for container */
+        }
+
+        /* Media Query for Mobile/Smaller Screens */
+        @media (max-width: 850px) {
+             #game-container {
+                 width: 100vw;
+                 height: 50vw;
+                 max-height: 100vh;
+                 max-width: 200vh;
+                 max-width: 100vw;
+                 border-radius: 0; /* Remove radius on mobile potentially */
+             }
+             /* Adjust UI font sizes slightly for mobile */
+             #scoreDisplay, #livesDisplay { font-size: 1.2em; }
+             .poi-overlay h3 { font-size: 1em; }
+             .poi-overlay p { font-size: 0.8em; }
+             #closePoiButton { font-size: 0.8em; }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Knight Image Styling */
+        #knightImage {
+            position: absolute;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+            /* image-rendering: pixelated; REMOVED - use browser default */
+        }
+
+        /* UI Screen Styling */
+        .ui-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75); /* Slightly less dark */
+            color: var(--bb-white); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            z-index: 30; padding: 20px;
+            font-family: var(--font-sans); /* Use standard font */
+            line-height: 1.6;
+        }
+        .ui-screen h1 {
+            font-size: 3em; /* Adjust size */
+            margin-bottom: 20px; color: var(--bb-yellow);
+            text-shadow: 1px 1px 2px var(--bb-black); /* Softer shadow */
+        }
+        .ui-screen h2 {
+            font-size: 2.5em; /* Adjust size */
+            margin-bottom: 20px; color: #f88; /* Softer red */
+            text-shadow: 1px 1px 2px var(--bb-black); /* Softer shadow */
+        }
+        .ui-screen p { font-size: 1.1em; margin: 10px 0; } /* Adjust size */
+
+        /* General Button Styling */
+        .ui-button {
+            padding: 12px 25px; /* Adjust padding */
+            font-size: 1.2em; /* Adjust size */
+            font-family: var(--font-sans); /* Use standard font */
+            margin-top: 30px; cursor: pointer; background-color: #eee;
+            border: 1px solid #999; /* Thinner border */
+            color: var(--bb-black);
+            /* text-transform: uppercase; REMOVED */
+            transition: background-color 0.15s ease, box-shadow 0.15s ease;
+            border-radius: 6px; /* Rounded corners */
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3); /* Softer shadow */
+        }
+        .ui-button:hover { background-color: #ddd; box-shadow: 3px 3px 5px rgba(0,0,0,0.4); }
+        .ui-button:active { background-color: #ccc; transform: translate(1px, 1px); box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+        .instructions { margin-top: 25px; font-size: 0.9em !important; color: #ccc; line-height: 1.5; }
+
+        /* In-Game UI Displays */
+        #scoreDisplay, #livesDisplay {
+            position: absolute; top: 15px;
+            font-size: 1.6em; /* Adjust size */
+            font-family: var(--font-sans); /* Use standard font */
+            color: var(--bb-white);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7); /* Softer shadow */
+            z-index: 20;
+        }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
-        .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 600px; background-color: rgba(0, 0, 0, 0.85); border: 3px solid var(--bb-yellow); border-radius: 0; z-index: 50; color: var(--bb-white); padding: 15px 20px; text-align: center; font-family: var(--font-pixel); box-shadow: 4px 4px 0px rgba(0,0,0,0.5); display: none; cursor: pointer; }
+
+        /* POI Overlay Styling */
+        .poi-overlay {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 550px; /* Slightly narrower */
+            background-color: rgba(0, 0, 0, 0.88); /* More opaque */
+            border: 1px solid var(--bb-yellow); /* Thinner border */
+            border-radius: 8px; /* Rounded corners */
+            z-index: 50; color: var(--bb-white); padding: 20px 25px; /* Adjust padding */
+            text-align: center; font-family: var(--font-sans); /* Use standard font */
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.5); /* Softer shadow */
+            display: none; cursor: pointer;
+        }
         .poi-overlay.visible { display: block !important; }
-        .poi-overlay h3 { margin-bottom: 10px; font-size: 1.1em; color: var(--bb-yellow); text-shadow: 2px 2px 0px var(--bb-black); }
-        .poi-overlay p { font-size: 0.9em; line-height: 1.6; color: var(--bb-white); margin-bottom: 15px; }
-        #closePoiButton { padding: 8px 15px; font-size: 0.9em; font-family: var(--font-pixel); cursor: pointer; background-color: #ccc; border: 2px solid var(--bb-black); color: var(--bb-black); margin-top: 10px; box-shadow: 2px 2px 0px var(--bb-black); }
+        .poi-overlay h3 {
+            margin-bottom: 15px; /* More space */
+            font-size: 1.3em; /* Adjust size */
+            color: var(--bb-yellow);
+            text-shadow: 1px 1px 2px var(--bb-black); /* Softer shadow */
+        }
+        .poi-overlay p {
+            font-size: 1em; /* Adjust size */
+            line-height: 1.6; color: var(--bb-white); margin-bottom: 20px; /* More space */
+        }
+        #closePoiButton {
+             padding: 8px 15px; font-size: 1em; /* Adjust size */
+             font-family: var(--font-sans); /* Use standard font */
+             cursor: pointer; background-color: #ccc;
+             border: 1px solid #888; /* Thinner border */
+             color: var(--bb-black); margin-top: 10px;
+             border-radius: 5px; /* Rounded corners */
+             box-shadow: 1px 1px 3px rgba(0,0,0,0.4); /* Softer shadow */
+        }
         #closePoiButton:hover { background-color: #bbb; }
-        #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 1px 1px 0px var(--bb-black); }
+        #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
+
+        /* Utility class to hide elements */
         .hidden { display: none !important; }
-        #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
+
+        /* Orientation Message Styling */
+        #orientationMessage { /* ... */ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
+
+        /* Media Queries for Orientation */
         @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } }
         @media (orientation: landscape) { #orientationMessage { display: none; } }
+
     </style>
 </head>
 <body>
@@ -234,15 +377,7 @@
 
             function startGame() { /* ... */ console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; currentKnightVisualState = null; updateKnightVisuals(); playSound('start'); lastTime = performance.now(); }
             function restartGame() { /* ... */ console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
-            // --- MODIFIED: handleJumpInput (Added log) ---
-            function handleJumpInput() {
-                console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); // DEBUG log
-                if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) {
-                    player.dy = player.jumpPower;
-                    player.grounded = false;
-                    playSound('jump');
-                }
-            }
+            function handleJumpInput() { /* ... */ console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
 
             // --- Input Event Handlers ---
             function handleKeyDown(e) { /* ... */ if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; } if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!allAssetsLoaded) return; switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } } }
