@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Arrow Key Movement)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Parallax Background)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* All CSS remains the same */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -78,6 +78,7 @@
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('game-container');
+            // ... (other refs remain the same) ...
             const startScreen = document.getElementById('startScreen');
             const gameOverScreen = document.getElementById('gameOverScreen');
             const startButton = document.getElementById('startButton');
@@ -94,6 +95,7 @@
             const livesDisplay = document.getElementById('livesDisplay');
             const currentLivesSpan = document.getElementById('currentLives');
             const knightImageEl = document.getElementById('knightImage');
+
 
             // --- Canvas and Context ---
             let ctx;
@@ -125,51 +127,50 @@
             const PLAYER_GRAVITY_FACTOR = 1300;
             const PLAYER_JUMP_FACTOR = -40;
             const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
-            // NEW: Player horizontal movement constants
-            const PLAYER_ACCEL_FACTOR = 1.0; // Acceleration relative to canvas width/sec^2
-            const PLAYER_MAX_DX_FACTOR = 0.375; // Max speed relative to canvas width/sec (same as initial obstacle speed)
-            const PLAYER_FRICTION = 0.90; // Friction factor (closer to 1 = less friction)
-
+            const PLAYER_ACCEL_FACTOR = 1.0;
+            const PLAYER_MAX_DX_FACTOR = 0.375;
+            const PLAYER_FRICTION = 0.90;
             const OBSTACLE_STONE_WIDTH_PERCENT = 0.044;
             const OBSTACLE_STONE_HEIGHT_PERCENT = 0.088;
             const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.088;
             const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.113;
             const POI_SIGN_WIDTH_PERCENT = 0.113;
             const POI_SIGN_HEIGHT_PERCENT = 0.275;
-            // REMOVED: INITIAL_GAME_SPEED_FACTOR
-            // NEW: Fixed speed for obstacles relative to width
-            const OBSTACLE_SPEED_FACTOR = 0.375; // Speed relative to canvas width/sec (300/800)
-
-            const SPEED_INCREASE_INTERVAL_SCORE = 400; // Score interval doesn't need scaling
-            // REMOVED: SPEED_INCREASE_AMOUNT_FACTOR
-            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
+            const OBSTACLE_SPEED_FACTOR = 0.375;
+            const SPEED_INCREASE_INTERVAL_SCORE = 400; // Score is independent of speed now
+            // REMOVED: const SPEED_INCREASE_AMOUNT_FACTOR
+            // REMOVED: const BACKGROUND_SWITCH_SCORE_INTERVAL
             const POI_SPAWN_CHANCE = 0.15;
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
             const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
             const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045;
             const MOBILE_BREAKPOINT_WIDTH = 850;
+            // NEW: Background scroll speed factors (relative to obstacle speed)
+            const BG1_SCROLL_FACTOR = 0.25; // Closest layer
+            const BG2_SCROLL_FACTOR = 0.15; // Middle layer
+            const BG3_SCROLL_FACTOR = 0.05; // Furthest layer
+
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
             let player = { x: 0, y: 0, width: 0, height: 0, dx: 0, dy: 0, gravity: 0, jumpPower: 0, grounded: true };
             let obstacles = [];
-            // REMOVED: gameSpeed
-            let obstacleSpeed = 0; // NEW: Calculated obstacle speed
-            let playerMaxDx = 0; // NEW: Calculated max horizontal speed
-            let playerAccel = 0; // NEW: Calculated horizontal acceleration
-            let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE; // Score doesn't change
-            let bgX = 0; let currentBackgroundIndex = 0; let nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
+            let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
+            let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
+            // NEW: Separate background offsets
+            let bg1X = 0;
+            let bg2X = 0;
+            let bg3X = 0;
+            // REMOVED: currentBackgroundIndex, nextBackgroundSwitchScore
             let nextObstacleSpawnTime = 0; let nextPoiIndex = 0; let lastTime = 0;
             let gameInitialized = false; let isPaused = false; let groundHeightPx = 0; let collisionLandingTolerancePx = 0;
             let currentKnightVisualState = null;
-            // NEW: Key press state
-            let isPressingLeft = false;
-            let isPressingRight = false;
+            let isPressingLeft = false; let isPressingRight = false;
 
 
             // --- Graphics Assets ---
             const assets = { /* ... */ knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' } };
-            const numBackgrounds = 3;
+            // REMOVED: const numBackgrounds
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
@@ -191,201 +192,102 @@
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
-            // --- MODIFIED: Reset Game Variables (Calculates dynamic speeds/accel, resets key state) ---
+            // --- MODIFIED: Reset Game Variables (Resets multiple bg offsets) ---
             function resetGame() {
-                score = 0;
-                playerLives = LIVES_START_COUNT;
-                playerInvincibleUntil = 0;
-                obstacles = [];
-
-                // Calculate dynamic values based on current canvas size
-                groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT;
-                collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
-                obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; // Obstacle speed scales with width
-                playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; // Player max speed scales with width
-                playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR; // Player acceleration scales with width
-
-                player.width = canvasWidth * (window.innerWidth <= MOBILE_BREAKPOINT_WIDTH ? PLAYER_WIDTH_PERCENT_MOBILE : PLAYER_WIDTH_PERCENT_DESKTOP);
-                player.height = canvasHeight * (window.innerWidth <= MOBILE_BREAKPOINT_WIDTH ? PLAYER_HEIGHT_PERCENT_MOBILE : PLAYER_HEIGHT_PERCENT_DESKTOP);
-                player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT;
-                player.y = canvasHeight - groundHeightPx - player.height;
-                player.dx = 0; // Reset horizontal velocity
-                player.dy = 0;
-                player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR;
-                player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
-                player.grounded = true;
-
-                nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE; // Score threshold doesn't scale
-                bgX = 0; // Background is static now
-                currentBackgroundIndex = 0;
-                nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
-
-                currentScoreSpan.textContent = score;
-                currentLivesSpan.textContent = playerLives;
-                nextObstacleSpawnTime = 0;
-                nextPoiIndex = 0;
-                isPaused = false;
-                isPressingLeft = false; // Reset key state
-                isPressingRight = false; // Reset key state
-                poiOverlay.classList.remove('visible');
-                knightImageEl.style.display = 'none';
-                currentKnightVisualState = null;
-
+                score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
+                groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
+                obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
+                player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR; player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
+                const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_WIDTH;
+                console.log(`isMobile check (width <= ${MOBILE_BREAKPOINT_WIDTH}): ${isMobile}`);
+                if (isMobile) { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_MOBILE; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_MOBILE; }
+                else { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP; }
+                player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT; player.y = canvasHeight - groundHeightPx - player.height; player.dx = 0; player.dy = 0; player.grounded = true;
+                nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
+                // Reset all background offsets
+                bg1X = 0;
+                bg2X = 0;
+                bg3X = 0;
+                // REMOVED: currentBackgroundIndex, nextBackgroundSwitchScore
+                currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
+                poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none'; currentKnightVisualState = null;
                 console.log(`Game Reset - Obstacle Speed: ${obstacleSpeed.toFixed(1)}, Player MaxDX: ${playerMaxDx.toFixed(1)}, Accel: ${playerAccel.toFixed(1)}, Size: ${player.width.toFixed(0)}x${player.height.toFixed(0)}, Gravity: ${player.gravity.toFixed(2)}, Jump: ${player.jumpPower.toFixed(1)}`);
             }
 
-            // --- MODIFIED: Update Player (Handles horizontal movement) ---
-            function updatePlayer(dt) {
-                // --- Horizontal Movement ---
-                // Apply acceleration based on key state
-                if (isPressingLeft) {
-                    player.dx -= playerAccel * dt;
-                } else if (isPressingRight) {
-                    player.dx += playerAccel * dt;
-                } else {
-                    // Apply friction if no horizontal keys are pressed
-                    player.dx *= PLAYER_FRICTION;
-                    // Stop completely if speed is very low
-                    if (Math.abs(player.dx) < 1) {
-                        player.dx = 0;
-                    }
-                }
-
-                // Clamp horizontal speed
-                player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx));
-
-                // Update horizontal position
-                player.x += player.dx * dt;
-
-                // --- Screen Bounds Check (Horizontal) ---
-                if (player.x < 0) {
-                    player.x = 0;
-                    player.dx = 0; // Stop movement at edge
-                }
-                if (player.x + player.width > canvasWidth) {
-                    player.x = canvasWidth - player.width;
-                    player.dx = 0; // Stop movement at edge
-                }
-
-                // --- Vertical Movement (Gravity & Jump) ---
-                if (!player.grounded) {
-                    player.dy += player.gravity;
-                    player.y += player.dy * dt * 60; // Scaling factor for dy might need adjustment
-                }
-
-                // Ground collision
-                const groundLevel = canvasHeight - groundHeightPx - player.height;
-                if (player.y >= groundLevel) {
-                    player.y = groundLevel;
-                    player.dy = 0;
-                    if (!player.grounded) {
-                        player.grounded = true;
-                    }
-                }
-            }
-
-             // --- MODIFIED: updateObstacles (Uses fixed obstacle speed, removed gameSpeed dependency) ---
-             function updateObstacles(dt, currentTime) {
-                 // --- Obstacle Spawning ---
-                 if (currentTime >= nextObstacleSpawnTime) {
-                    let newObjectData = null;
-                    const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
-                    const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded;
-                    const spawnPOI = willSpawnPOI && canSpawnPOI;
-
-                    if (spawnPOI) {
-                        const poi = poiData[nextPoiIndex];
-                        const objWidth = canvasWidth * poiSignDimensions.widthPercent;
-                        const objHeight = canvasHeight * poiSignDimensions.heightPercent;
-                        newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' };
-                        nextPoiIndex++;
-                    } else {
-                        if (regularObstacleTypes.length > 0) {
-                            const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length);
-                            const type = regularObstacleTypes[typeIndex];
-                            if (assets[type.assetKey] && assets[type.assetKey].loaded) {
-                                const objWidth = canvasWidth * type.widthPercent;
-                                const objHeight = canvasHeight * type.heightPercent;
-                                newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false };
-                            }
-                        }
-                    }
+            // --- Update Functions ---
+            function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
+            function updateObstacles(dt, currentTime) { /* ... */
+                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
+                    let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
+                    if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
+                    else { if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; } } }
                     if (newObjectData) { obstacles.push(newObjectData); }
-
-                    // Spawn timing can still be dynamic, but not based on player-controlled 'gameSpeed'
-                    // Maybe base it on score or keep it simple for now? Let's keep it simple.
-                    const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); // Base + randomness
-                    nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
+                    const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
-
-                 // --- Obstacle Movement & POI Triggering ---
-                 const movement = obstacleSpeed * dt; // Use fixed obstacle speed
-
-                 for (let i = obstacles.length - 1; i >= 0; i--) {
-                    const obj = obstacles[i];
-                    if (obj.isKnocked) {
-                        obj.y += (canvasHeight * 1.25) * dt;
-                    } else {
-                        obj.x -= movement; // Move left based on obstacleSpeed
-                    }
-                    // POI Trigger check
-                    if (obj.isPOI && !obj.passed) {
-                         const triggerPoint = obj.x;
-                         const playerRightEdge = player.x + player.width;
-                         if (playerRightEdge > triggerPoint) {
-                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`);
-                            displayPOIInfo(obj.poiId);
-                            obj.passed = true;
-                            score += 50;
-                            currentScoreSpan.textContent = score;
-                            playSound('poi');
-                        }
-                    }
-                    // Remove if off-screen
-                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) {
-                         obstacles.splice(i, 1);
-                    }
+                 const movement = obstacleSpeed * dt;
+                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger, removal ... */
+                    const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else { obj.x -= movement; }
+                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); obj.passed = true; score += 50; currentScoreSpan.textContent = score; playSound('poi'); } }
+                    if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
              }
-
-
             function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
 
-            // --- MODIFIED: updateScoreAndSpeed (Removed gameSpeed increase) ---
+            // --- MODIFIED: updateScoreAndSpeed (No background switch) ---
             function updateScoreAndSpeed() {
                 score++;
                 currentScoreSpan.textContent = score;
-                // Speed increase logic removed - obstacles have fixed speed now
-                // if (score >= nextSpeedIncreaseScore) { ... }
-
-                // Background switching still based on score
-                if (score >= nextBackgroundSwitchScore) {
-                    currentBackgroundIndex = (currentBackgroundIndex + 1) % numBackgrounds;
-                    nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL;
-                    console.log(`Background switched to index: ${currentBackgroundIndex}`);
-                    // bgX = 0; // Background doesn't scroll automatically anymore
-                }
+                // Speed increase logic removed
+                // Background switching logic removed
             }
 
             // --- Draw Functions ---
-            // --- MODIFIED: drawBackground (No automatic scrolling) ---
+            // --- MODIFIED: drawBackground (Layered parallax scrolling) ---
             function drawBackground(dt) {
-                const currentBgIndex = currentBackgroundIndex + 1;
-                const currentAssetKey = `background${currentBgIndex}`;
-                const currentAsset = assets[currentAssetKey];
-                // bgX -= bgMovement; // REMOVED - No automatic scroll
+                // Calculate scroll speeds based on factors and obstacle speed
+                const bgSpeed1 = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt;
+                const bgSpeed2 = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt;
+                const bgSpeed3 = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt;
 
-                // Draw static background
-                if (currentAsset && currentAsset.loaded) {
-                    // Draw only one instance, no wrapping needed for static bg
-                    ctx.drawImage(currentAsset.img, 0, 0, canvasWidth, canvasHeight);
-                } else {
-                    // Fallback color
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                // Update offsets
+                bg1X -= bgSpeed1;
+                bg2X -= bgSpeed2;
+                bg3X -= bgSpeed3;
+
+                // Wrap offsets
+                if (bg1X <= -canvasWidth) { bg1X += canvasWidth; }
+                if (bg2X <= -canvasWidth) { bg2X += canvasWidth; }
+                if (bg3X <= -canvasWidth) { bg3X += canvasWidth; }
+
+                // --- Draw layers (furthest first) ---
+                // Fallback clear
+                ctx.fillStyle = '#87CEEB'; // Light Sky Blue fallback
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // Layer 3 (Furthest)
+                if (assets.background3 && assets.background3.loaded) {
+                    ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight);
+                    ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight);
                 }
-                // Draw ground
-                ctx.fillStyle = '#228B22'; // Or use gradient/pattern
+                // Layer 2 (Middle)
+                if (assets.background2 && assets.background2.loaded) {
+                    ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight);
+                    ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight);
+                }
+                // Layer 1 (Closest)
+                if (assets.background1 && assets.background1.loaded) {
+                    ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight);
+                    ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight);
+                }
+
+                // --- Draw Ground ---
+                // Use a simple gradient for now, replace with texture if available
+                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight);
+                groundGradient.addColorStop(0, '#5a8a36'); // Lighter green top
+                groundGradient.addColorStop(0.3, '#446d20'); // Darker green
+                groundGradient.addColorStop(1, '#6b4423'); // Brown bottom
+
+                ctx.fillStyle = groundGradient;
                 ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
             }
 
@@ -411,86 +313,24 @@
             function restartGame() { /* ... */ console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
             function handleJumpInput() { /* ... */ console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
 
-            // --- MODIFIED: Input Event Handlers (Arrow Keys) ---
-            function handleKeyDown(e) {
-                 // POI Close Check
-                 if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; }
-
-                 // Movement and Jump Keys
-                 switch (e.key) {
-                     case ' ': // Space for Jump
-                     case 'ArrowUp': // Optional: Arrow Up for Jump
-                         e.preventDefault();
-                         if (!allAssetsLoaded) return;
-                         if (currentGameState === GameState.PLAYING) { handleJumpInput(); }
-                         else if (currentGameState === GameState.MENU) { startGame(); }
-                         else if (currentGameState === GameState.GAME_OVER) { restartGame(); }
-                         break;
-                     case 'ArrowLeft':
-                         e.preventDefault();
-                         if (currentGameState === GameState.PLAYING && !isPaused) { isPressingLeft = true; }
-                         break;
-                     case 'ArrowRight':
-                         e.preventDefault();
-                         if (currentGameState === GameState.PLAYING && !isPaused) { isPressingRight = true; }
-                         break;
-                 }
-            }
-
-            // --- NEW: Key Up Handler ---
-            function handleKeyUp(e) {
-                 switch (e.key) {
-                     case 'ArrowLeft':
-                         isPressingLeft = false;
-                         break;
-                     case 'ArrowRight':
-                         isPressingRight = false;
-                         break;
-                 }
-            }
-
+            // --- Input Event Handlers ---
+            function handleKeyDown(e) { /* ... */ if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; } switch (e.key) { case ' ': case 'ArrowUp': e.preventDefault(); if (!allAssetsLoaded) return; if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } break; case 'ArrowLeft': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingLeft = true; } break; case 'ArrowRight': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingRight = true; } break; } }
+            function handleKeyUp(e) { /* ... */ switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
             function handleMouseClick(e) { /* ... */ if (e.target === closePoiButton || e.target === startButton || e.target === restartButton) { return; } console.log("Mouse click detected. Current state:", currentGameState, "Assets loaded?", allAssetsLoaded, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
             function handleScreenTouch(e) { /* ... */ e.preventDefault(); if (!allAssetsLoaded) return; /* Let overlay listener handle close */ switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
 
              function resizeCanvas() { /* ... */ const containerWidth = gameContainer.clientWidth; const containerHeight = gameContainer.clientHeight; canvasWidth = containerWidth; canvasHeight = containerHeight; canvas.width = canvasWidth; canvas.height = canvasHeight; console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`); if (gameInitialized) { console.log("Recalculating dynamic values on resize..."); resetGame(); currentGameState = GameState.MENU; startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; } }
 
-            // --- MODIFIED: Initial Setup (Adds keyup listener) ---
-            function initGame() {
+            // --- Initial Setup ---
+            function initGame() { /* ... */
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
                 if (!assets.knight_run.loaded || !assets.knight_jump.loaded) { console.error("Knight run/jump assets failed to load! Cannot start."); alert("Error: Essential knight images failed to load. Please check paths or refresh."); return; }
                 loadHighScore(); resizeCanvas(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
-
-                 // Remove potentially old listeners first
-                 startButton.removeEventListener('click', startGame);
-                 restartButton.removeEventListener('click', restartGame);
-                 document.removeEventListener('keydown', handleKeyDown);
-                 document.removeEventListener('keyup', handleKeyUp); // Remove old keyup
-                 gameContainer.removeEventListener('touchstart', handleScreenTouch);
-                 gameContainer.removeEventListener('click', handleMouseClick);
-                 window.removeEventListener('resize', resizeCanvas);
-                 closePoiButton.removeEventListener('click', closePoiOverlay);
-                 poiOverlay.removeEventListener('click', closePoiOverlay);
-
-                 // Add listeners
-                 console.log("Attaching listeners...");
-                 startButton.addEventListener('click', startGame);
-                 restartButton.addEventListener('click', restartGame);
-                 document.addEventListener('keydown', handleKeyDown);
-                 document.addEventListener('keyup', handleKeyUp); // NEW: Add keyup listener
-                 gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false });
-                 gameContainer.addEventListener('click', handleMouseClick);
-                 window.addEventListener('resize', resizeCanvas);
-                 closePoiButton.addEventListener('click', closePoiOverlay);
-                 poiOverlay.addEventListener('click', closePoiOverlay);
-                 console.log("Event listeners attached.");
-
-                 currentGameState = GameState.MENU;
-                 console.log("Set gameState to MENU");
-                 lastTime = performance.now();
-                 requestAnimationFrame(gameLoop);
-                 console.log("Initial game loop requested.");
+                 startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('click', closePoiOverlay);
+                 console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas); closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('click', closePoiOverlay);
+                 console.log("Event listeners attached."); currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
