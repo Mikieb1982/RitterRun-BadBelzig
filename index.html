@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Joystick Style Update)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Test Joystick Landscape CSS)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none;
-            touch-action: manipulation;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
         :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; /* --font-pixel: 'Press Start 2P', cursive; */ --font-sans: 'Arial', sans-serif; }
         body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
@@ -46,7 +40,7 @@
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
 
-        /* --- MODIFIED: Joystick Styles (Transparency & Knob Image) --- */
+        /* Joystick Styles */
         #joystickContainer {
             position: fixed;
             bottom: 25px;
@@ -54,7 +48,7 @@
             width: 120px;
             height: 120px;
             z-index: 25;
-            display: none;
+            display: none; /* Hidden by default */
             pointer-events: none;
         }
         #joystickBase {
@@ -62,8 +56,8 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: rgba(80, 80, 80, 0.4); /* Darker grey, More transparent */
-            border: 2px solid rgba(255, 255, 255, 0.5); /* More transparent */
+            background-color: rgba(80, 80, 80, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             pointer-events: auto;
         }
         #joystickKnob {
@@ -71,33 +65,40 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            /* background-color: rgba(200, 200, 200, 0.6); */ /* More transparent - REMOVED for image */
-            background-color: rgba(255, 255, 255, 0.2); /* Slight white tint behind image */
+            background-color: rgba(255, 255, 255, 0.2);
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             pointer-events: auto;
             transition: transform 0.05s linear;
-            /* NEW: Knight image */
-            background-image: url('assets/knight_jump.png'); /* Use jump image */
-            background-size: 80%; /* Adjust size as needed */
+            background-image: url('assets/knight_jump.png');
+            background-size: 80%;
             background-repeat: no-repeat;
             background-position: center;
         }
-        /* --- END MODIFICATION --- */
 
         .hidden { display: none !important; }
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
 
-        /* Media Queries */
-        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } #joystickContainer { display: none !important; } }
-        @media (orientation: landscape) { #orientationMessage { display: none; }
-            /* Show joystick ONLY if also small screen */
-             @media (max-width: 850px) {
-                 #joystickContainer { display: block; }
-             }
+        /* --- MODIFIED: Media Queries (Simplified Joystick Display) --- */
+        @media (orientation: portrait) {
+             #game-container { display: none; }
+             #orientationMessage { display: flex; }
+             #joystickContainer { display: none !important; } /* Ensure hidden in portrait */
         }
+        @media (orientation: landscape) {
+             #orientationMessage { display: none; }
+             /* TEST: Show joystick in ANY landscape view, regardless of width */
+             #joystickContainer {
+                 display: block;
+             }
+             /* Original combined query (commented out for test): */
+             /* @media (max-width: 850px) { */
+                 /* #joystickContainer { display: block; } */
+             /* } */
+        }
+        /* --- END MODIFICATION --- */
 
     </style>
 </head>
