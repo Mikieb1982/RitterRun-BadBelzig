@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Force Joystick Visible Test)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Adjusted Joystick Style)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -46,16 +46,15 @@
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
 
-        /* --- MODIFIED: Joystick Styles (Forced Visible for Test) --- */
+        /* --- MODIFIED: Joystick Styles (Size & Opacity) --- */
         #joystickContainer {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 100px;
-            height: 100px;
+            bottom: 25px; /* Adjust position slightly */
+            left: 25px;
+            width: 120px; /* Increased size */
+            height: 120px; /* Increased size */
             z-index: 25;
-            /* display: none; */ /* REMOVED default hidden */
-            display: block !important; /* FORCE VISIBLE FOR TEST */
+            display: none;
             pointer-events: none;
         }
         #joystickBase {
@@ -63,16 +62,16 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background-color: rgba(100, 100, 100, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            background-color: rgba(100, 100, 100, 0.65); /* More opaque */
+            border: 2px solid rgba(255, 255, 255, 0.75); /* More opaque */
             pointer-events: auto;
         }
         #joystickKnob {
             position: absolute;
-            width: 50px;
-            height: 50px;
+            width: 60px; /* Increased knob size */
+            height: 60px; /* Increased knob size */
             border-radius: 50%;
-            background-color: rgba(200, 200, 200, 0.8);
+            background-color: rgba(200, 200, 200, 0.9); /* More opaque */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -85,15 +84,12 @@
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
 
-        /* --- MODIFIED: Media Queries (Commented out joystick display logic) --- */
-        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } /* #joystickContainer { display: none !important; } */ }
+        /* Media Queries */
+        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } #joystickContainer { display: none !important; } }
         @media (orientation: landscape) { #orientationMessage { display: none; } }
-        /* @media (max-width: 850px) and (orientation: landscape) { */
-            /* #joystickContainer { */
-                /* display: block; */ /* Show joystick */
-            /* } */
-        /* } */
-        /* --- END MODIFICATION --- */
+        @media (max-width: 850px) and (orientation: landscape) {
+            #joystickContainer { display: block; }
+        }
 
     </style>
 </head>
