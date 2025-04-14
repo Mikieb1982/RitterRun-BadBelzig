@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Mobile Jump Button)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Joystick CSS/JS Debug)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
@@ -41,37 +41,65 @@
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
 
         /* Joystick Styles */
-        #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; pointer-events: none; }
-        #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
-        #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; background-image: url('assets/knight_jump.png'); background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
+        #joystickContainer {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 120px;
+            height: 120px;
+            z-index: 25;
+            display: none; /* Hidden by default */
+            pointer-events: none;
+            border: 5px solid red !important; /* DEBUG BORDER */
+        }
+        #joystickBase {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: rgba(80, 80, 80, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            pointer-events: auto;
+        }
+        #joystickKnob {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            transition: transform 0.05s linear;
+            background-image: url('assets/knight_jump.png');
+            background-size: 80%;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.5;
+        }
 
-        /* --- NEW: Jump Button Styles --- */
+        /* Jump Button Styles */
         #jumpButton {
             position: fixed;
             bottom: 25px;
             right: 25px;
-            width: 80px; /* Adjust size as needed */
+            width: 80px;
             height: 80px;
-            border-radius: 50%; /* Circular */
-            background-color: rgba(200, 200, 200, 0.7); /* Semi-transparent */
+            border-radius: 50%;
+            background-color: rgba(200, 200, 200, 0.7);
             border: 2px solid rgba(255, 255, 255, 0.8);
-            z-index: 25; /* Same level as joystick */
+            z-index: 25;
             display: none; /* Hidden by default */
-            /* Basic text styling (optional, can use background image) */
             color: var(--bb-black);
             font-family: var(--font-sans);
             font-size: 1em;
             font-weight: bold;
-            /* Prevent text selection */
             user-select: none;
             -webkit-user-select: none;
+            border: 5px solid red !important; /* DEBUG BORDER */
         }
-        /* Style for when button is pressed */
-         #jumpButton:active {
-             background-color: rgba(255, 255, 255, 0.7);
-         }
-        /* --- END NEW --- */
-
+         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
 
         .hidden { display: none !important; }
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
@@ -82,13 +110,13 @@
              #game-container { display: none; }
              #orientationMessage { display: flex; }
              #joystickContainer { display: none !important; }
-             #jumpButton { display: none !important; } /* Hide jump button too */
+             #jumpButton { display: none !important; }
         }
         @media (orientation: landscape) {
              #orientationMessage { display: none; }
              /* Show joystick & jump button ONLY if also small screen */
              @media (max-width: 850px) {
-                 #joystickContainer { display: block; }
+                 #joystickContainer { display: block; } /* Show joystick */
                  #jumpButton { display: block; } /* Show jump button */
              }
         }
@@ -161,7 +189,7 @@
             const joystickContainer = document.getElementById('joystickContainer');
             const joystickBase = document.getElementById('joystickBase');
             const joystickKnob = document.getElementById('joystickKnob');
-            const jumpButton = document.getElementById('jumpButton'); // NEW: Jump button ref
+            const jumpButton = document.getElementById('jumpButton');
 
             // --- Canvas and Context ---
             let ctx;
@@ -171,7 +199,6 @@
             // --- Essential Element Check ---
             if (!canvas || !canvas.getContext || !gameContainer) { /* ... */ return; }
             ctx = canvas.getContext('2d');
-            // Add jumpButton to check
             const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl, joystickContainer, joystickBase, joystickKnob, jumpButton };
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
@@ -325,103 +352,31 @@
             // --- Input Event Handlers ---
             function handleKeyDown(e) { /* ... */ if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; } switch (e.key) { case ' ': case 'ArrowUp': e.preventDefault(); if (!allAssetsLoaded) return; if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } break; case 'ArrowLeft': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingLeft = true; } break; case 'ArrowRight': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingRight = true; } break; } }
             function handleKeyUp(e) { /* ... */ switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
-            // --- MODIFIED: handleMouseClick (No longer jumps) ---
-            function handleMouseClick(e) {
-                 // Ignore clicks on specific buttons or the joystick
-                 if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target)) {
-                     return;
-                 }
-                 console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id);
-                 if (!allAssetsLoaded) return;
-                 // Ignore clicks if POI is visible (handled by overlay listener)
-                 if (isPaused && poiOverlay.classList.contains('visible')) {
-                     console.log("Mouse click ignored: POI overlay is visible.");
-                     return;
-                 }
-                 // Jump logic removed from general click
-                 switch (currentGameState) {
-                     // case GameState.PLAYING: handleJumpInput(); break;
-                     case GameState.MENU: startGame(); break;
-                     case GameState.GAME_OVER: restartGame(); break;
-                 }
-            }
-             // --- MODIFIED: handleScreenTouch (No longer jumps) ---
-            function handleScreenTouch(e) {
-                 e.preventDefault();
-                 if (!allAssetsLoaded) return;
-                 // Ignore touches starting on joystick or jump button
-                 if (joystickContainer.contains(e.target) || jumpButton.contains(e.target)) {
-                     console.log("Touch ignored on gameContainer: Handled by specific control.");
-                     return;
-                 }
-                 // Let overlay listener handle its own close
-                 // Jump logic removed from general touch
-                 switch (currentGameState) {
-                     // case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break;
-                     case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break;
-                     case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break;
-                 }
-            }
+            function handleMouseClick(e) { /* ... */ if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target)) { return; } console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
+            function handleScreenTouch(e) { /* ... */ e.preventDefault(); if (!allAssetsLoaded) return; if (joystickContainer.contains(e.target) || jumpButton.contains(e.target)) { console.log("Touch ignored on gameContainer: Handled by specific control."); return; } /* Let overlay listener handle close */ switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
             function handleJoystickStart(e) { /* ... */ if (currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); joystickBaseRect = joystickBase.getBoundingClientRect(); joystickRadius = joystickBaseRect.width / 2 - joystickKnob.offsetWidth / 2; joystickActive = true; const touch = e.touches[0]; joystickStartX = touch.clientX; joystickStartY = touch.clientY; }
             function handleJoystickMove(e) { /* ... */ if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); const touch = e.touches[0]; const currentX = touch.clientX; const currentY = touch.clientY; let deltaX = currentX - joystickStartX; let deltaY = currentY - joystickStartY; const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedX = deltaX; let clampedY = deltaY; if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; } joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`; if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; } else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; } else { isPressingLeft = false; isPressingRight = false; } }
             function handleJoystickEnd(e) { /* ... */ if (!joystickActive) return; e.preventDefault(); joystickKnob.style.transform = 'translate(-50%, -50%)'; joystickActive = false; isPressingLeft = false; isPressingRight = false; }
 
              function resizeCanvas() { /* ... */ const containerWidth = gameContainer.clientWidth; const containerHeight = gameContainer.clientHeight; canvasWidth = containerWidth; canvasHeight = containerHeight; canvas.width = canvasWidth; canvas.height = canvasHeight; console.log(`Canvas resized to: ${canvasWidth}x${canvasHeight}`); if (gameInitialized) { console.log("Recalculating dynamic values on resize..."); resetGame(); currentGameState = GameState.MENU; startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; } }
 
-            // --- MODIFIED: Initial Setup (Adds jump button listener) ---
-            function initGame() {
+            // --- Initial Setup ---
+            function initGame() { /* ... */
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
                 if (!assets.knight_run.loaded || !assets.knight_jump.loaded || !assets.family.loaded) { console.error("Essential assets failed to load!"); alert("Error: Essential images failed to load."); return; }
                 loadHighScore(); resizeCanvas(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
-
-                 // Remove potentially old listeners first
-                 startButton.removeEventListener('click', startGame);
-                 restartButton.removeEventListener('click', restartGame);
-                 document.removeEventListener('keydown', handleKeyDown);
-                 document.removeEventListener('keyup', handleKeyUp);
-                 gameContainer.removeEventListener('touchstart', handleScreenTouch);
-                 gameContainer.removeEventListener('click', handleMouseClick);
-                 window.removeEventListener('resize', resizeCanvas);
-                 closePoiButton.removeEventListener('click', closePoiOverlay);
-                 poiOverlay.removeEventListener('touchstart', closePoiOverlay);
-                 joystickContainer.removeEventListener('touchstart', handleJoystickStart);
-                 joystickContainer.removeEventListener('touchmove', handleJoystickMove);
-                 joystickContainer.removeEventListener('touchend', handleJoystickEnd);
-                 joystickContainer.removeEventListener('touchcancel', handleJoystickEnd);
-                 jumpButton.removeEventListener('touchstart', handleJumpInput); // Remove old jump listener
-
-                 // Add listeners
-                 console.log("Attaching listeners...");
-                 startButton.addEventListener('click', startGame);
-                 restartButton.addEventListener('click', restartGame);
-                 document.addEventListener('keydown', handleKeyDown);
-                 document.addEventListener('keyup', handleKeyUp);
-                 gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); // Handles start/restart touches
-                 gameContainer.addEventListener('click', handleMouseClick); // Handles start/restart clicks
-                 window.addEventListener('resize', resizeCanvas);
-                 closePoiButton.addEventListener('click', closePoiOverlay);
-                 poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false });
-                 joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false });
-                 joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false });
-                 joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false });
-                 joystickContainer.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
-                 jumpButton.addEventListener('touchstart', handleJumpInput, { passive: false }); // NEW: Listener for jump button
+                 startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('touchstart', closePoiOverlay); joystickContainer.removeEventListener('touchstart', handleJoystickStart); joystickContainer.removeEventListener('touchmove', handleJoystickMove); joystickContainer.removeEventListener('touchend', handleJoystickEnd); joystickContainer.removeEventListener('touchcancel', handleJoystickEnd); jumpButton.removeEventListener('touchstart', handleJumpInput); // Remove old jump listener
+                 console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas); closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false }); joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false }); joystickContainer.addEventListener('touchcancel', handleJoystickEnd, { passive: false }); jumpButton.addEventListener('touchstart', handleJumpInput, { passive: false }); // Add jump listener
                  console.log("Event listeners attached.");
-
-                 // NEW: Check if joystick container exists (for debugging)
+                 // Check if joystick container exists (for debugging)
                  if (!joystickContainer || !jumpButton) {
-                     alert("UI Button elements (joystick/jump) NOT FOUND!");
+                     alert("DEBUG: Joystick or Jump Button HTML element NOT FOUND!");
                  } else {
-                     console.log("UI Button elements (joystick/jump) FOUND.");
+                     console.log("DEBUG: Joystick and Jump Button HTML elements FOUND.");
                  }
-
-                 currentGameState = GameState.MENU;
-                 console.log("Set gameState to MENU");
-                 lastTime = performance.now();
-                 requestAnimationFrame(gameLoop);
-                 console.log("Initial game loop requested.");
+                 currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
