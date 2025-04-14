@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Test Joystick Landscape CSS)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Translucent Joystick Knob)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
@@ -48,7 +48,7 @@
             width: 120px;
             height: 120px;
             z-index: 25;
-            display: none; /* Hidden by default */
+            display: none;
             pointer-events: none;
         }
         #joystickBase {
@@ -75,30 +75,21 @@
             background-size: 80%;
             background-repeat: no-repeat;
             background-position: center;
+            opacity: 0.5; /* NEW: Make knob semi-transparent */
         }
 
         .hidden { display: none !important; }
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
 
-        /* --- MODIFIED: Media Queries (Simplified Joystick Display) --- */
-        @media (orientation: portrait) {
-             #game-container { display: none; }
-             #orientationMessage { display: flex; }
-             #joystickContainer { display: none !important; } /* Ensure hidden in portrait */
-        }
-        @media (orientation: landscape) {
-             #orientationMessage { display: none; }
-             /* TEST: Show joystick in ANY landscape view, regardless of width */
-             #joystickContainer {
-                 display: block;
+        /* Media Queries */
+        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } #joystickContainer { display: none !important; } }
+        @media (orientation: landscape) { #orientationMessage { display: none; }
+             /* Show joystick ONLY if also small screen */
+             @media (max-width: 850px) {
+                 #joystickContainer { display: block; }
              }
-             /* Original combined query (commented out for test): */
-             /* @media (max-width: 850px) { */
-                 /* #joystickContainer { display: block; } */
-             /* } */
         }
-        /* --- END MODIFICATION --- */
 
     </style>
 </head>
@@ -347,7 +338,14 @@
                 loadHighScore(); resizeCanvas(); startScreen.classList.remove('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
                  startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('touchstart', closePoiOverlay); joystickContainer.removeEventListener('touchstart', handleJoystickStart); joystickContainer.removeEventListener('touchmove', handleJoystickMove); joystickContainer.removeEventListener('touchend', handleJoystickEnd); joystickContainer.removeEventListener('touchcancel', handleJoystickEnd);
                  console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas); closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false }); joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false }); joystickContainer.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
-                 console.log("Event listeners attached."); currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
+                 console.log("Event listeners attached.");
+                 // NEW: Check if joystick container exists
+                 if (!joystickContainer) {
+                     alert("Joystick container element NOT FOUND!");
+                 } else {
+                     console.log("Joystick container element FOUND.");
+                 }
+                 currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
