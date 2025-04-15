@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Oscillating Tractor)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>RitterRun Enhanced - Bad Belzig (Resize Elements & Joystick Test)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        /* All CSS remains the same */
+        /* Basic Reset & Global Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
         :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; /* --font-pixel: 'Press Start 2P', cursive; */ --font-sans: 'Arial', sans-serif; }
         body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
+
+        /* Game Container Sizing */
         #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
         @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
+
         canvas { display: block; width: 100%; height: 100%; }
         #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; /* image-rendering: pixelated; */ }
+
+        /* UI Screens & Buttons */
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -25,6 +30,8 @@
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
+
+        /* POI Overlay */
         .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
@@ -32,11 +39,44 @@
         #closePoiButton { padding: 8px 15px; font-size: 1em; font-family: var(--font-sans); cursor: pointer; background-color: #ccc; border: 1px solid #888; color: var(--bb-black); margin-top: 10px; border-radius: 5px; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
+
+        /* Joystick Styles */
+        #joystickContainer {
+            position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px;
+            z-index: 25; display: none; /* Hidden by default */
+            /* pointer-events: none; */ /* REMOVED FOR TEST */
+        }
+        #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
+        #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; background-image: url('assets/knight_jump.png'); background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
+
+        /* Jump Button Styles */
+        #jumpButton {
+            position: fixed; bottom: 25px; right: 25px;
+            /* Responsive size using vw, with max */
+            width: 15vw;
+            height: 15vw;
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 50%; background-color: rgba(200, 200, 200, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Hidden by default */
+            color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold;
+            user-select: none; -webkit-user-select: none;
+        }
+         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
+
         .hidden { display: none !important; }
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
+
+        /* Media Queries */
         @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } #joystickContainer { display: none !important; } #jumpButton { display: none !important; } }
-        @media (orientation: landscape) { #orientationMessage { display: none; } @media (max-width: 850px) { #joystickContainer { display: block; } #jumpButton { display: block; } } }
+        @media (orientation: landscape) { #orientationMessage { display: none; }
+             /* Show joystick & jump button ONLY if also small screen */
+             @media (max-width: 850px) {
+                 #joystickContainer { display: block; }
+                 #jumpButton { display: block; }
+             }
+        }
 
     </style>
 </head>
@@ -84,6 +124,7 @@
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('game-container');
+            // ... (other refs remain the same) ...
             const startScreen = document.getElementById('startScreen');
             const gameOverScreen = document.getElementById('gameOverScreen');
             const startButton = document.getElementById('startButton');
@@ -122,10 +163,14 @@
             const CollisionType = Object.freeze({ NONE: 0, TOP: 1, SIDE: 2 });
 
             // --- Game Constants ---
-            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.08; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.16; const PLAYER_WIDTH_PERCENT_MOBILE = 0.112; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.224; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176; const POI_SIGN_WIDTH_PERCENT = 0.113; const POI_SIGN_HEIGHT_PERCENT = 0.275; const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; const POI_SPAWN_CHANCE = 0.15; const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850; const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1; const backgroundSequence = [0, 1, 2, 1, 0]; const FINAL_POI_ID = 7; const BACKGROUND_TRANSITION_DURATION = 1000; const JOYSTICK_DEAD_ZONE = 10;
-            // NEW: Tractor oscillation constants
-            const TRACTOR_OSC_AMPLITUDE_FACTOR = 0.02; // Oscillation width relative to canvas width (2%)
-            const TRACTOR_OSC_FREQUENCY = 0.75; // Oscillations per second
+            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075;
+            // --- MODIFIED: Reverted Player Size Percentages ---
+            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10;  // Back to doubled size
+            const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20;
+            const PLAYER_WIDTH_PERCENT_MOBILE = 0.14;
+            const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28;
+
+            const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176; const POI_SIGN_WIDTH_PERCENT = 0.113; const POI_SIGN_HEIGHT_PERCENT = 0.275; const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; const POI_SPAWN_CHANCE = 0.15; const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850; const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1; const backgroundSequence = [0, 1, 2, 1, 0]; const FINAL_POI_ID = 7; const BACKGROUND_TRANSITION_DURATION = 1000; const JOYSTICK_DEAD_ZONE = 10;
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
@@ -167,6 +212,7 @@
                 obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
                 player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR; player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
                 const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_WIDTH;
+                // Use correct size constants based on mobile check
                 if (isMobile) { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_MOBILE; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_MOBILE; }
                 else { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP; }
                 player.x = canvasWidth * PLAYER_INITIAL_X_PERCENT; player.y = canvasHeight - groundHeightPx - player.height; player.dx = 0; player.dy = 0; player.grounded = true;
@@ -182,68 +228,21 @@
 
             // --- Update Functions ---
             function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-
-            // --- MODIFIED: updateObstacles (Adds tractor oscillation) ---
             function updateObstacles(dt, currentTime) {
-                 // --- Obstacle Spawning ---
-                 if (currentTime >= nextObstacleSpawnTime) {
+                 if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
-                    if (spawnPOI) {
-                        const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent;
-                        newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' };
-                        nextPoiIndex++;
-                    } else {
-                        if (regularObstacleTypes.length > 0) {
-                            const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex];
-                            if (assets[type.assetKey] && assets[type.assetKey].loaded) {
-                                const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent;
-                                newObjectData = {
-                                    isPOI: false, x: canvasWidth, baseX: canvasWidth, // Initialize baseX
-                                    y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight,
-                                    assetKey: type.assetKey, isKnocked: false
-                                };
-                                // Add oscillation properties specifically for tractors
-                                if (type.assetKey === 'tractor') {
-                                    newObjectData.isOscillating = true;
-                                    newObjectData.oscillationPhase = Math.random() * Math.PI * 2; // Random start phase
-                                }
-                            }
-                        }
-                    }
+                    if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
+                    else { if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } } } }
                     if (newObjectData) { obstacles.push(newObjectData); }
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
-
-                 // --- Obstacle Movement & POI Triggering ---
                  const movement = obstacleSpeed * dt;
-                 for (let i = obstacles.length - 1; i >= 0; i--) {
-                    const obj = obstacles[i];
-                    if (obj.isKnocked) {
-                        obj.y += (canvasHeight * 1.25) * dt; // Move knocked down
-                    } else if (!obj.isPOI) { // Don't move POI signs horizontally
-                        // Update base position for linear leftward movement
-                        obj.baseX -= movement;
-
-                        // Apply oscillation only to tractors
-                        if (obj.assetKey === 'tractor') {
-                            obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; // Update phase based on time
-                            const amplitudePx = canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR; // Calculate amplitude
-                            const xOffset = amplitudePx * Math.sin(obj.oscillationPhase); // Calculate sine offset
-                            obj.x = obj.baseX + xOffset; // Apply offset to base position
-                        } else {
-                            // Other obstacles just follow base position
-                            obj.x = obj.baseX;
-                        }
-                    }
-
-                    // POI Trigger check (remains the same)
+                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger (incl win condition), removal ... */
+                    const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else if (!obj.isPOI) { obj.baseX -= movement; if (obj.assetKey === 'tractor') { obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; const amplitudePx = canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR; const xOffset = amplitudePx * Math.sin(obj.oscillationPhase); obj.x = obj.baseX + xOffset; } else { obj.x = obj.baseX; } }
                     if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
-
-                    // Remove if off-screen
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
              }
-
             function checkCollisions() { /* ... */ const now = performance.now(); if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; } const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width }; for (const obstacle of obstacles) { if (obstacle.isPOI || obstacle.isKnocked) { continue; } const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width }; if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) { const isFalling = player.dy >= 0; const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx; if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; } console.warn(`Collision: SIDE with ${obstacle.assetKey}`); return { type: CollisionType.SIDE }; } } return { type: CollisionType.NONE }; }
             function updateScoreAndSpeed() { /* ... */ score++; currentScoreSpan.textContent = score; if (!isTransitioningBackground && score >= nextBackgroundSwitchScore) { previousBackgroundSequenceIndex = backgroundSequenceIndex; backgroundSequenceIndex = (backgroundSequenceIndex + 1) % backgroundSequence.length; if (previousBackgroundSequenceIndex !== backgroundSequenceIndex) { isTransitioningBackground = true; transitionStartTime = performance.now(); console.log(`Background transition START: ${previousBackgroundSequenceIndex} -> ${backgroundSequenceIndex}`); } nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; } }
 
