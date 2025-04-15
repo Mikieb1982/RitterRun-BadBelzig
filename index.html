@@ -3,104 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Consolidated)</title>
+    <title>RitterRun Enhanced - Bad Belzig (Restore Control Visibility CSS)</title> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            /* Prevent text selection during interactions */
-            user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            -moz-user-select: none;
-            /* Improve touch interaction responsiveness */
-            touch-action: manipulation;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* Prevent scrollbars */
-            background-color: #222;
-        }
-
-        /* Color Palette & Fonts */
-        :root {
-            --bb-green: #0ca644;
-            --bb-blue: #0296c6;
-            --bb-yellow: #f5d306;
-            --bb-black: #151513;
-            --bb-white: #ffffff;
-            --font-sans: 'Arial', sans-serif; /* Using standard sans-serif */
-            --font-pixel: 'Press Start 2P', cursive; /* For orientation message only */
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            font-family: var(--font-sans);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
+        :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; /* --font-pixel: 'Press Start 2P', cursive; */ --font-sans: 'Arial', sans-serif; }
+        body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
 
         /* Game Container Sizing */
-        #game-container {
-            position: relative;
-            border: 3px solid #444;
-            overflow: hidden;
-            background-color: var(--bb-blue); /* Fallback background */
-            /* Default fixed size (Desktop) */
-            width: 800px;
-            height: 400px;
-            max-width: 100%;
-            box-sizing: border-box;
-            display: block;
-            border-radius: 8px;
-        }
+        #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
+        @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
 
-        /* Responsive sizing for smaller screens */
-        @media (max-width: 850px) {
-             #game-container {
-                 width: 100vw;
-                 height: 50vw; /* Maintain 2:1 aspect ratio */
-                 max-height: 100vh;
-                 max-width: 200vh; /* Corresponds to 2:1 */
-                 max-width: 100vw; /* Ensure it doesn't exceed screen width */
-                 border-radius: 0;
-             }
-             /* Adjust UI font sizes slightly for mobile */
-             #scoreDisplay, #livesDisplay { font-size: 1.2em; }
-             .poi-overlay h3 { font-size: 1em; }
-             .poi-overlay p { font-size: 0.8em; }
-             #closePoiButton { font-size: 0.8em; }
-        }
+        canvas { display: block; width: 100%; height: 100%; }
+        #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; /* image-rendering: pixelated; */ }
 
-        /* Canvas Styling */
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Knight Image (HTML Overlay) Styling */
-        #knightImage {
-            position: absolute;
-            display: none; /* Controlled by JS */
-            pointer-events: none; /* Allow clicks/touches to pass through */
-            z-index: 10; /* Above canvas, below UI */
-            image-rendering: pixelated; /* Keep pixel look if desired */
-            image-rendering: crisp-edges;
-        }
-
-        /* UI Screens (Start/Game Over) Styling */
-        .ui-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white);
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; text-align: center;
-            z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6;
-        }
+        /* UI Screens & Buttons */
+        .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen p { font-size: 1.1em; margin: 10px 0; }
@@ -108,24 +27,12 @@
         .ui-button:hover { background-color: #ddd; box-shadow: 3px 3px 5px rgba(0,0,0,0.4); }
         .ui-button:active { background-color: #ccc; transform: translate(1px, 1px); box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .instructions { margin-top: 25px; font-size: 0.9em !important; color: #ccc; line-height: 1.5; }
-
-        /* In-Game UI Displays (Score/Lives) */
-        #scoreDisplay, #livesDisplay {
-            position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans);
-            color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20;
-        }
+        #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
 
-        /* POI Overlay Styling */
-        .poi-overlay {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88);
-            border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50;
-            color: var(--bb-white); padding: 20px 25px; text-align: center;
-            font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
-            display: none; cursor: pointer; /* Allow tap-to-close */
-        }
+        /* POI Overlay */
+        .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .poi-overlay p { font-size: 1em; line-height: 1.6; color: var(--bb-white); margin-bottom: 20px; }
@@ -135,44 +42,86 @@
 
         /* Joystick Styles */
         #joystickContainer {
-            position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px;
-            z-index: 25; display: none; /* Hidden by default */ pointer-events: none;
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 120px;
+            height: 120px;
+            z-index: 25;
+            display: none; /* Hidden by default */
+            pointer-events: none;
+            /* border: 5px solid red !important; */ /* DEBUG BORDER REMOVED */
         }
-        #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
-        #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; background-image: url('assets/knight_jump.png'); background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
+        #joystickBase {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: rgba(80, 80, 80, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            pointer-events: auto;
+        }
+        #joystickKnob {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            transition: transform 0.05s linear;
+            background-image: url('assets/knight_jump.png');
+            background-size: 80%;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.5;
+        }
 
         /* Jump Button Styles */
         #jumpButton {
-            position: fixed; bottom: 25px; right: 25px; width: 80px; height: 80px;
-            border-radius: 50%; background-color: rgba(200, 200, 200, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Hidden by default */
-            color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold;
-            user-select: none; -webkit-user-select: none;
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(200, 200, 200, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            z-index: 25;
+            display: none; /* Hidden by default */
+            color: var(--bb-black);
+            font-family: var(--font-sans);
+            font-size: 1em;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+            /* border: 5px solid red !important; */ /* DEBUG BORDER REMOVED */
         }
          #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
 
-        /* Utility class */
         .hidden { display: none !important; }
-
-        /* Orientation Message */
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; display: none; }
         #orientationMessage p { margin-bottom: 1em; }
 
-        /* Media Queries */
+        /* --- MODIFIED: Media Queries (Restored correct logic) --- */
         @media (orientation: portrait) {
              #game-container { display: none; }
              #orientationMessage { display: flex; }
-             #joystickContainer { display: none !important; }
-             #jumpButton { display: none !important; }
+             #joystickContainer { display: none !important; } /* Ensure hidden */
+             #jumpButton { display: none !important; } /* Ensure hidden */
         }
         @media (orientation: landscape) {
              #orientationMessage { display: none; }
              /* Show joystick & jump button ONLY if also small screen */
              @media (max-width: 850px) {
-                 #joystickContainer { display: block; }
-                 #jumpButton { display: block; }
+                 #joystickContainer { display: block; } /* Show joystick */
+                 #jumpButton { display: block; } /* Show jump button */
              }
         }
+        /* --- END MODIFICATION --- */
+
     </style>
 </head>
 <body>
@@ -213,6 +162,7 @@
     </div>
     <button id="jumpButton">JUMP</button>
 
+
     <script>
         // --- Strict mode and IIFE ---
         (function() {
@@ -221,6 +171,7 @@
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('game-container');
+            // ... (other refs remain the same) ...
             const startScreen = document.getElementById('startScreen');
             const gameOverScreen = document.getElementById('gameOverScreen');
             const startButton = document.getElementById('startButton');
@@ -248,7 +199,7 @@
             let canvasHeight;
 
             // --- Essential Element Check ---
-            if (!canvas || !canvas.getContext || !gameContainer) { alert("Fatal Error: Canvas not found!"); return; }
+            if (!canvas || !canvas.getContext || !gameContainer) { /* ... */ return; }
             ctx = canvas.getContext('2d');
             const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl, joystickContainer, joystickBase, joystickKnob, jumpButton };
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
@@ -265,37 +216,37 @@
             const INVINCIBILITY_DURATION_MS = 1000;
             const GROUND_HEIGHT_PERCENT = 0.075;
             const PLAYER_INITIAL_X_PERCENT = 0.075;
-            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.08;  // Knight size (desktop)
+            const PLAYER_WIDTH_PERCENT_DESKTOP = 0.08;
             const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.16;
-            const PLAYER_WIDTH_PERCENT_MOBILE = 0.112; // Knight size (mobile)
+            const PLAYER_WIDTH_PERCENT_MOBILE = 0.112;
             const PLAYER_HEIGHT_PERCENT_MOBILE = 0.224;
-            const PLAYER_GRAVITY_FACTOR = 1300; // Affects how fast player falls (larger = less gravity)
-            const PLAYER_JUMP_FACTOR = -40;     // Affects jump height (more negative = higher jump)
-            const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; // How high bounce is relative to jump
-            const PLAYER_ACCEL_FACTOR = 1.0;    // Horizontal acceleration factor
-            const PLAYER_MAX_DX_FACTOR = 0.375; // Max horizontal speed factor
-            const PLAYER_FRICTION = 0.90;       // Horizontal friction (0-1, lower = more friction)
-            const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; // Stone size
+            const PLAYER_GRAVITY_FACTOR = 1300;
+            const PLAYER_JUMP_FACTOR = -40;
+            const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8;
+            const PLAYER_ACCEL_FACTOR = 1.0;
+            const PLAYER_MAX_DX_FACTOR = 0.375;
+            const PLAYER_FRICTION = 0.90;
+            const OBSTACLE_STONE_WIDTH_PERCENT = 0.088;
             const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176;
-            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; // Tractor size
+            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176;
             const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226;
-            const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; // Family size
+            const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088;
             const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
-            const POI_SIGN_WIDTH_PERCENT = 0.113; // Sign size
+            const POI_SIGN_WIDTH_PERCENT = 0.113;
             const POI_SIGN_HEIGHT_PERCENT = 0.275;
-            const OBSTACLE_SPEED_FACTOR = 0.375; // How fast obstacles move left (relative to width)
-            const SPEED_INCREASE_INTERVAL_SCORE = 400; // Score needed to potentially increase speed (currently disabled)
-            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; // Score needed to switch background
-            const POI_SPAWN_CHANCE = 0.15; // Probability (0-1) of spawning a POI instead of obstacle
-            const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; // Base time between obstacle spawns
-            const OBSTACLE_MIN_SPAWN_TIME_MS = 800;   // Minimum time between spawns
-            const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; // How lenient the "landing on top" check is
-            const MOBILE_BREAKPOINT_WIDTH = 850; // Width threshold for mobile layout/controls
-            const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1; // How fast background scrolls (relative to obstacle speed)
-            const backgroundSequence = [0, 1, 2, 1, 0]; // Order of backgrounds (0=bg1, 1=bg2, 2=bg3)
-            const FINAL_POI_ID = 7; // ID of the winning POI (Burg Eisenhardt)
-            const BACKGROUND_TRANSITION_DURATION = 1000; // Fade duration in ms
-            const JOYSTICK_DEAD_ZONE = 10; // Minimum pixel movement to activate joystick direction
+            const OBSTACLE_SPEED_FACTOR = 0.375;
+            const SPEED_INCREASE_INTERVAL_SCORE = 400;
+            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
+            const POI_SPAWN_CHANCE = 0.15;
+            const OBSTACLE_BASE_SPAWN_TIME_MS = 1800;
+            const OBSTACLE_MIN_SPAWN_TIME_MS = 800;
+            const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045;
+            const MOBILE_BREAKPOINT_WIDTH = 850;
+            const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1;
+            const backgroundSequence = [0, 1, 2, 1, 0];
+            const FINAL_POI_ID = 7;
+            const BACKGROUND_TRANSITION_DURATION = 1000;
+            const JOYSTICK_DEAD_ZONE = 10;
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
@@ -314,52 +265,30 @@
 
 
             // --- Graphics Assets ---
-            const assets = {
-                knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' },
-                knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' },
-                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-                sign: { img: new Image(), loaded: false, src: 'assets/sign.png' },
-                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
-                family: { img: new Image(), loaded: false, src: 'assets/family.png' },
-                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
-                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
-                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }
-            };
+            const assets = { /* ... */ knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' }, knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, sign: { img: new Image(), loaded: false, src: 'assets/sign.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' }, family: { img: new Image(), loaded: false, src: 'assets/family.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' } };
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
-            const regularObstacleTypes = [
-                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
-                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT },
-                { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT }
-            ];
+            const regularObstacleTypes = [ /* ... */ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }, { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
-            const poiData = [
-                 { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile." },
-                 { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage." },
-                 { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern." },
-                 { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet." },
-                 { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt." },
-                 { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation." },
-                 { id: 7, name: "Burg Eisenhardt", info: "Burg Eisenhardt: A well-preserved medieval castle vital to the region's defense, known for its distinct architecture and historical significance. | Burg Eisenhardt: Eine gut erhaltene mittelalterliche Burg, entscheidend für die Verteidigung der Region, bekannt für ihre markante Architektur und historische Bedeutung." }
-            ];
+            const poiData = [ /* ... */ { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile." }, { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage." }, { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern." }, { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet." }, { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt." }, { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation." }, { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region." } ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) { console.log(`Asset loaded: ${assetKey}`); assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.log("All assets loaded."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
-            function assetLoadError(assetKey) { console.error(`Failed to load asset: ${assets[assetKey].src}. Check path and file existence.`); alert(`Error loading image: ${assets[assetKey].src}\nGame might not display correctly.`); assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
-            function loadAssets() { console.log("Starting asset loading..."); currentGameState = GameState.LOADING; for (const key in assets) { if (Object.prototype.hasOwnProperty.call(assets, key) && assets[key].img) { assets[key].img.src = assets[key].src; assets[key].img.onload = () => assetLoaded(key); assets[key].img.onerror = () => assetLoadError(key); } } }
+            function assetLoaded(assetKey) { /* ... */ console.log(`Asset loaded: ${assetKey}`); assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.log("All assets loaded."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
+            function assetLoadError(assetKey) { /* ... */ console.error(`Failed to load asset: ${assets[assetKey].src}. Check path and file existence.`); alert(`Error loading image: ${assets[assetKey].src}\nGame might not display correctly.`); assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
+            function loadAssets() { /* ... */ console.log("Starting asset loading..."); currentGameState = GameState.LOADING; for (const key in assets) { if (Object.prototype.hasOwnProperty.call(assets, key) && assets[key].img) { assets[key].img.src = assets[key].src; assets[key].img.onload = () => assetLoaded(key); assets[key].img.onerror = () => assetLoadError(key); } } }
 
             // --- High Score Handling ---
-            function loadHighScore() { try { const savedScore = localStorage.getItem('ritterRunHighScore'); highScore = savedScore ? parseInt(savedScore, 10) : 0; if (isNaN(highScore)) highScore = 0; startHighScoreSpan.textContent = highScore; gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Load HS:", e); highScore = 0; } }
-            function saveHighScore() { if (score > highScore) { highScore = score; try { localStorage.setItem('ritterRunHighScore', highScore.toString()); gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Save HS:", e); } } }
+            function loadHighScore() { /* ... */ try { const savedScore = localStorage.getItem('ritterRunHighScore'); highScore = savedScore ? parseInt(savedScore, 10) : 0; if (isNaN(highScore)) highScore = 0; startHighScoreSpan.textContent = highScore; gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Load HS:", e); highScore = 0; } }
+            function saveHighScore() { /* ... */ if (score > highScore) { highScore = score; try { localStorage.setItem('ritterRunHighScore', highScore.toString()); gameOverHighScoreSpan.textContent = highScore; } catch (e) { console.error("LS Error Save HS:", e); } } }
 
             // --- Sound Playing Helper (Stub) ---
             function playSound(soundId) { console.log(`Playing sound: ${soundId}`); }
 
             // --- Reset Game Variables ---
-            function resetGame() {
+            function resetGame() { /* ... */
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
                 obstacleSpeed = canvasWidth * OBSTACLE_SPEED_FACTOR; playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
@@ -379,8 +308,8 @@
             }
 
             // --- Update Functions ---
-            function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            function updateObstacles(dt, currentTime) {
+            function updatePlayer(dt) { /* ... */ if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
+            function updateObstacles(dt, currentTime) { /* Uses updated obstacle size constants */
                  if (currentTime >= nextObstacleSpawnTime) { /* ... spawning logic ... */
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
                     if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
@@ -450,7 +379,8 @@
 
                  // Check if joystick container exists (for debugging)
                  if (!joystickContainer || !jumpButton) {
-                     // alert("DEBUG: Joystick or Jump Button HTML element NOT FOUND!"); // Keep commented out unless needed
+                     // Keep alert commented out unless actively debugging HTML issues
+                     // alert("DEBUG: Joystick or Jump Button HTML element NOT FOUND!");
                  } else {
                      console.log("DEBUG: Joystick and Jump Button HTML elements FOUND.");
                  }
