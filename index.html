@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Increase POI Spawn Chance)</title> <style>
+    <title>RitterRun Enhanced - Bad Belzig (Force POI Spawn & Draw Debug)</title> <style>
         /* Basic Reset & Global Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
@@ -118,7 +118,7 @@
 
             // --- Game Constants ---
             const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176; const POI_SIGN_WIDTH_PERCENT = 0.113; const POI_SIGN_HEIGHT_PERCENT = 0.275; const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
-            const POI_SPAWN_CHANCE = 0.8; // MODIFIED: Increased chance for testing
+            const POI_SPAWN_CHANCE = 0.8; // Keep high chance for testing
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850; const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1; const backgroundSequence = [0, 1, 2, 1, 0]; const FINAL_POI_ID = 7; const BACKGROUND_TRANSITION_DURATION = 1000; const JOYSTICK_DEAD_ZONE = 10;
             const TRACTOR_OSC_AMPLITUDE_FACTOR = 0.02; const TRACTOR_OSC_FREQUENCY = 0.75;
             const MOBILE_LANDSCAPE_QUERY = `(max-width: ${MOBILE_BREAKPOINT_WIDTH}px) and (orientation: landscape)`;
@@ -177,18 +177,27 @@
 
             // --- Update Functions ---
             function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            // --- MODIFIED: updateObstacles (Added logging) ---
+            // --- MODIFIED: updateObstacles (Force first spawn as POI) ---
             function updateObstacles(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; // Using updated constant
+                    let forceFirstPOI = obstacles.length === 0 && nextPoiIndex === 0; // Force only the very first obstacle to be POI 1
+                    const willSpawnPOI = forceFirstPOI || (Math.random() < POI_SPAWN_CHANCE);
                     const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded;
                     const spawnPOI = willSpawnPOI && canSpawnPOI;
 
-                    if (spawnPOI) { const poi = poiData[nextPoiIndex]; const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent; newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' }; nextPoiIndex++; }
-                    else { if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } } } }
+                    if (spawnPOI) {
+                        const poi = poiData[nextPoiIndex];
+                        const objWidth = canvasWidth * poiSignDimensions.widthPercent;
+                        const objHeight = canvasHeight * poiSignDimensions.heightPercent;
+                        newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: 'sign' };
+                        console.log(`DEBUG: Spawning POI (Forced: ${forceFirstPOI}, ID: ${poi.id})`); // Add specific log
+                        nextPoiIndex++;
+                    } else {
+                        if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } } }
+                    }
                     if (newObjectData) {
-                        console.log('Spawning:', newObjectData?.assetKey || 'POI', newObjectData?.x); // DEBUG LOG
+                        console.log('Spawning:', newObjectData?.assetKey || 'POI', newObjectData?.x); // General spawn log
                         obstacles.push(newObjectData);
                     }
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
@@ -196,21 +205,7 @@
                  const movement = obstacleSpeed * dt;
                  for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else if (!obj.isPOI) { obj.baseX -= movement; if (obj.assetKey === 'tractor') { obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; const amplitudePx = canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR; const xOffset = amplitudePx * Math.sin(obj.oscillationPhase); obj.x = obj.baseX + xOffset; } else { obj.x = obj.baseX; } }
-                    // --- MODIFIED: POI Trigger Logging ---
-                    if (obj.isPOI && !obj.passed) {
-                        const triggerPoint = obj.x; const playerRightEdge = player.x + player.width;
-                        // console.log(`POI Check: PlayerRight=${playerRightEdge.toFixed(0)}, POI_X=${triggerPoint.toFixed(0)}`); // Optional: Spammy
-                        if (playerRightEdge > triggerPoint) {
-                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); // Keep existing log
-                            obj.passed = true;
-                            if (obj.poiId === FINAL_POI_ID) { /* ... win logic ... */ console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } }
-                            else {
-                                console.log(">>> Calling displayPOIInfo for regular POI."); // Add log
-                                displayPOIInfo(obj.poiId);
-                                score += 50; currentScoreSpan.textContent = score; playSound('poi');
-                            }
-                        }
-                    } // --- End POI Check ---
+                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(">>> Calling displayPOIInfo for regular POI."); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
              }
@@ -218,34 +213,27 @@
             function updateScoreAndSpeed() { /* ... */ score++; currentScoreSpan.textContent = score; if (!isTransitioningBackground && score >= nextBackgroundSwitchScore) { previousBackgroundSequenceIndex = backgroundSequenceIndex; backgroundSequenceIndex = (backgroundSequenceIndex + 1) % backgroundSequence.length; if (previousBackgroundSequenceIndex !== backgroundSequenceIndex) { isTransitioningBackground = true; transitionStartTime = performance.now(); console.log(`Background transition START: ${previousBackgroundSequenceIndex} -> ${backgroundSequenceIndex}`); } nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; } }
 
             // --- Draw Functions ---
-            function drawBackground(dt) {
-                const now = performance.now();
-                const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt;
-                bgX -= bgMovement;
-                if (bgX <= -canvasWidth) { bgX += canvasWidth; }
-
-                // Log dimensions occasionally
-                if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log(`Draw BG - Canvas W: ${canvasWidth}, H: ${canvasHeight}`); }
-
-                ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                let currentAssetKey = ''; // To log which background is drawn
-                if (isTransitioningBackground) { /* ... transition logic ... */ const elapsed = now - transitionStartTime; const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION); const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex]; const oldAssetKey = `background${oldActualIndex + 1}`; const oldAsset = assets[oldAssetKey]; const newActualIndex = backgroundSequence[backgroundSequenceIndex]; const newAssetKey = `background${newActualIndex + 1}`; const newAsset = assets[newAssetKey]; if (oldAsset && oldAsset.loaded) { ctx.globalAlpha = 1 - progress; ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } if (newAsset && newAsset.loaded) { ctx.globalAlpha = progress; ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); currentAssetKey = newAssetKey; /* Log the new one during transition */ } ctx.globalAlpha = 1.0; if (progress >= 1) { isTransitioningBackground = false; console.log("Background transition END"); } } else { /* ... draw current background ... */ const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex]; currentAssetKey = `background${actualBackgroundIndex + 1}`; const currentAsset = assets[currentAssetKey]; if (currentAsset && currentAsset.loaded) { ctx.globalAlpha = 1.0; ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } }
-                // Log background being drawn occasionally
-                // if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log('Drawing Background:', currentAssetKey || 'Transitioning/None'); } // Spammy
-
-                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
-            }
-            // --- MODIFIED: drawObstacles (Added logging) ---
+            function drawBackground(dt) { /* ... */ const now = performance.now(); const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt; bgX -= bgMovement; if (bgX <= -canvasWidth) { bgX += canvasWidth; } if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log(`Draw BG - Canvas W: ${canvasWidth}, H: ${canvasHeight}`); } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); let currentAssetKey = ''; if (isTransitioningBackground) { const elapsed = now - transitionStartTime; const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION); const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex]; const oldAssetKey = `background${oldActualIndex + 1}`; const oldAsset = assets[oldAssetKey]; const newActualIndex = backgroundSequence[backgroundSequenceIndex]; const newAssetKey = `background${newActualIndex + 1}`; const newAsset = assets[newAssetKey]; if (oldAsset && oldAsset.loaded) { ctx.globalAlpha = 1 - progress; ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } if (newAsset && newAsset.loaded) { ctx.globalAlpha = progress; ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); currentAssetKey = newAssetKey; } ctx.globalAlpha = 1.0; if (progress >= 1) { isTransitioningBackground = false; console.log("Background transition END"); } } else { const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex]; currentAssetKey = `background${actualBackgroundIndex + 1}`; const currentAsset = assets[currentAssetKey]; if (currentAsset && currentAsset.loaded) { ctx.globalAlpha = 1.0; ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
+            // --- MODIFIED: drawObstacles (Added fallback drawing) ---
             function drawObstacles() {
-                // console.log(`Drawing ${obstacles.length} obstacles`); // DEBUG LOG - Can be spammy
                 for (const obj of obstacles) {
-                    if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                         console.log('Drawing Obstacle/POI:', obj.assetKey, obj.x.toFixed(0), obj.y.toFixed(0)); // DEBUG LOG - Less spammy
+                    if (obj.assetKey === 'sign') { // Special handling for sign
+                         if (assets.sign.loaded) {
+                             // console.log('Drawing Obstacle/POI:', obj.assetKey, obj.x.toFixed(0), obj.y.toFixed(0)); // Optional log
+                             ctx.drawImage(assets.sign.img, obj.x, obj.y, obj.width, obj.height);
+                         } else {
+                             // Draw bright fallback rectangle if sign asset failed to load
+                             console.warn("Attempted to draw POI sign but asset not loaded!");
+                             ctx.fillStyle = 'cyan'; // Bright fallback color
+                             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                         }
+                    } else if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { // Handle other obstacles
+                        // console.log('Drawing Obstacle/POI:', obj.assetKey, obj.x.toFixed(0), obj.y.toFixed(0)); // Optional log
                         ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
-                    } else {
-                        ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
-                        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                        console.warn("Attempted to draw obstacle/POI but asset not loaded:", obj.assetKey);
+                    } else { // Fallback for other obstacles if not loaded
+                         ctx.fillStyle = 'red';
+                         ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                         console.warn("Attempted to draw obstacle but asset not loaded:", obj.assetKey);
                     }
                 }
             }
@@ -301,7 +289,7 @@
             // --- MODIFIED: updateControlVisibility (JS control of display - FORCED VISIBLE TEST) ---
             function updateControlVisibility() {
                 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-                // console.log(`updateControlVisibility - Portrait: ${isPortrait} - FORCING controls visible in landscape`); // Keep this commented unless debugging visibility itself
+                // console.log(`updateControlVisibility - Portrait: ${isPortrait} - FORCING controls visible in landscape`);
 
                 // Show/Hide Orientation Message and Game Container
                 if(orientationMessage) { orientationMessage.style.display = isPortrait ? 'flex' : 'none'; }
@@ -309,19 +297,19 @@
 
                 // Force controls visible if not portrait
                 if (!isPortrait) {
-                    // console.log("Attempting to force controls VISIBLE via JS..."); // Keep commented unless debugging visibility
-                    // console.log("Checking joystickContainer element:", joystickContainer);
+                    console.log("Attempting to force controls VISIBLE via JS...");
+                    console.log("Checking joystickContainer element:", joystickContainer); // Log element ref
                     if(joystickContainer) {
-                        // console.log("Setting joystick display: block");
+                        console.log("Setting joystick display: block");
                         joystickContainer.style.display = 'block';
                     } else { console.error("Joystick container null during visibility update!"); }
-                    // console.log("Checking jumpButton element:", jumpButton);
+                    console.log("Checking jumpButton element:", jumpButton); // Log element ref
                     if(jumpButton) {
-                        // console.log("Setting jump button display: block");
+                        console.log("Setting jump button display: block");
                         jumpButton.style.display = 'block';
                     } else { console.error("Jump button null during visibility update!"); }
                 } else {
-                    // console.log("Setting controls to HIDDEN via JS (Portrait)"); // Keep commented unless debugging visibility
+                    console.log("Setting controls to HIDDEN via JS (Portrait)");
                     if(joystickContainer) joystickContainer.style.display = 'none';
                     if(jumpButton) jumpButton.style.display = 'none';
                 }
