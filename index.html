@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (JS Force Controls & More Logging)</title> <style>
+    <title>RitterRun Enhanced - Bad Belzig (POI Debug Logging)</title> <style>
         /* Basic Reset & Global Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
@@ -74,7 +74,6 @@
         // --- Strict mode and IIFE ---
         (function() {
             'use strict';
-            // console.log("Script execution started."); // More console-friendly check
 
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
@@ -177,6 +176,7 @@
 
             // --- Update Functions ---
             function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
+            // --- MODIFIED: updateObstacles (Added logging) ---
             function updateObstacles(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null; const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE; const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded; const spawnPOI = willSpawnPOI && canSpawnPOI;
@@ -189,9 +189,23 @@
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS + (Math.random() * 500 - 250); nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
                  const movement = obstacleSpeed * dt;
-                 for (let i = obstacles.length - 1; i >= 0; i--) { /* ... movement, POI trigger (incl win condition), removal ... */
+                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i]; if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; } else if (!obj.isPOI) { obj.baseX -= movement; if (obj.assetKey === 'tractor') { obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; const amplitudePx = canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR; const xOffset = amplitudePx * Math.sin(obj.oscillationPhase); obj.x = obj.baseX + xOffset; } else { obj.x = obj.baseX; } }
-                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
+                    // --- MODIFIED: POI Trigger Logging ---
+                    if (obj.isPOI && !obj.passed) {
+                        const triggerPoint = obj.x; const playerRightEdge = player.x + player.width;
+                        // console.log(`POI Check: PlayerRight=${playerRightEdge.toFixed(0)}, POI_X=${triggerPoint.toFixed(0)}`); // Optional: Spammy
+                        if (playerRightEdge > triggerPoint) {
+                            console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); // Keep existing log
+                            obj.passed = true;
+                            if (obj.poiId === FINAL_POI_ID) { /* ... win logic ... */ console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } }
+                            else {
+                                console.log(">>> Calling displayPOIInfo for regular POI."); // Add log
+                                displayPOIInfo(obj.poiId);
+                                score += 50; currentScoreSpan.textContent = score; playSound('poi');
+                            }
+                        }
+                    } // --- End POI Check ---
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
              }
@@ -212,28 +226,47 @@
                 let currentAssetKey = ''; // To log which background is drawn
                 if (isTransitioningBackground) { /* ... transition logic ... */ const elapsed = now - transitionStartTime; const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION); const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex]; const oldAssetKey = `background${oldActualIndex + 1}`; const oldAsset = assets[oldAssetKey]; const newActualIndex = backgroundSequence[backgroundSequenceIndex]; const newAssetKey = `background${newActualIndex + 1}`; const newAsset = assets[newAssetKey]; if (oldAsset && oldAsset.loaded) { ctx.globalAlpha = 1 - progress; ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } if (newAsset && newAsset.loaded) { ctx.globalAlpha = progress; ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); currentAssetKey = newAssetKey; /* Log the new one during transition */ } ctx.globalAlpha = 1.0; if (progress >= 1) { isTransitioningBackground = false; console.log("Background transition END"); } } else { /* ... draw current background ... */ const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex]; currentAssetKey = `background${actualBackgroundIndex + 1}`; const currentAsset = assets[currentAssetKey]; if (currentAsset && currentAsset.loaded) { ctx.globalAlpha = 1.0; ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } }
                 // Log background being drawn occasionally
-                if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log('Drawing Background:', currentAssetKey || 'Transitioning/None'); }
+                // if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log('Drawing Background:', currentAssetKey || 'Transitioning/None'); } // Spammy
 
                 const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
             }
+            // --- MODIFIED: drawObstacles (Added logging) ---
             function drawObstacles() {
                 // console.log(`Drawing ${obstacles.length} obstacles`); // DEBUG LOG - Can be spammy
                 for (const obj of obstacles) {
                     if (assets[obj.assetKey] && assets[obj.assetKey].loaded) {
-                        // console.log('Drawing Obstacle:', obj.assetKey, obj.x, obj.y, obj.width, obj.height); // DEBUG LOG - Very spammy
+                         console.log('Drawing Obstacle/POI:', obj.assetKey, obj.x.toFixed(0), obj.y.toFixed(0)); // DEBUG LOG - Less spammy
                         ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height);
                     } else {
-                        // Draw fallback rectangle if asset not loaded (shouldn't happen if loading works)
                         ctx.fillStyle = obj.isPOI ? 'blue' : 'red';
                         ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                        // console.warn("Attempted to draw obstacle but asset not loaded:", obj.assetKey);
+                        console.warn("Attempted to draw obstacle/POI but asset not loaded:", obj.assetKey);
                     }
                 }
             }
             function updateKnightVisuals() { /* Uses updated player size constants */ const now = performance.now(); let targetState = player.grounded ? 'run' : 'jump'; let targetSrc = player.grounded ? assets.knight_run.src : assets.knight_jump.src; if (targetState !== currentKnightVisualState || !knightImageEl.src) { if ((targetState === 'run' && assets.knight_run.loaded) || (targetState === 'jump' && assets.knight_jump.loaded)) { if (knightImageEl.src !== targetSrc) { knightImageEl.src = targetSrc; console.log(`Set knight visual state to: ${targetState}`); } currentKnightVisualState = targetState; } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
-            function displayPOIInfo(poiId) { /* ... */ const poi = poiData.find(p => p.id === poiId); if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; } isPaused = true; console.log(`>>> Game PAUSED for POI ID: ${poiId}`); poiNameEl.textContent = poi.name; const infoParts = poi.info.split('|').map(s => s.trim()); const formattedInfo = infoParts.join('<br><br>'); poiInfoTextEl.innerHTML = formattedInfo; poiOverlay.classList.add('visible'); console.log(">>> Added 'visible' class to poiOverlay."); }
-            function closePoiOverlay() { /* ... */ console.log("closePoiOverlay function called by event"); poiOverlay.classList.remove('visible'); isPaused = false; lastTime = performance.now(); console.log(">>> Closed POI Overlay. Game RESUMED."); }
+            // --- MODIFIED: displayPOIInfo (Added logging) ---
+            function displayPOIInfo(poiId) {
+                console.log(">>> Entered displayPOIInfo. Pausing game."); // Add log
+                const poi = poiData.find(p => p.id === poiId);
+                if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; }
+                isPaused = true; // Pause game updates
+                poiNameEl.textContent = poi.name;
+                const infoParts = poi.info.split('|').map(s => s.trim());
+                const formattedInfo = infoParts.join('<br><br>');
+                poiInfoTextEl.innerHTML = formattedInfo; // Use innerHTML for <br>
+                poiOverlay.classList.add('visible');
+                console.log(">>> Added 'visible' class to poiOverlay. displayPOIInfo finished."); // Add log
+            }
+            // --- MODIFIED: closePoiOverlay (Added logging) ---
+            function closePoiOverlay() {
+                console.log(">>> Entered closePoiOverlay. Removing visible class, resuming game."); // Add log
+                poiOverlay.classList.remove('visible');
+                isPaused = false; // Resume game updates
+                lastTime = performance.now(); // Reset lastTime to prevent large dt jump
+                console.log(">>> Closed POI Overlay. Game RESUMED.");
+            }
 
             function gameLoop(timestamp) {
                 const dt = (timestamp - lastTime) / 1000 || 0; if (!isPaused) { lastTime = timestamp; }
@@ -262,7 +295,6 @@
 
             // --- MODIFIED: updateControlVisibility (JS control of display - FORCED VISIBLE TEST) ---
             function updateControlVisibility() {
-                // Use window.matchMedia to check portrait, but FORCE controls visible otherwise
                 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
                 console.log(`updateControlVisibility - Portrait: ${isPortrait} - FORCING controls visible in landscape`);
 
@@ -273,10 +305,12 @@
                 // Force controls visible if not portrait
                 if (!isPortrait) {
                     console.log("Attempting to force controls VISIBLE via JS...");
+                    console.log("Checking joystickContainer element:", joystickContainer); // Log element ref
                     if(joystickContainer) {
                         console.log("Setting joystick display: block");
                         joystickContainer.style.display = 'block';
                     } else { console.error("Joystick container null!"); }
+                    console.log("Checking jumpButton element:", jumpButton); // Log element ref
                     if(jumpButton) {
                         console.log("Setting jump button display: block");
                         jumpButton.style.display = 'block';
@@ -331,7 +365,7 @@
                 if (!assets.knight_run.loaded || !assets.knight_jump.loaded) { console.error("Essential knight assets failed to load!"); alert("Error: Essential knight images failed to load."); return; }
 
                 loadHighScore();
-                resizeCanvas(); // Initial resize and control visibility check
+                resizeCanvas(); // Initial resize, sets canvas size, calculates initial dynamic values, and calls updateControlVisibility
 
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
