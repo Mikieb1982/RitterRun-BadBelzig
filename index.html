@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Force POI Spawn & Draw Debug)</title> <style>
-        /* Basic Reset & Global Styles */
+    <title>RitterRun Enhanced - Bad Belzig (Sign Draw Debug)</title> <style>
+        /* CSS unchanged */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
         :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-sans: 'Arial', sans-serif; --font-pixel: 'Press Start 2P', cursive; }
         body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
-
-        /* Game Container Sizing */
         #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
         @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
-
         canvas { display: block; width: 100%; height: 100%; }
         #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; image-rendering: pixelated; image-rendering: crisp-edges; }
-
-        /* UI Screens & Buttons */
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -29,8 +24,6 @@
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
-
-        /* POI Overlay Styling */
         .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
@@ -38,22 +31,15 @@
         #closePoiButton { padding: 8px 15px; font-size: 1em; font-family: var(--font-sans); cursor: pointer; background-color: #ccc; border: 1px solid #888; color: var(--bb-black); margin-top: 10px; border-radius: 5px; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
-
-        /* Joystick Styles */
         #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; /* Controlled by JS */ pointer-events: none; }
         #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
         #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; background-image: url('assets/knight_jump.png'); background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
-
-        /* Jump Button Styles */
         #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Controlled by JS */ color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
-
         .hidden { display: none !important; }
         #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: none; /* Controlled by JS */ flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; }
         #orientationMessage p { margin-bottom: 1em; }
-
         /* Removed CSS Media Queries for Controls Visibility - Handled by JS */
-
     </style>
 </head>
 <body>
@@ -78,6 +64,7 @@
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('game-container');
+            // ... (Refs remain the same) ...
             const startScreen = document.getElementById('startScreen');
             const gameOverScreen = document.getElementById('gameOverScreen');
             const startButton = document.getElementById('startButton');
@@ -177,12 +164,14 @@
 
             // --- Update Functions ---
             function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!player.grounded) { player.grounded = true; } } }
-            // --- MODIFIED: updateObstacles (Force first spawn as POI) ---
+            // --- MODIFIED: updateObstacles (Force first spawn as POI, add logging) ---
             function updateObstacles(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    let forceFirstPOI = obstacles.length === 0 && nextPoiIndex === 0; // Force only the very first obstacle to be POI 1
-                    const willSpawnPOI = forceFirstPOI || (Math.random() < POI_SPAWN_CHANCE);
+                    // Force the very first object created in the game to be POI 1
+                    let forceFirstPOI = obstacles.length === 0 && nextPoiIndex === 0;
+                    console.log(`Checking canSpawnPOI: nextPoiIndex=${nextPoiIndex}, poiData.length=${poiData.length}, assets.sign.loaded=${assets.sign.loaded}`); // Log check
+                    const willSpawnPOI = forceFirstPOI || (Math.random() < POI_SPAWN_CHANCE); // Keep high chance otherwise
                     const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded;
                     const spawnPOI = willSpawnPOI && canSpawnPOI;
 
@@ -214,16 +203,22 @@
 
             // --- Draw Functions ---
             function drawBackground(dt) { /* ... */ const now = performance.now(); const bgMovement = isPaused ? 0 : obstacleSpeed * BACKGROUND_SCROLL_SPEED_FACTOR * dt; bgX -= bgMovement; if (bgX <= -canvasWidth) { bgX += canvasWidth; } if (Math.floor(now / 1000) !== Math.floor((now - dt*1000) / 1000)) { console.log(`Draw BG - Canvas W: ${canvasWidth}, H: ${canvasHeight}`); } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); let currentAssetKey = ''; if (isTransitioningBackground) { const elapsed = now - transitionStartTime; const progress = Math.min(1, elapsed / BACKGROUND_TRANSITION_DURATION); const oldActualIndex = backgroundSequence[previousBackgroundSequenceIndex]; const oldAssetKey = `background${oldActualIndex + 1}`; const oldAsset = assets[oldAssetKey]; const newActualIndex = backgroundSequence[backgroundSequenceIndex]; const newAssetKey = `background${newActualIndex + 1}`; const newAsset = assets[newAssetKey]; if (oldAsset && oldAsset.loaded) { ctx.globalAlpha = 1 - progress; ctx.drawImage(oldAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(oldAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } if (newAsset && newAsset.loaded) { ctx.globalAlpha = progress; ctx.drawImage(newAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(newAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); currentAssetKey = newAssetKey; } ctx.globalAlpha = 1.0; if (progress >= 1) { isTransitioningBackground = false; console.log("Background transition END"); } } else { const actualBackgroundIndex = backgroundSequence[backgroundSequenceIndex]; currentAssetKey = `background${actualBackgroundIndex + 1}`; const currentAsset = assets[currentAssetKey]; if (currentAsset && currentAsset.loaded) { ctx.globalAlpha = 1.0; ctx.drawImage(currentAsset.img, bgX, 0, canvasWidth, canvasHeight); ctx.drawImage(currentAsset.img, bgX + canvasWidth, 0, canvasWidth, canvasHeight); } } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
-            // --- MODIFIED: drawObstacles (Added fallback drawing) ---
+            // --- MODIFIED: drawObstacles (Added fallback drawing and logging) ---
             function drawObstacles() {
                 for (const obj of obstacles) {
                     if (obj.assetKey === 'sign') { // Special handling for sign
+                         console.log(`Attempting to draw sign. assets.sign.loaded = ${assets.sign.loaded}`); // Log loaded status
                          if (assets.sign.loaded) {
-                             // console.log('Drawing Obstacle/POI:', obj.assetKey, obj.x.toFixed(0), obj.y.toFixed(0)); // Optional log
-                             ctx.drawImage(assets.sign.img, obj.x, obj.y, obj.width, obj.height);
+                             console.log('Sign image object:', assets.sign.img); // Log image object state
+                             // TEST: Draw magenta rectangle instead of image
+                             ctx.fillStyle = 'magenta';
+                             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                             console.log(`Drew magenta fallback for sign at ${obj.x.toFixed(0)}, ${obj.y.toFixed(0)}`);
+                             // Original drawImage call (commented out for test):
+                             // ctx.drawImage(assets.sign.img, obj.x, obj.y, obj.width, obj.height);
                          } else {
                              // Draw bright fallback rectangle if sign asset failed to load
-                             console.warn("Attempted to draw POI sign but asset not loaded!");
+                             console.warn("Attempted to draw POI sign but asset reported as not loaded!");
                              ctx.fillStyle = 'cyan'; // Bright fallback color
                              ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
                          }
@@ -291,19 +286,17 @@
                 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
                 // console.log(`updateControlVisibility - Portrait: ${isPortrait} - FORCING controls visible in landscape`);
 
-                // Show/Hide Orientation Message and Game Container
                 if(orientationMessage) { orientationMessage.style.display = isPortrait ? 'flex' : 'none'; }
                 if(gameContainer) { gameContainer.style.display = isPortrait ? 'none' : 'block'; }
 
-                // Force controls visible if not portrait
                 if (!isPortrait) {
                     console.log("Attempting to force controls VISIBLE via JS...");
-                    console.log("Checking joystickContainer element:", joystickContainer); // Log element ref
+                    console.log("Checking joystickContainer element:", joystickContainer);
                     if(joystickContainer) {
                         console.log("Setting joystick display: block");
                         joystickContainer.style.display = 'block';
                     } else { console.error("Joystick container null during visibility update!"); }
-                    console.log("Checking jumpButton element:", jumpButton); // Log element ref
+                    console.log("Checking jumpButton element:", jumpButton);
                     if(jumpButton) {
                         console.log("Setting jump button display: block");
                         jumpButton.style.display = 'block';
@@ -314,15 +307,9 @@
                     if(jumpButton) jumpButton.style.display = 'none';
                 }
 
-                // Update player size based on mobile breakpoint
                 const isMobileWidth = window.innerWidth <= MOBILE_BREAKPOINT_WIDTH;
-                if (isMobileWidth) {
-                    player.width = canvasWidth * PLAYER_WIDTH_PERCENT_MOBILE;
-                    player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_MOBILE;
-                } else {
-                    player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP;
-                    player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP;
-                }
+                if (isMobileWidth) { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_MOBILE; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_MOBILE; }
+                else { player.width = canvasWidth * PLAYER_WIDTH_PERCENT_DESKTOP; player.height = canvasHeight * PLAYER_HEIGHT_PERCENT_DESKTOP; }
                  player.y = canvasHeight - groundHeightPx - player.height; // Update Y pos
             }
 
