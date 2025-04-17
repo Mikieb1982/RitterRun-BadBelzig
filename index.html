@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Restore Sign Drawing)</title> <style>
+    <title>RitterRun Enhanced - Bad Belzig (Sign drawImage Debug)</title> <style>
         /* CSS unchanged */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
@@ -64,7 +64,6 @@
             // --- DOM Element References ---
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('game-container');
-            // ... (Refs remain the same) ...
             const startScreen = document.getElementById('startScreen');
             const gameOverScreen = document.getElementById('gameOverScreen');
             const startButton = document.getElementById('startButton');
@@ -168,7 +167,6 @@
             function updateObstacles(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    // let forceFirstPOI = obstacles.length === 0 && nextPoiIndex === 0; // Removed force logic
                     // console.log(`Checking canSpawnPOI: nextPoiIndex=${nextPoiIndex}, poiData.length=${poiData.length}, assets.sign.loaded=${assets.sign.loaded}`); // Removed specific log
                     const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
                     const canSpawnPOI = nextPoiIndex < poiData.length && assets.sign.loaded;
@@ -212,9 +210,6 @@
                              // --- Restored original drawImage call ---
                              ctx.drawImage(assets.sign.img, obj.x, obj.y, obj.width, obj.height);
                              // --- Removed magenta fallback ---
-                             // ctx.fillStyle = 'magenta';
-                             // ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                             // console.log(`Drew magenta fallback for sign at ${obj.x.toFixed(0)}, ${obj.y.toFixed(0)}`);
                          } else {
                              // Keep cyan fallback in case loaded flag is somehow wrong
                              console.warn("Attempted to draw POI sign but asset reported as not loaded!");
