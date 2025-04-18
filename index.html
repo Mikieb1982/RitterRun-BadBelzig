@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Individual POI Images)</title> <style>
+    <title>RitterRun Enhanced - Bad Belzig (Double POI Image Size)</title> <style>
         /* CSS unchanged */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
@@ -120,7 +120,12 @@
             const CollisionType = Object.freeze({ NONE: 0, TOP: 1, SIDE: 2 });
 
             // --- Game Constants ---
-            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176; const POI_SIGN_WIDTH_PERCENT = 0.113; const POI_SIGN_HEIGHT_PERCENT = 0.275; const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
+            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
+            // --- MODIFIED: Doubled POI size ---
+            const POI_SIGN_WIDTH_PERCENT = 0.226; // Was 0.113
+            const POI_SIGN_HEIGHT_PERCENT = 0.55;  // Was 0.275
+            // --- END MODIFICATION ---
+            const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000;
             const POI_SPAWN_CHANCE = 0.15; // Back to original spawn chance
             const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850; const BACKGROUND_SCROLL_SPEED_FACTOR = 0.1; const backgroundSequence = [0, 1, 2, 1, 0]; const FINAL_POI_ID = 7; const BACKGROUND_TRANSITION_DURATION = 1000; const JOYSTICK_DEAD_ZONE = 10;
             const TRACTOR_OSC_AMPLITUDE_FACTOR = 0.02; const TRACTOR_OSC_FREQUENCY = 0.75;
@@ -136,7 +141,7 @@
             let isTransitioningBackground = false; let transitionStartTime = 0; let previousBackgroundSequenceIndex = 0;
             let joystickActive = false; let joystickStartX = 0; let joystickStartY = 0; let joystickBaseRect = null; let joystickRadius = 0;
 
-            // --- MODIFIED: Graphics Assets (Individual POI images) ---
+            // --- MODIFIED: Graphics Assets (Individual POI images, updated post key/src) ---
             const assets = {
                 knight_run: { img: new Image(), loaded: false, src: 'assets/knight_run.gif' },
                 knight_jump: { img: new Image(), loaded: false, src: 'assets/knight_jump.png' },
@@ -151,24 +156,23 @@
                 freibad: { img: new Image(), loaded: false, src: 'assets/freibad.png' },
                 kulturzentrum: { img: new Image(), loaded: false, src: 'assets/kulturzentrum.png' },
                 bahnhof: { img: new Image(), loaded: false, src: 'assets/bahnhof.png' },
-                postmeilensaeule: { img: new Image(), loaded: false, src: 'assets/postmeilensaeule.png' }, // Using 'ae' assuming filename is web-safe
+                post: { img: new Image(), loaded: false, src: 'assets/post.png' }, // Changed key and src
                 rathaus: { img: new Image(), loaded: false, src: 'assets/rathaus.png' },
                 burg: { img: new Image(), loaded: false, src: 'assets/burg.png' }
-                // Removed 'sign' asset
             };
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
             const regularObstacleTypes = [ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }, { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } ];
-            const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT }; // Keep using consistent dimensions for now
+            const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT }; // Uses updated constants
 
-            // --- MODIFIED: POI Data Structure (Added assetKey) ---
+            // --- MODIFIED: POI Data Structure (Updated assetKey for Postmeilensäule) ---
             const poiData = [
                 { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile.", assetKey: 'therme' },
                 { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage.", assetKey: 'freibad' },
                 { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern.", assetKey: 'kulturzentrum' },
                 { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet.", assetKey: 'bahnhof' },
-                { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt.", assetKey: 'postmeilensaeule' },
+                { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt.", assetKey: 'post' }, // Changed assetKey
                 { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation.", assetKey: 'rathaus' },
                 { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region.", assetKey: 'burg' }
             ];
@@ -211,25 +215,19 @@
             function updateObstacles(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    // Check if sign asset is loaded before considering POI spawn
-                    const signAssetLoaded = assets.bahnhof?.loaded || // Check if at least one POI asset is loaded (adjust if needed)
-                                            assets.burg?.loaded ||
-                                            assets.freibad?.loaded ||
-                                            assets.kulturzentrum?.loaded ||
-                                            assets.postmeilensaeule?.loaded ||
-                                            assets.therme?.loaded ||
-                                            assets.rathaus?.loaded;
+                    // Check if *any* POI asset is loaded before considering POI spawn
+                    const anyPoiAssetLoaded = poiData.some(poi => assets[poi.assetKey]?.loaded);
 
                     const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
-                    const canSpawnPOI = nextPoiIndex < poiData.length && signAssetLoaded; // Use general check
+                    const canSpawnPOI = nextPoiIndex < poiData.length && anyPoiAssetLoaded;
                     const spawnPOI = willSpawnPOI && canSpawnPOI;
 
                     if (spawnPOI) {
                         const poi = poiData[nextPoiIndex];
                         // Ensure the specific asset for *this* POI is loaded before spawning it
                         if (assets[poi.assetKey] && assets[poi.assetKey].loaded) {
-                            const objWidth = canvasWidth * poiSignDimensions.widthPercent;
-                            const objHeight = canvasHeight * poiSignDimensions.heightPercent;
+                            const objWidth = canvasWidth * poiSignDimensions.widthPercent; // Uses updated constant
+                            const objHeight = canvasHeight * poiSignDimensions.heightPercent; // Uses updated constant
                             newObjectData = {
                                 isPOI: true,
                                 poiId: poi.id,
@@ -346,8 +344,7 @@
             function handleJoystickMove(e) { /* ... */ if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); const touch = e.touches[0]; const currentX = touch.clientX; const currentY = touch.clientY; let deltaX = currentX - joystickStartX; let deltaY = currentY - joystickStartY; const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedX = deltaX; let clampedY = deltaY; if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; } joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`; if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; } else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; } else { isPressingLeft = false; isPressingRight = false; } }
             function handleJoystickEnd(e) { /* ... */ if (!joystickActive) return; e.preventDefault(); joystickKnob.style.transform = 'translate(-50%, -50%)'; joystickActive = false; isPressingLeft = false; isPressingRight = false; }
 
-            // --- MODIFIED: updateControlVisibility removed ---
-            // function updateControlVisibility() { ... } // Removed JS logic
+            // --- updateControlVisibility removed ---
 
              // --- MODIFIED: resizeCanvas (Simplified) ---
              function resizeCanvas() {
