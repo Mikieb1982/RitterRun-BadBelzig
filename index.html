@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Revert to HTML Img for Knight)</title> <style>
-        /* CSS unchanged except for adding #knightImage back and removing joystick knob bg */
+    <title>RitterRun Enhanced - Bad Belzig (Use tractor.gif)</title> <style>
+        /* CSS unchanged */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
         :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-sans: 'Arial', sans-serif; --font-pixel: 'Press Start 2P', cursive; }
@@ -12,8 +12,7 @@
         #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
         @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
         canvas { display: block; width: 100%; height: 100%; }
-        /* MODIFIED: Added #knightImage rule back, removed image-rendering */
-        #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; }
+        #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; /* image-rendering removed */ }
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -142,11 +141,11 @@
             let isTransitioningBackground = false; let transitionStartTime = 0; let previousBackgroundSequenceIndex = 0;
             let joystickActive = false; let joystickStartX = 0; let joystickStartY = 0; let joystickBaseRect = null; let joystickRadius = 0;
 
-            // --- MODIFIED: Graphics Assets (Use knight.gif, remove knight_jump) ---
+            // --- MODIFIED: Graphics Assets (Use knight.gif, tractor.gif) ---
             const assets = {
-                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' }, // Renamed key and src
+                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' },
                 stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.png' },
+                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.gif' }, // Changed src
                 family: { img: new Image(), loaded: false, src: 'assets/family.png' },
                 background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
                 background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
