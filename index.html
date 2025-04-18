@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Restore Movement, Remove Image-Rendering)</title> <style>
-        /* CSS unchanged except for knightImage and joystick knob */
+    <title>RitterRun Enhanced - Bad Belzig (Draw Knight on Canvas)</title> <style>
+        /* CSS unchanged except for removing #knightImage and joystick knob bg */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
         html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
         :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-sans: 'Arial', sans-serif; --font-pixel: 'Press Start 2P', cursive; }
@@ -12,8 +12,7 @@
         #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
         @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } }
         canvas { display: block; width: 100%; height: 100%; }
-        /* MODIFIED: Removed image-rendering */
-        #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; /* image-rendering: pixelated; image-rendering: crisp-edges; */ }
+        /* MODIFIED: Removed #knightImage rule */
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -34,7 +33,7 @@
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
         #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; /* Hidden by default */ pointer-events: none; }
         #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
-        #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; /* background-image: url('assets/knight_jump.png'); */ background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
+        #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; /* background-image removed */ background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.5; }
         #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Hidden by default */ color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
         .hidden { display: none !important; }
@@ -63,7 +62,6 @@
     <div id="orientationMessage"><p>Please rotate your device to landscape mode to play.</p><p>Bitte drehe dein Gerät ins Querformat, um zu spielen.</p></div>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <img id="knightImage" src="" alt="Knight">
         <div id="poiInfoOverlay" class="poi-overlay"><h3 id="poiName">POI Name</h3><p id="poiInfoText">POI information will appear here.</p><button id="closePoiButton">Close</button></div>
         <div id="startScreen" class="ui-screen"><h1>RitterRun</h1><p>Explore Bad Belzig!</p><p>High Score: <span id="startHighScore">0</span></p><button id="startButton" class="ui-button">Start Game</button><p class="instructions">Use Arrow Keys or Joystick to Move<br>Press SPACE, Click Screen, or Tap JUMP to Jump<br>Press Enter or Click/Tap POI to Close Info</p></div>
         <div id="gameOverScreen" class="ui-screen hidden"><h2>Game Over!</h2><p>Score/Punkte: <span id="finalScore">0</span></p><p>High Score: <span id="gameOverHighScore">0</span></p><button id="restartButton" class="ui-button">Restart</button></div>
@@ -97,7 +95,7 @@
             const closePoiButton = document.getElementById('closePoiButton');
             const livesDisplay = document.getElementById('livesDisplay');
             const currentLivesSpan = document.getElementById('currentLives');
-            const knightImageEl = document.getElementById('knightImage');
+            // const knightImageEl = document.getElementById('knightImage'); // MODIFIED: Removed
             const joystickContainer = document.getElementById('joystickContainer');
             const joystickBase = document.getElementById('joystickBase');
             const joystickKnob = document.getElementById('joystickKnob');
@@ -110,7 +108,8 @@
             // --- Essential Element Check ---
             if (!canvas || !canvas.getContext || !gameContainer) { alert("Fatal Error: Canvas not found!"); return; }
             ctx = canvas.getContext('2d');
-            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl, joystickContainer, joystickBase, joystickKnob, jumpButton, orientationMessage };
+            // MODIFIED: Removed knightImageEl from check
+            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, /*knightImageEl,*/ joystickContainer, joystickBase, joystickKnob, jumpButton, orientationMessage };
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
             // --- Game States ---
@@ -200,7 +199,7 @@
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
                 bgX = 0; backgroundSequenceIndex = 0; nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
                 currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
-                poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none'; // currentKnightVisualState removed
+                poiOverlay.classList.remove('visible'); // knightImageEl removed
                 isTransitioningBackground = false; transitionStartTime = 0; previousBackgroundSequenceIndex = 0;
                 joystickActive = false; if(joystickKnob) joystickKnob.style.transform = 'translate(-50%, -50%)';
                 const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; }
@@ -275,7 +274,7 @@
                     }
 
                     // POI Trigger Check (uses updated obj.x)
-                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(">>> Calling displayPOIInfo for regular POI."); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
+                    if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); /* knightImageEl removed */ if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(">>> Calling displayPOIInfo for regular POI."); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
                     // Off-screen check
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
@@ -299,41 +298,30 @@
                     }
                 }
             }
-            // --- MODIFIED: updateKnightVisuals (Restored style updates) ---
-            function updateKnightVisuals() {
+            // --- MODIFIED: Renamed to drawKnight, uses canvas drawing ---
+            function drawKnight() {
                 const now = performance.now();
 
-                // Ensure the correct image source is set (only needs to happen once ideally)
-                if (knightImageEl.src !== assets.knight.src) {
-                    if (assets.knight.loaded) {
-                        knightImageEl.src = assets.knight.src;
-                        console.log("Set knight visual state to: knight (gif)");
-                    }
+                if (!assets.knight.loaded) {
+                    // Optionally draw a placeholder if knight isn't loaded yet
+                    ctx.fillStyle = 'grey';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                    return;
                 }
 
-                // Handle invincibility flashing
-                let currentOpacity = 1;
+                // Handle invincibility flashing using canvas alpha
+                let originalAlpha = ctx.globalAlpha;
                 if (now < playerInvincibleUntil) {
                     if (Math.floor(now / 100) % 2 !== 0) {
-                        currentOpacity = 0.4;
+                        ctx.globalAlpha = 0.4; // Set canvas alpha for flashing
                     }
                 }
-                knightImageEl.style.opacity = currentOpacity;
 
-                // Update position and size
-                knightImageEl.style.left = `${player.x}px`;
-                knightImageEl.style.top = `${player.y}px`;
-                knightImageEl.style.width = `${player.width}px`;
-                knightImageEl.style.height = `${player.height}px`;
+                // Draw the knight image onto the canvas
+                ctx.drawImage(assets.knight.img, player.x, player.y, player.width, player.height);
 
-                // Ensure visibility during gameplay
-                if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) {
-                     if (knightImageEl.style.display === 'none') {
-                         knightImageEl.style.display = 'block';
-                     }
-                 } else {
-                     knightImageEl.style.display = 'none';
-                 }
+                // Restore original alpha
+                ctx.globalAlpha = originalAlpha;
             }
 
             // --- displayPOIInfo & closePoiOverlay remain the same ---
@@ -353,19 +341,26 @@
                 console.log(">>> Closed POI Overlay. Game RESUMED.");
             }
 
+            // --- MODIFIED: gameLoop calls drawKnight ---
             function gameLoop(timestamp) {
                 const dt = (timestamp - lastTime) / 1000 || 0; if (!isPaused) { lastTime = timestamp; }
                  if (currentGameState === GameState.PLAYING && !isPaused) { /* ... collision checks, updates ... */
                     let collisionHandledThisFrame = false; const collisionResult = checkCollisions();
-                    if (collisionResult.type === CollisionType.SIDE) { playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; collisionHandledThisFrame = true; if (playerLives > 0) { console.log(`Life lost! ${playerLives} remaining.`); player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`); } else { console.warn("GAME OVER - No lives left."); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; } gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } }
+                    if (collisionResult.type === CollisionType.SIDE) { playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; collisionHandledThisFrame = true; if (playerLives > 0) { console.log(`Life lost! ${playerLives} remaining.`); player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; console.log(`Player invincible until ${playerInvincibleUntil.toFixed(0)}`); } else { console.warn("GAME OVER - No lives left."); currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; } gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); /* knightImageEl removed */ if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } }
                     else if (collisionResult.type === CollisionType.TOP) { player.y = collisionResult.obstacle.y - player.height; player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; player.grounded = false; playSound('bounce'); collisionResult.obstacle.isKnocked = true; console.log(`Knocked off: ${collisionResult.obstacle.assetKey}`); updatePlayer(dt); collisionHandledThisFrame = true; }
                     if (!collisionHandledThisFrame) { updatePlayer(dt); } if (currentGameState === GameState.PLAYING) { updateObstacles(dt, timestamp); updateScoreAndSpeed(); } }
-                 ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(dt); drawObstacles(); updateKnightVisuals();
+                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                 drawBackground(dt);
+                 drawObstacles();
+                 // Draw knight only when playing or game over (before UI screens)
+                 if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER) {
+                    drawKnight(); // Call the new canvas drawing function
+                 }
                  if (currentGameState === GameState.LOADING) { /* ... draw loading ... */ ctx.fillStyle = 'white'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2); }
                 requestAnimationFrame(gameLoop);
             }
 
-            function startGame() { /* ... */ console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; /*currentKnightVisualState removed*/ updateKnightVisuals(); playSound('start'); lastTime = performance.now(); }
+            function startGame() { /* ... */ console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); /* knightImageEl removed */ playSound('start'); lastTime = performance.now(); }
             function restartGame() { /* ... */ console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
             function handleJumpInput() { /* ... */ console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
 
@@ -429,7 +424,7 @@
                 scoreDisplay.classList.add('hidden');
                 livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
-                knightImageEl.style.display = 'none';
+                // knightImageEl.style.display = 'none'; // Removed
 
                  // Remove potentially old listeners first
                  startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas); // Use resizeCanvas directly now
