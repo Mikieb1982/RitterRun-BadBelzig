@@ -3,75 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Major Enhancements)</title>
-    <style>
+    <title>RitterRun Enhanced - Bad Belzig (Joystick Debug v2)</title> <style>
         /* Basic Reset & Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            -moz-user-select: none;
-            touch-action: manipulation;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #222;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
+        :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-sans: 'Arial', sans-serif; --font-pixel: 'Press Start 2P', cursive; }
+        body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
 
-        :root {
-            --bb-green: #0ca644;
-            --bb-blue: #0296c6;
-            --bb-yellow: #f5d306;
-            --bb-black: #151513;
-            --bb-white: #ffffff;
-            --font-sans: 'Arial', sans-serif;
-            --font-pixel: 'Press Start 2P', cursive;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            font-family: var(--font-sans);
-        }
-
-        #game-container {
-            position: relative;
-            border: 3px solid #444;
-            overflow: hidden;
-            background-color: var(--bb-blue);
-            width: 800px;
-            height: 400px;
-            max-width: 100%;
-            box-sizing: border-box;
-            display: block;
-            border-radius: 8px;
-        }
-
-        @media (max-width: 850px) {
-             #game-container {
-                 width: 100vw;
-                 height: 50vw;
-                 max-height: 100vh;
-                 max-width: 100vw;
-                 border-radius: 0;
-             }
-             #scoreDisplay, #livesDisplay { font-size: 1.2em; }
-             .poi-overlay h3 { font-size: 1em; }
-             .poi-overlay p { font-size: 0.8em; }
-             #closePoiButton { font-size: 0.8em; }
-             #pauseButton { font-size: 0.8em; padding: 8px 10px;}
-        }
+        /* Game Container Sizing */
+        #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
+        @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } #pauseButton { font-size: 0.8em; padding: 8px 10px;} }
 
         canvas { display: block; width: 100%; height: 100%; }
         #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; image-rendering: pixelated; image-rendering: crisp-edges; }
 
+        /* UI Screens & Buttons */
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -80,11 +26,11 @@
         .ui-button:hover { background-color: #ddd; box-shadow: 3px 3px 5px rgba(0,0,0,0.4); }
         .ui-button:active { background-color: #ccc; transform: translate(1px, 1px); box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .instructions { margin-top: 25px; font-size: 0.9em !important; color: #ccc; line-height: 1.5; }
-
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
 
+        /* POI Overlay Styling */
         .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
@@ -93,65 +39,43 @@
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
 
-        #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; pointer-events: none; }
+        /* Joystick Styles */
+        #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; /* Hidden by default */ pointer-events: none; }
         #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
         #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; opacity: 0.5; }
 
-        #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
+        /* Jump Button Styles */
+        #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Hidden by default */ color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
 
-        /* NEW: Pause Button Styles */
-        #pauseButton {
-            position: absolute;
-            top: 10px;
-            right: 100px; /* Adjust as needed */
-            padding: 8px 12px;
-            font-size: 1em;
-            font-family: var(--font-sans);
-            background-color: rgba(238, 238, 238, 0.8);
-            border: 1px solid #888;
-            color: var(--bb-black);
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 26; /* Above score/lives */
-            display: none; /* Hidden by default, shown by JS */
-        }
+        /* Pause Button Styles */
+        #pauseButton { position: absolute; top: 10px; right: 100px; padding: 8px 12px; font-size: 1em; font-family: var(--font-sans); background-color: rgba(238, 238, 238, 0.8); border: 1px solid #888; color: var(--bb-black); border-radius: 5px; cursor: pointer; z-index: 26; display: none; /* Hidden by default, shown by JS */ }
         #pauseButton:hover { background-color: rgba(221, 221, 221, 0.9); }
         #pauseButton:active { background-color: rgba(204, 204, 204, 0.9); transform: translate(1px, 1px); }
-
-        #pausedMessage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.5em;
-            font-family: var(--font-sans);
-            color: var(--bb-yellow);
-            text-shadow: 2px 2px 0px var(--bb-black);
-            z-index: 35; /* Above game elements, below overlays if any */
-            display: none; /* Hidden by default */
-        }
-        /* END NEW */
+        #pausedMessage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5em; font-family: var(--font-sans); color: var(--bb-yellow); text-shadow: 2px 2px 0px var(--bb-black); z-index: 35; display: none; /* Hidden by default */ }
 
         .hidden { display: none !important; }
-        #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; }
+        #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: none; /* Hidden by default */ flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; }
         #orientationMessage p { margin-bottom: 1em; }
 
+        /* --- MODIFIED: Media Queries (Simplified Joystick/Button Display) --- */
         @media (orientation: portrait) {
              #game-container { display: none; }
              #orientationMessage { display: flex; }
-             #joystickContainer, #jumpButton, #pauseButton { display: none !important; }
+             #joystickContainer { display: none !important; } /* Ensure hidden */
+             #jumpButton { display: none !important; } /* Ensure hidden */
+             #pauseButton { display: none !important; } /* Ensure hidden */
         }
         @media (orientation: landscape) {
              #orientationMessage { display: none; }
              #game-container { display: block; }
-             @media (max-width: 850px) { /* Mobile landscape */
-                 #joystickContainer { display: block; }
-                 #jumpButton { display: block; }
-                 #pauseButton { display: block; } /* Show pause button on mobile landscape */
-             }
-             /* On wider landscape (desktop), JS will handle pause button visibility */
+             /* TEST: Show joystick & jump button & pause button in ANY landscape view */
+             #joystickContainer { display: block; }
+             #jumpButton { display: block; }
+             #pauseButton { display: block; } /* Show pause button in landscape */
         }
+        /* --- END MODIFICATION --- */
+
     </style>
 </head>
 <body>
@@ -199,8 +123,8 @@
             const joystickKnob = document.getElementById('joystickKnob');
             const jumpButton = document.getElementById('jumpButton');
             const orientationMessage = document.getElementById('orientationMessage');
-            const pauseButton = document.getElementById('pauseButton'); // NEW
-            const pausedMessage = document.getElementById('pausedMessage'); // NEW
+            const pauseButton = document.getElementById('pauseButton');
+            const pausedMessage = document.getElementById('pausedMessage');
 
             // --- Canvas and Context ---
             let ctx; let canvasWidth; let canvasHeight;
@@ -212,7 +136,7 @@
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
             // --- Game States ---
-            const GameState = Object.freeze({ MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', LOADING: 'LOADING', PAUSED: 'PAUSED' }); // Added PAUSED
+            const GameState = Object.freeze({ MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', LOADING: 'LOADING', PAUSED: 'PAUSED' });
             let currentGameState = GameState.LOADING;
 
             // --- Collision Types ---
@@ -221,54 +145,30 @@
             // --- Game Constants ---
             const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
             const POI_SIGN_WIDTH_PERCENT = 0.226; const POI_SIGN_HEIGHT_PERCENT = 0.55;
-            const OBSTACLE_SPEED_FACTOR = 0.375;
-            const SPEED_INCREASE_INTERVAL_SCORE = 400;
-            const OBSTACLE_SPEED_INCREASE_FACTOR = 0.01; // How much to increase obstacle speed factor by
-            const OBSTACLE_SPEED_MAX_FACTOR = 0.75;    // Max obstacle speed factor
-            const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; const POI_SPAWN_CHANCE = 0.15; const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850;
-            const BG1_SCROLL_FACTOR = 0.05; // Furthest
-            const BG2_SCROLL_FACTOR = 0.1;  // Middle
-            const BG3_SCROLL_FACTOR = 0.15; // Closest
+            const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const OBSTACLE_SPEED_INCREASE_FACTOR = 0.01; const OBSTACLE_SPEED_MAX_FACTOR = 0.75; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; const POI_SPAWN_CHANCE = 0.15; const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850;
+            const BG1_SCROLL_FACTOR = 0.05; const BG2_SCROLL_FACTOR = 0.1; const BG3_SCROLL_FACTOR = 0.15;
             const backgroundSequence = [0, 1, 2, 1, 0]; const FINAL_POI_ID = 7; const BACKGROUND_TRANSITION_DURATION = 1000; const JOYSTICK_DEAD_ZONE = 10;
             const TRACTOR_OSC_AMPLITUDE_FACTOR = 0.02; const TRACTOR_OSC_FREQUENCY = 0.75;
             const MOBILE_LANDSCAPE_QUERY = `(max-width: ${MOBILE_BREAKPOINT_WIDTH}px) and (orientation: landscape)`;
-            const COIN_WIDTH_PERCENT = 0.03; const COIN_HEIGHT_PERCENT = 0.03; const COIN_SCORE_VALUE = 10; const COIN_SPAWN_CHANCE = 0.1; // 10% chance an obstacle slot becomes a coin
-            const SCREEN_SHAKE_DURATION = 200; // ms
-            const SCREEN_SHAKE_MAGNITUDE = 5; // pixels
+            const COIN_WIDTH_PERCENT = 0.03; const COIN_HEIGHT_PERCENT = 0.03; const COIN_SCORE_VALUE = 10; const COIN_SPAWN_CHANCE = 0.1;
+            const SCREEN_SHAKE_DURATION = 200; const SCREEN_SHAKE_MAGNITUDE = 5;
             const PARTICLE_COUNT = 10; const PARTICLE_LIFESPAN = 500; const PARTICLE_SPEED = 0.05;
-
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
             let player = { x: 0, y: 0, width: 0, height: 0, dx: 0, dy: 0, gravity: 0, jumpPower: 0, grounded: true, justLanded: false };
             let obstacles = []; let coins = []; let particles = [];
-            let currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR; // For difficulty ramp
-            let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
+            let currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR; let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
-            let bg1X = 0; let bg2X = 0; let bg3X = 0; // For parallax
+            let bg1X = 0; let bg2X = 0; let bg3X = 0;
             let nextObstacleSpawnTime = 0; let nextPoiIndex = 0; let lastTime = 0; let gameInitialized = false; let isPaused = false; let groundHeightPx = 0; let collisionLandingTolerancePx = 0;
             let isPressingLeft = false; let isPressingRight = false;
+            let isTransitioningBackground = false; let transitionStartTime = 0; let previousBackgroundSequenceIndex = 0;
             let joystickActive = false; let joystickStartX = 0; let joystickStartY = 0; let joystickBaseRect = null; let joystickRadius = 0;
-            let screenShakeEndTime = 0; let screenShakeActive = false;
+            let screenShakeActive = false; let screenShakeEndTime = 0;
 
             // --- Graphics Assets ---
-            const assets = {
-                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' },
-                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
-                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.gif' },
-                family: { img: new Image(), loaded: false, src: 'assets/family.png' },
-                coin: { img: new Image(), loaded: false, src: 'assets/coin.png' }, // NEW
-                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
-                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
-                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' },
-                therme: { img: new Image(), loaded: false, src: 'assets/therme.png' },
-                freibad: { img: new Image(), loaded: false, src: 'assets/freibad.png' },
-                kulturzentrum: { img: new Image(), loaded: false, src: 'assets/kulturzentrum.png' },
-                bahnhof: { img: new Image(), loaded: false, src: 'assets/bahnhof.png' },
-                post: { img: new Image(), loaded: false, src: 'assets/post.png' },
-                rathaus: { img: new Image(), loaded: false, src: 'assets/rathaus.png' },
-                burg: { img: new Image(), loaded: false, src: 'assets/burg.png' }
-            };
+            const assets = { knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.gif' }, family: { img: new Image(), loaded: false, src: 'assets/family.png' }, coin: { img: new Image(), loaded: false, src: 'assets/coin.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }, therme: { img: new Image(), loaded: false, src: 'assets/therme.png' }, freibad: { img: new Image(), loaded: false, src: 'assets/freibad.png' }, kulturzentrum: { img: new Image(), loaded: false, src: 'assets/kulturzentrum.png' }, bahnhof: { img: new Image(), loaded: false, src: 'assets/bahnhof.png' }, post: { img: new Image(), loaded: false, src: 'assets/post.png' }, rathaus: { img: new Image(), loaded: false, src: 'assets/rathaus.png' }, burg: { img: new Image(), loaded: false, src: 'assets/burg.png' } };
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
@@ -294,7 +194,7 @@
             function resetGame() {
                 score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = []; coins = []; particles = [];
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
-                currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR; // Reset to initial
+                currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR;
                 obstacleSpeed = canvasWidth * currentObstacleSpeedFactor;
                 playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR; playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
                 player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR; player.jumpPower = canvasHeight / PLAYER_JUMP_FACTOR;
@@ -302,47 +202,28 @@
                 player.dx = 0; player.dy = 0; player.grounded = true; player.justLanded = false;
                 nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
                 bg1X = 0; bg2X = 0; bg3X = 0;
-                // backgroundSequenceIndex and nextBackgroundSwitchScore are not reset here, they persist or are set by updateScoreAndSpeed
                 currentScoreSpan.textContent = score; currentLivesSpan.textContent = playerLives; nextObstacleSpawnTime = 0; nextPoiIndex = 0; isPaused = false; isPressingLeft = false; isPressingRight = false;
                 poiOverlay.classList.remove('visible'); knightImageEl.style.display = 'none';
                 joystickActive = false; if(joystickKnob) joystickKnob.style.transform = 'translate(-50%, -50%)';
                 const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; }
                 screenShakeActive = false; screenShakeEndTime = 0;
                 pausedMessage.style.display = 'none';
-                pauseButton.textContent = "Pause";
+                if(pauseButton) pauseButton.textContent = "Pause";
                 console.log(`Game Reset - Obstacle Speed Factor: ${currentObstacleSpeedFactor.toFixed(3)}`);
             }
 
             // --- Update Functions ---
-            function updatePlayer(dt) {
-                if (isPressingLeft) { player.dx -= playerAccel * dt; }
-                else if (isPressingRight) { player.dx += playerAccel * dt; }
-                else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } }
-                player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx));
-                player.x += player.dx * dt;
-                if (player.x < 0) { player.x = 0; player.dx = 0; }
-                if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; }
-
-                const wasGrounded = player.grounded;
-                if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; }
-                const groundLevel = canvasHeight - groundHeightPx - player.height;
-                if (player.y >= groundLevel) {
-                    player.y = groundLevel; player.dy = 0;
-                    if (!wasGrounded) { player.grounded = true; player.justLanded = true; } // Set justLanded
-                }
-            }
-
+            function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } const wasGrounded = player.grounded; if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!wasGrounded) { player.grounded = true; player.justLanded = true; } } }
             function updateObstaclesAndCoins(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
                     const isSpawningCoin = Math.random() < COIN_SPAWN_CHANCE && assets.coin.loaded;
 
                     if (isSpawningCoin) {
-                        const objWidth = canvasWidth * COIN_WIDTH_PERCENT;
-                        const objHeight = canvasHeight * COIN_HEIGHT_PERCENT;
+                        const objWidth = canvasWidth * COIN_WIDTH_PERCENT; const objHeight = canvasHeight * COIN_HEIGHT_PERCENT;
                         newObjectData = { isCoin: true, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight - (Math.random() * player.height * 1.5), width: objWidth, height: objHeight, assetKey: 'coin' };
                         coins.push(newObjectData);
-                        console.log('Spawning: coin');
+                        // console.log('Spawning: coin');
                     } else {
                         const anyPoiAssetLoaded = poiData.some(poi => assets[poi.assetKey]?.loaded);
                         const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
@@ -354,21 +235,20 @@
                             if (assets[poi.assetKey] && assets[poi.assetKey].loaded) {
                                 const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent;
                                 newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: poi.assetKey };
-                                nextPoiIndex++;
-                                obstacles.push(newObjectData);
                                 console.log(`DEBUG: Spawning POI (ID: ${poi.id}, Asset: ${poi.assetKey})`);
+                                nextPoiIndex++;
+                                obstacles.push(newObjectData); // Add POI to obstacles array
                             } else { console.warn(`Skipping POI spawn for ID ${poi.id} because asset '${poi.assetKey}' is not loaded.`); }
                         } else {
                             if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } obstacles.push(newObjectData); } }
                         }
                     }
-                    // if (newObjectData && !isSpawningCoin) { console.log('Spawning:', newObjectData?.assetKey || 'POI', newObjectData?.x); } // Log only non-coin obstacles
-                    const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS / (currentObstacleSpeedFactor / OBSTACLE_SPEED_FACTOR) + (Math.random() * 500 - 250); // Spawn faster as speed increases
+                    // if (newObjectData && !isSpawningCoin) { console.log('Spawning:', newObjectData?.assetKey || 'POI', newObjectData?.x); }
+                    const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS / (currentObstacleSpeedFactor / OBSTACLE_SPEED_FACTOR) + (Math.random() * 500 - 250);
                     nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
 
-                 const currentMovement = obstacleSpeed * dt; // Use current obstacleSpeed
-                 // Move Obstacles
+                 const currentMovement = obstacleSpeed * dt;
                  for (let i = obstacles.length - 1; i >= 0; i--) {
                     const obj = obstacles[i];
                     if (obj.isKnocked) { obj.y += (canvasHeight * 1.25) * dt; }
@@ -381,20 +261,12 @@
                     if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(">>> Calling displayPOIInfo for regular POI."); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
-                 // Move Coins
-                 for (let i = coins.length - 1; i >= 0; i--) {
-                    const coin = coins[i];
-                    coin.x -= currentMovement;
-                    if (coin.x + coin.width < -100) { coins.splice(i, 1); }
-                 }
+                 for (let i = coins.length - 1; i >= 0; i--) { const coin = coins[i]; coin.x -= currentMovement; if (coin.x + coin.width < -100) { coins.splice(i, 1); } }
             }
-
             function checkCollisions() {
                 const now = performance.now();
                 if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; }
                 const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width };
-
-                // Obstacle Collisions
                 for (const obstacle of obstacles) {
                     if (obstacle.isPOI || obstacle.isKnocked) { continue; }
                     const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width };
@@ -403,137 +275,51 @@
                         const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
                         if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; }
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
-                        screenShakeActive = true; screenShakeEndTime = now + SCREEN_SHAKE_DURATION; // Trigger screen shake
+                        screenShakeActive = true; screenShakeEndTime = now + SCREEN_SHAKE_DURATION;
                         return { type: CollisionType.SIDE };
                     }
                 }
-                // Coin Collisions
                 for (let i = coins.length - 1; i >= 0; i--) {
-                    const coin = coins[i];
-                    const coinRect = { x: coin.x, y: coin.y, width: coin.width, height: coin.height };
-                    if (playerRect.x < coinRect.x + coinRect.width && playerRect.right > coinRect.x &&
-                        playerRect.y < coinRect.y + coinRect.height && playerRect.bottom > coinRect.y) {
-                        score += COIN_SCORE_VALUE;
-                        currentScoreSpan.textContent = score;
-                        playSound('coin'); // Placeholder for coin sound
-                        coins.splice(i, 1); // Remove collected coin
-                        console.log("Coin collected!");
-                    }
+                    const coin = coins[i]; const coinRect = { x: coin.x, y: coin.y, width: coin.width, height: coin.height };
+                    if (playerRect.x < coinRect.x + coinRect.width && playerRect.right > coinRect.x && playerRect.y < coinRect.y + coinRect.height && playerRect.bottom > coinRect.y) { score += COIN_SCORE_VALUE; currentScoreSpan.textContent = score; playSound('coin'); coins.splice(i, 1); console.log("Coin collected!"); }
                 }
                 return { type: CollisionType.NONE };
             }
-
             function updateScoreAndSpeed() {
-                score++;
-                currentScoreSpan.textContent = score;
-                // Difficulty ramp: Increase obstacle speed
-                if (score >= nextSpeedIncreaseScore && currentObstacleSpeedFactor < OBSTACLE_SPEED_MAX_FACTOR) {
-                    currentObstacleSpeedFactor += OBSTACLE_SPEED_INCREASE_FACTOR;
-                    obstacleSpeed = canvasWidth * currentObstacleSpeedFactor; // Recalculate actual speed
-                    nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE;
-                    console.log(`Obstacle speed factor increased to: ${currentObstacleSpeedFactor.toFixed(3)}`);
-                }
-                // Background switching
+                score++; currentScoreSpan.textContent = score;
+                if (score >= nextSpeedIncreaseScore && currentObstacleSpeedFactor < OBSTACLE_SPEED_MAX_FACTOR) { currentObstacleSpeedFactor += OBSTACLE_SPEED_INCREASE_FACTOR; obstacleSpeed = canvasWidth * currentObstacleSpeedFactor; nextSpeedIncreaseScore += SPEED_INCREASE_INTERVAL_SCORE; console.log(`Obstacle speed factor increased to: ${currentObstacleSpeedFactor.toFixed(3)}`); }
                 if (!isTransitioningBackground && score >= nextBackgroundSwitchScore) { previousBackgroundSequenceIndex = backgroundSequenceIndex; backgroundSequenceIndex = (backgroundSequenceIndex + 1) % backgroundSequence.length; if (previousBackgroundSequenceIndex !== backgroundSequenceIndex) { isTransitioningBackground = true; transitionStartTime = performance.now(); console.log(`Background transition START: ${previousBackgroundSequenceIndex} -> ${backgroundSequenceIndex}`); } nextBackgroundSwitchScore += BACKGROUND_SWITCH_SCORE_INTERVAL; }
             }
 
             // --- Draw Functions ---
-            function drawBackground(dt) {
-                const now = performance.now();
-                // Parallax scrolling for each layer
-                const bg1Movement = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt; // Closest (bg1) moves fastest
-                const bg2Movement = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt;
-                const bg3Movement = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt; // Furthest (bg3) moves slowest
-
-                bg1X -= bg1Movement; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; }
-                bg2X -= bg2Movement; if (bg2X <= -canvasWidth) { bg2X += canvasWidth; }
-                bg3X -= bg3Movement; if (bg3X <= -canvasWidth) { bg3X += canvasWidth; }
-
-                ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); // Fallback
-
-                // Draw layers (furthest first)
-                if (assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); }
-                if (assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); }
-                if (assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); }
-
-                const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx);
-            }
+            function drawBackground(dt) { const now = performance.now(); const bg1Movement = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt; const bg2Movement = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt; const bg3Movement = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt; bg1X -= bg1Movement; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; } bg2X -= bg2Movement; if (bg2X <= -canvasWidth) { bg2X += canvasWidth; } bg3X -= bg3Movement; if (bg3X <= -canvasWidth) { bg3X += canvasWidth; } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); if (assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
             function drawObstacles() { for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); console.warn("Attempted to draw obstacle/POI but asset not loaded:", obj.assetKey); } } }
             function drawCoins() { for (const coin of coins) { if (assets.coin.loaded) { ctx.drawImage(assets.coin.img, coin.x, coin.y, coin.width, coin.height); } else { ctx.fillStyle = 'gold'; ctx.fillRect(coin.x, coin.y, coin.width, coin.height); } } }
-            function drawParticles() {
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    p.x += p.vx * (canvasWidth * 0.001); // Scale speed by canvas width
-                    p.y += p.vy * (canvasHeight * 0.001);
-                    p.alpha -= 0.02; // Fade out
-                    if (p.alpha <= 0) { particles.splice(i, 1); continue; }
-                    ctx.globalAlpha = p.alpha;
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.globalAlpha = 1.0;
-            }
-            function createLandingParticles() {
-                if (!player.justLanded) return;
-                player.justLanded = false;
-                for (let i = 0; i < PARTICLE_COUNT; i++) {
-                    particles.push({
-                        x: player.x + player.width / 2,
-                        y: player.y + player.height - 5, // Start at bottom of player
-                        vx: (Math.random() - 0.5) * PARTICLE_SPEED,
-                        vy: (Math.random() - 0.2) * PARTICLE_SPEED, // Mostly upward
-                        size: Math.random() * 3 + 1,
-                        color: 'rgba(150, 150, 150, 0.7)', // Dust color
-                        alpha: 1
-                    });
-                }
-            }
-            function updateKnightVisuals() { /* ... (as before) ... */ const now = performance.now(); if (knightImageEl.src !== assets.knight.src) { if (assets.knight.loaded) { knightImageEl.src = assets.knight.src; console.log("Set knight visual state to: knight (gif)"); } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
+            function drawParticles() { for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx * (canvasWidth * 0.001); p.y += p.vy * (canvasHeight * 0.001); p.alpha -= 0.02; if (p.alpha <= 0) { particles.splice(i, 1); continue; } ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0; }
+            function createLandingParticles() { if (!player.justLanded) return; player.justLanded = false; for (let i = 0; i < PARTICLE_COUNT; i++) { particles.push({ x: player.x + player.width / 2, y: player.y + player.height - 5, vx: (Math.random() - 0.5) * PARTICLE_SPEED, vy: (Math.random() - 0.2) * PARTICLE_SPEED, size: Math.random() * 3 + 1, color: 'rgba(150, 150, 150, 0.7)', alpha: 1 }); } }
+            function updateKnightVisuals() { const now = performance.now(); if (knightImageEl.src !== assets.knight.src) { if (assets.knight.loaded) { knightImageEl.src = assets.knight.src; console.log("Set knight visual state to: knight (gif)"); } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
-            // --- displayPOIInfo & closePoiOverlay remain the same ---
             function displayPOIInfo(poiId) { console.log(">>> Entered displayPOIInfo. Pausing game."); const poi = poiData.find(p => p.id === poiId); if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; } isPaused = true; poiNameEl.textContent = poi.name; const infoParts = poi.info.split('|').map(s => s.trim()); const formattedInfo = infoParts.join('<br><br>'); poiInfoTextEl.innerHTML = formattedInfo; poiOverlay.classList.add('visible'); console.log(">>> Added 'visible' class to poiOverlay. displayPOIInfo finished."); }
             function closePoiOverlay() { console.log(">>> Entered closePoiOverlay. Removing visible class, resuming game."); poiOverlay.classList.remove('visible'); isPaused = false; lastTime = performance.now(); console.log(">>> Closed POI Overlay. Game RESUMED."); }
 
             function gameLoop(timestamp) {
                 const dt = (timestamp - lastTime) / 1000 || 0;
-                if (!isPaused && currentGameState !== GameState.PAUSED) { // Check for PAUSED state
-                    lastTime = timestamp;
-                }
+                if (!isPaused && currentGameState !== GameState.PAUSED) { lastTime = timestamp; }
 
                 if (currentGameState === GameState.PLAYING && !isPaused) {
-                    updatePlayer(dt);
-                    updateObstaclesAndCoins(dt, timestamp);
-                    updateScoreAndSpeed();
+                    updatePlayer(dt); updateObstaclesAndCoins(dt, timestamp); updateScoreAndSpeed();
                     const collisionResult = checkCollisions();
-                    if (collisionResult.type === CollisionType.SIDE) {
-                        playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives;
-                        screenShakeActive = true; screenShakeEndTime = performance.now() + SCREEN_SHAKE_DURATION;
-                        if (playerLives > 0) { player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; }
-                        else { currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; } gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } }
-                    } else if (collisionResult.type === CollisionType.TOP) { player.y = collisionResult.obstacle.y - player.height; player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; player.grounded = false; playSound('bounce'); collisionResult.obstacle.isKnocked = true; }
+                    if (collisionResult.type === CollisionType.SIDE) { playSound('hit'); playerLives--; currentLivesSpan.textContent = playerLives; screenShakeActive = true; screenShakeEndTime = performance.now() + SCREEN_SHAKE_DURATION; if (playerLives > 0) { player.y = canvasHeight - groundHeightPx - player.height; player.dy = 0; player.grounded = true; playerInvincibleUntil = performance.now() + INVINCIBILITY_DURATION_MS; } else { currentGameState = GameState.GAME_OVER; saveHighScore(); finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Game Over!"; titleElement.style.color = '#f88'; } gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } }
+                    else if (collisionResult.type === CollisionType.TOP) { player.y = collisionResult.obstacle.y - player.height; player.dy = player.jumpPower * PLAYER_BOUNCE_POWER_MULTIPLIER; player.grounded = false; playSound('bounce'); collisionResult.obstacle.isKnocked = true; }
                     createLandingParticles();
                 }
 
-                // Drawing
-                ctx.save(); // Save context for screen shake
-                if (screenShakeActive && performance.now() < screenShakeEndTime) {
-                    const dx = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2;
-                    const dy = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2;
-                    ctx.translate(dx, dy);
-                } else {
-                    screenShakeActive = false;
-                }
+                ctx.save();
+                if (screenShakeActive && performance.now() < screenShakeEndTime) { const dx = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2; const dy = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2; ctx.translate(dx, dy); }
+                else { screenShakeActive = false; }
 
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                drawBackground(dt);
-                drawObstacles();
-                drawCoins();
-                drawParticles(); // Draw particles after other elements
-                updateKnightVisuals(); // Update HTML Img Knight visuals
-
-                ctx.restore(); // Restore context after screen shake
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(dt); drawObstacles(); drawCoins(); drawParticles(); updateKnightVisuals();
+                ctx.restore();
 
                 if (currentGameState === GameState.LOADING) { ctx.fillStyle = 'white'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2); }
                 if (currentGameState === GameState.PAUSED) { pausedMessage.style.display = 'flex'; }
@@ -542,46 +328,19 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            function togglePause() {
-                if (currentGameState === GameState.PLAYING) {
-                    currentGameState = GameState.PAUSED;
-                    isPaused = true;
-                    pauseButton.textContent = "Resume";
-                    pausedMessage.style.display = 'flex';
-                    console.log("Game Paused");
-                } else if (currentGameState === GameState.PAUSED) {
-                    currentGameState = GameState.PLAYING;
-                    isPaused = false;
-                    pauseButton.textContent = "Pause";
-                    pausedMessage.style.display = 'none';
-                    lastTime = performance.now(); // Important to prevent large dt jump
-                    console.log("Game Resumed");
-                }
-            }
-
-            function startGame() { /* ... */ console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; updateKnightVisuals(); playSound('start'); lastTime = performance.now(); if(pauseButton) pauseButton.style.display = 'block'; /* Show pause button */ }
-            function restartGame() { /* ... */ console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
-            function handleJumpInput() { /* ... */ console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
+            function togglePause() { if (currentGameState === GameState.PLAYING) { currentGameState = GameState.PAUSED; isPaused = true; pauseButton.textContent = "Resume"; pausedMessage.style.display = 'flex'; console.log("Game Paused"); } else if (currentGameState === GameState.PAUSED) { currentGameState = GameState.PLAYING; isPaused = false; pauseButton.textContent = "Pause"; pausedMessage.style.display = 'none'; lastTime = performance.now(); console.log("Game Resumed"); } }
+            function startGame() { console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; updateKnightVisuals(); playSound('start'); lastTime = performance.now(); if(pauseButton) pauseButton.style.display = 'block'; }
+            function restartGame() { console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
+            function handleJumpInput() { console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
 
             // --- Input Event Handlers ---
-            function handleKeyDown(e) {
-                if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; }
-                if (e.key.toUpperCase() === 'P') { // Pause with 'P' key
-                    e.preventDefault();
-                    if(currentGameState === GameState.PLAYING || currentGameState === GameState.PAUSED) {
-                        togglePause();
-                    }
-                    return;
-                }
-                if (isPaused && currentGameState !== GameState.PAUSED) return; // Ignore game input if POI is up, but allow pause toggle
-                switch (e.key) { case ' ': case 'ArrowUp': e.preventDefault(); if (!allAssetsLoaded) return; if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } break; case 'ArrowLeft': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingLeft = true; } break; case 'ArrowRight': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingRight = true; } break; }
-            }
-            function handleKeyUp(e) { /* ... */ switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
-            function handleMouseClick(e) { /* ... */ if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { return; } console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
-            function handleScreenTouch(e) { /* ... */ e.preventDefault(); if (!allAssetsLoaded) return; if (joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { console.log("Touch ignored on gameContainer: Handled by specific control."); return; } /* Let overlay listener handle close */ switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
-            function handleJoystickStart(e) { /* ... */ if (currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); joystickBaseRect = joystickBase.getBoundingClientRect(); joystickRadius = joystickBaseRect.width / 2 - joystickKnob.offsetWidth / 2; joystickActive = true; const touch = e.touches[0]; joystickStartX = touch.clientX; joystickStartY = touch.clientY; }
-            function handleJoystickMove(e) { /* ... */ if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); const touch = e.touches[0]; const currentX = touch.clientX; const currentY = touch.clientY; let deltaX = currentX - joystickStartX; let deltaY = currentY - joystickStartY; const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedX = deltaX; let clampedY = deltaY; if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; } joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`; if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; } else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; } else { isPressingLeft = false; isPressingRight = false; } }
-            function handleJoystickEnd(e) { /* ... */ if (!joystickActive) return; e.preventDefault(); joystickKnob.style.transform = 'translate(-50%, -50%)'; joystickActive = false; isPressingLeft = false; isPressingRight = false; }
+            function handleKeyDown(e) { if ((e.key === 'Enter' || e.keyCode === 13) && isPaused && poiOverlay.classList.contains('visible')) { e.preventDefault(); console.log("Enter key pressed while POI visible. Closing POI."); closePoiOverlay(); return; } if (e.key.toUpperCase() === 'P') { e.preventDefault(); if(currentGameState === GameState.PLAYING || currentGameState === GameState.PAUSED) { togglePause(); } return; } if (isPaused && currentGameState !== GameState.PAUSED) return; switch (e.key) { case ' ': case 'ArrowUp': e.preventDefault(); if (!allAssetsLoaded) return; if (currentGameState === GameState.PLAYING) { handleJumpInput(); } else if (currentGameState === GameState.MENU) { startGame(); } else if (currentGameState === GameState.GAME_OVER) { restartGame(); } break; case 'ArrowLeft': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingLeft = true; } break; case 'ArrowRight': e.preventDefault(); if (currentGameState === GameState.PLAYING && !isPaused) { isPressingRight = true; } break; } }
+            function handleKeyUp(e) { switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
+            function handleMouseClick(e) { if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { return; } console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
+            function handleScreenTouch(e) { e.preventDefault(); if (!allAssetsLoaded) return; if (joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { console.log("Touch ignored on gameContainer: Handled by specific control."); return; } switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
+            function handleJoystickStart(e) { if (currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); joystickBaseRect = joystickBase.getBoundingClientRect(); joystickRadius = joystickBaseRect.width / 2 - joystickKnob.offsetWidth / 2; joystickActive = true; const touch = e.touches[0]; joystickStartX = touch.clientX; joystickStartY = touch.clientY; }
+            function handleJoystickMove(e) { if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); const touch = e.touches[0]; const currentX = touch.clientX; const currentY = touch.clientY; let deltaX = currentX - joystickStartX; let deltaY = currentY - joystickStartY; const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedX = deltaX; let clampedY = deltaY; if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; } joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`; if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; } else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; } else { isPressingLeft = false; isPressingRight = false; } }
+            function handleJoystickEnd(e) { if (!joystickActive) return; e.preventDefault(); joystickKnob.style.transform = 'translate(-50%, -50%)'; joystickActive = false; isPressingLeft = false; isPressingRight = false; }
 
              // --- resizeCanvas simplified ---
              function resizeCanvas() {
@@ -616,12 +375,6 @@
                 console.log("Initializing Game...");
                 gameInitialized = true;
                  if (!assets.knight.loaded) { console.error("Essential knight asset failed to load!"); alert("Error: Knight image failed to load. Game cannot start."); return; }
-                // Check if all individual POI assets are loaded (optional, could add fallback)
-                poiData.forEach(poi => {
-                    if (!assets[poi.assetKey] || !assets[poi.assetKey].loaded) {
-                        console.warn(`POI asset '${poi.assetKey}' for '${poi.name}' not loaded. POI may not display correctly.`);
-                    }
-                });
 
                 loadHighScore();
                 resizeCanvas(); // Initial resize
@@ -631,17 +384,17 @@
                 scoreDisplay.classList.add('hidden');
                 livesDisplay.classList.add('hidden');
                 poiOverlay.classList.remove('visible');
-                knightImageEl.style.display = 'none'; // Ensure hidden initially
+                knightImageEl.style.display = 'none';
 
                  // Remove potentially old listeners first
                  startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas);
                  closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('touchstart', closePoiOverlay); joystickContainer.removeEventListener('touchstart', handleJoystickStart); joystickContainer.removeEventListener('touchmove', handleJoystickMove); joystickContainer.removeEventListener('touchend', handleJoystickEnd); joystickContainer.removeEventListener('touchcancel', handleJoystickEnd); jumpButton.removeEventListener('touchstart', handleJumpInput);
-                 pauseButton.removeEventListener('click', togglePause); // Remove old pause listener
+                 pauseButton.removeEventListener('click', togglePause);
 
                  // Add listeners
                  console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas);
                  closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false }); joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false }); joystickContainer.addEventListener('touchcancel', handleJoystickEnd, { passive: false }); jumpButton.addEventListener('touchstart', handleJumpInput, { passive: false });
-                 pauseButton.addEventListener('click', togglePause); // Add new pause listener
+                 pauseButton.addEventListener('click', togglePause);
                  console.log("Event listeners attached.");
 
                  currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
