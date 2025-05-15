@@ -3,21 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Joystick Debug v2)</title> <style>
+    <title>RitterRun Enhanced - Bad Belzig (Joystick Debugging)</title>
+    <style>
         /* Basic Reset & Global Styles */
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; touch-action: manipulation; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background-color: #222; }
-        :root { --bb-green: #0ca644; --bb-blue: #0296c6; --bb-yellow: #f5d306; --bb-black: #151513; --bb-white: #ffffff; --font-sans: 'Arial', sans-serif; --font-pixel: 'Press Start 2P', cursive; }
-        body { display: flex; justify-content: center; align-items: center; margin: 0; font-family: var(--font-sans); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            -moz-user-select: none;
+            touch-action: manipulation;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #222;
+        }
 
-        /* Game Container Sizing */
-        #game-container { position: relative; border: 3px solid #444; overflow: hidden; background-color: var(--bb-blue); width: 800px; height: 400px; max-width: 100%; box-sizing: border-box; display: block; border-radius: 8px; }
-        @media (max-width: 850px) { #game-container { width: 100vw; height: 50vw; max-height: 100vh; max-width: 200vh; max-width: 100vw; border-radius: 0; } #scoreDisplay, #livesDisplay { font-size: 1.2em; } .poi-overlay h3 { font-size: 1em; } .poi-overlay p { font-size: 0.8em; } #closePoiButton { font-size: 0.8em; } #pauseButton { font-size: 0.8em; padding: 8px 10px;} }
+        :root {
+            --bb-green: #0ca644;
+            --bb-blue: #0296c6;
+            --bb-yellow: #f5d306;
+            --bb-black: #151513;
+            --bb-white: #ffffff;
+            --font-sans: 'Arial', sans-serif;
+            --font-pixel: 'Press Start 2P', cursive;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: var(--font-sans);
+        }
+
+        #game-container {
+            position: relative;
+            border: 3px solid #444;
+            overflow: hidden;
+            background-color: var(--bb-blue);
+            width: 800px;
+            height: 400px;
+            max-width: 100%;
+            box-sizing: border-box;
+            display: block;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 850px) {
+             #game-container {
+                 width: 100vw;
+                 height: 50vw;
+                 max-height: 100vh;
+                 max-width: 100vw;
+                 border-radius: 0;
+             }
+             #scoreDisplay, #livesDisplay { font-size: 1.2em; }
+             .poi-overlay h3 { font-size: 1em; }
+             .poi-overlay p { font-size: 0.8em; }
+             #closePoiButton { font-size: 0.8em; }
+             #pauseButton { font-size: 0.8em; padding: 8px 10px;}
+        }
 
         canvas { display: block; width: 100%; height: 100%; }
         #knightImage { position: absolute; display: none; pointer-events: none; z-index: 10; image-rendering: pixelated; image-rendering: crisp-edges; }
 
-        /* UI Screens & Buttons */
         .ui-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); color: var(--bb-white); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 30; padding: 20px; font-family: var(--font-sans); line-height: 1.6; }
         .ui-screen h1 { font-size: 3em; margin-bottom: 20px; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
         .ui-screen h2 { font-size: 2.5em; margin-bottom: 20px; color: #f88; text-shadow: 1px 1px 2px var(--bb-black); }
@@ -26,11 +80,11 @@
         .ui-button:hover { background-color: #ddd; box-shadow: 3px 3px 5px rgba(0,0,0,0.4); }
         .ui-button:active { background-color: #ccc; transform: translate(1px, 1px); box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .instructions { margin-top: 25px; font-size: 0.9em !important; color: #ccc; line-height: 1.5; }
+
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
         #livesDisplay { right: 15px; }
 
-        /* POI Overlay Styling */
         .poi-overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; background-color: rgba(0, 0, 0, 0.88); border: 1px solid var(--bb-yellow); border-radius: 8px; z-index: 50; color: var(--bb-white); padding: 20px 25px; text-align: center; font-family: var(--font-sans); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); display: none; cursor: pointer; }
         .poi-overlay.visible { display: block !important; }
         .poi-overlay h3 { margin-bottom: 15px; font-size: 1.3em; color: var(--bb-yellow); text-shadow: 1px 1px 2px var(--bb-black); }
@@ -39,43 +93,24 @@
         #closePoiButton:hover { background-color: #bbb; }
         #closePoiButton:active { background-color: #aaa; transform: translate(1px, 1px); box-shadow: 0px 0px 2px rgba(0,0,0,0.4); }
 
-        /* Joystick Styles */
-        #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; /* Hidden by default */ pointer-events: none; }
+        #joystickContainer { position: fixed; bottom: 25px; left: 25px; width: 120px; height: 120px; z-index: 25; display: none; pointer-events: none; }
         #joystickBase { position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: rgba(80, 80, 80, 0.4); border: 2px solid rgba(255, 255, 255, 0.5); pointer-events: auto; }
         #joystickKnob { position: absolute; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; transition: transform 0.05s linear; opacity: 0.5; }
 
-        /* Jump Button Styles */
-        #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; /* Hidden by default */ color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
+        #jumpButton { position: fixed; bottom: 25px; right: 25px; width: 15vw; height: 15vw; max-width: 80px; max-height: 80px; border-radius: 50%; background-color: rgba(200, 200, 200, 0.7); border: 2px solid rgba(255, 255, 255, 0.8); z-index: 25; display: none; color: var(--bb-black); font-family: var(--font-sans); font-size: 1em; font-weight: bold; user-select: none; -webkit-user-select: none; }
         #jumpButton:active { background-color: rgba(255, 255, 255, 0.7); }
 
-        /* Pause Button Styles */
-        #pauseButton { position: absolute; top: 10px; right: 100px; padding: 8px 12px; font-size: 1em; font-family: var(--font-sans); background-color: rgba(238, 238, 238, 0.8); border: 1px solid #888; color: var(--bb-black); border-radius: 5px; cursor: pointer; z-index: 26; display: none; /* Hidden by default, shown by JS */ }
+        #pauseButton { position: absolute; top: 10px; right: 100px; padding: 8px 12px; font-size: 1em; font-family: var(--font-sans); background-color: rgba(238, 238, 238, 0.8); border: 1px solid #888; color: var(--bb-black); border-radius: 5px; cursor: pointer; z-index: 26; display: none; }
         #pauseButton:hover { background-color: rgba(221, 221, 221, 0.9); }
         #pauseButton:active { background-color: rgba(204, 204, 204, 0.9); transform: translate(1px, 1px); }
-        #pausedMessage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5em; font-family: var(--font-sans); color: var(--bb-yellow); text-shadow: 2px 2px 0px var(--bb-black); z-index: 35; display: none; /* Hidden by default */ }
+        #pausedMessage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5em; font-family: var(--font-sans); color: var(--bb-yellow); text-shadow: 2px 2px 0px var(--bb-black); z-index: 35; display: none; }
 
         .hidden { display: none !important; }
-        #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: none; /* Hidden by default */ flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; }
+        #orientationMessage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bb-black); color: var(--bb-white); display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 100; font-family: var(--font-pixel); padding: 20px; line-height: 1.8; font-size: 1.2em; }
         #orientationMessage p { margin-bottom: 1em; }
 
-        /* --- MODIFIED: Media Queries (Simplified Joystick/Button Display) --- */
-        @media (orientation: portrait) {
-             #game-container { display: none; }
-             #orientationMessage { display: flex; }
-             #joystickContainer { display: none !important; } /* Ensure hidden */
-             #jumpButton { display: none !important; } /* Ensure hidden */
-             #pauseButton { display: none !important; } /* Ensure hidden */
-        }
-        @media (orientation: landscape) {
-             #orientationMessage { display: none; }
-             #game-container { display: block; }
-             /* TEST: Show joystick & jump button & pause button in ANY landscape view */
-             #joystickContainer { display: block; }
-             #jumpButton { display: block; }
-             #pauseButton { display: block; } /* Show pause button in landscape */
-        }
-        /* --- END MODIFICATION --- */
-
+        @media (orientation: portrait) { #game-container { display: none; } #orientationMessage { display: flex; } #joystickContainer, #jumpButton, #pauseButton { display: none !important; } }
+        @media (orientation: landscape) { #orientationMessage { display: none; } #game-container { display: block; } @media (max-width: 850px) { #joystickContainer { display: block; } #jumpButton { display: block; } #pauseButton { display: block; } } }
     </style>
 </head>
 <body>
@@ -213,7 +248,23 @@
             }
 
             // --- Update Functions ---
-            function updatePlayer(dt) { if (isPressingLeft) { player.dx -= playerAccel * dt; } else if (isPressingRight) { player.dx += playerAccel * dt; } else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } } player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx)); player.x += player.dx * dt; if (player.x < 0) { player.x = 0; player.dx = 0; } if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; } const wasGrounded = player.grounded; if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; } const groundLevel = canvasHeight - groundHeightPx - player.height; if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!wasGrounded) { player.grounded = true; player.justLanded = true; } } }
+            function updatePlayer(dt) {
+                const oldDx = player.dx;
+                if (isPressingLeft) { player.dx -= playerAccel * dt; }
+                else if (isPressingRight) { player.dx += playerAccel * dt; }
+                else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } }
+                player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx));
+                if (player.dx !== oldDx) {
+                    console.log(`UpdatePlayer: Horizontal movement - isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}, player.dx=${player.dx.toFixed(2)}`);
+                }
+                player.x += player.dx * dt;
+                if (player.x < 0) { player.x = 0; player.dx = 0; }
+                if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; }
+                const wasGrounded = player.grounded;
+                if (!player.grounded) { player.dy += player.gravity; player.y += player.dy * dt * 60; }
+                const groundLevel = canvasHeight - groundHeightPx - player.height;
+                if (player.y >= groundLevel) { player.y = groundLevel; player.dy = 0; if (!wasGrounded) { player.grounded = true; player.justLanded = true; } }
+            }
             function updateObstaclesAndCoins(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
@@ -223,7 +274,6 @@
                         const objWidth = canvasWidth * COIN_WIDTH_PERCENT; const objHeight = canvasHeight * COIN_HEIGHT_PERCENT;
                         newObjectData = { isCoin: true, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight - (Math.random() * player.height * 1.5), width: objWidth, height: objHeight, assetKey: 'coin' };
                         coins.push(newObjectData);
-                        // console.log('Spawning: coin');
                     } else {
                         const anyPoiAssetLoaded = poiData.some(poi => assets[poi.assetKey]?.loaded);
                         const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
@@ -237,13 +287,12 @@
                                 newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: poi.assetKey };
                                 console.log(`DEBUG: Spawning POI (ID: ${poi.id}, Asset: ${poi.assetKey})`);
                                 nextPoiIndex++;
-                                obstacles.push(newObjectData); // Add POI to obstacles array
+                                obstacles.push(newObjectData);
                             } else { console.warn(`Skipping POI spawn for ID ${poi.id} because asset '${poi.assetKey}' is not loaded.`); }
                         } else {
                             if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } obstacles.push(newObjectData); } }
                         }
                     }
-                    // if (newObjectData && !isSpawningCoin) { console.log('Spawning:', newObjectData?.assetKey || 'POI', newObjectData?.x); }
                     const nextSpawnDelay = OBSTACLE_BASE_SPAWN_TIME_MS / (currentObstacleSpeedFactor / OBSTACLE_SPEED_FACTOR) + (Math.random() * 500 - 250);
                     nextObstacleSpawnTime = currentTime + Math.max(OBSTACLE_MIN_SPAWN_TIME_MS, nextSpawnDelay);
                  }
@@ -338,9 +387,56 @@
             function handleKeyUp(e) { switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
             function handleMouseClick(e) { if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { return; } console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
             function handleScreenTouch(e) { e.preventDefault(); if (!allAssetsLoaded) return; if (joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { console.log("Touch ignored on gameContainer: Handled by specific control."); return; } switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
-            function handleJoystickStart(e) { if (currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); joystickBaseRect = joystickBase.getBoundingClientRect(); joystickRadius = joystickBaseRect.width / 2 - joystickKnob.offsetWidth / 2; joystickActive = true; const touch = e.touches[0]; joystickStartX = touch.clientX; joystickStartY = touch.clientY; }
-            function handleJoystickMove(e) { if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return; e.preventDefault(); const touch = e.touches[0]; const currentX = touch.clientX; const currentY = touch.clientY; let deltaX = currentX - joystickStartX; let deltaY = currentY - joystickStartY; const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY); let clampedX = deltaX; let clampedY = deltaY; if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; } joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`; if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; } else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; } else { isPressingLeft = false; isPressingRight = false; } }
-            function handleJoystickEnd(e) { if (!joystickActive) return; e.preventDefault(); joystickKnob.style.transform = 'translate(-50%, -50%)'; joystickActive = false; isPressingLeft = false; isPressingRight = false; }
+            // --- MODIFIED: Joystick Handlers with Logging ---
+            function handleJoystickStart(e) {
+                console.log("Joystick START detected"); // DEBUG
+                if (currentGameState !== GameState.PLAYING || isPaused) return;
+                e.preventDefault();
+                joystickBaseRect = joystickBase.getBoundingClientRect();
+                joystickRadius = joystickBaseRect.width / 2 - joystickKnob.offsetWidth / 2;
+                joystickActive = true;
+                const touch = e.touches[0];
+                joystickStartX = touch.clientX;
+                joystickStartY = touch.clientY;
+                console.log(`Joystick START at X: ${joystickStartX.toFixed(0)}, Y: ${joystickStartY.toFixed(0)}`); // DEBUG
+            }
+            function handleJoystickMove(e) {
+                // console.log("Joystick MOVE detected (raw)"); // DEBUG - Very spammy
+                if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const currentX = touch.clientX;
+                const currentY = touch.clientY;
+
+                let deltaX = currentX - joystickStartX;
+                let deltaY = currentY - joystickStartY;
+                const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                let clampedX = deltaX; let clampedY = deltaY;
+
+                if (dist > joystickRadius) { const scale = joystickRadius / dist; clampedX = deltaX * scale; clampedY = deltaY * scale; }
+                joystickKnob.style.transform = `translate(calc(-50% + ${clampedX}px), calc(-50% + ${clampedY}px))`;
+
+                const oldPressingLeft = isPressingLeft;
+                const oldPressingRight = isPressingRight;
+
+                if (deltaX < -JOYSTICK_DEAD_ZONE) { isPressingLeft = true; isPressingRight = false; }
+                else if (deltaX > JOYSTICK_DEAD_ZONE) { isPressingRight = true; isPressingLeft = false; }
+                else { isPressingLeft = false; isPressingRight = false; }
+
+                if (oldPressingLeft !== isPressingLeft || oldPressingRight !== isPressingRight) {
+                    console.log(`Joystick MOVE: deltaX=${deltaX.toFixed(1)}, isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}`); // DEBUG
+                }
+            }
+            function handleJoystickEnd(e) {
+                console.log("Joystick END detected"); // DEBUG
+                if (!joystickActive) return;
+                e.preventDefault();
+                joystickKnob.style.transform = 'translate(-50%, -50%)';
+                joystickActive = false;
+                isPressingLeft = false;
+                isPressingRight = false;
+                console.log("Joystick END processed, flags reset."); // DEBUG
+            }
 
              // --- resizeCanvas simplified ---
              function resizeCanvas() {
@@ -407,4 +503,3 @@
     </script>
 </body>
 </html>
-
