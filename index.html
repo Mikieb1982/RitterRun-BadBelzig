@@ -254,7 +254,7 @@
                 else if (isPressingRight) { player.dx += playerAccel * dt; }
                 else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } }
                 player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx));
-                if (player.dx !== oldDx) {
+                if (player.dx !== oldDx) { // Log only if dx changed due to joystick/keys
                     console.log(`UpdatePlayer: Horizontal movement - isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}, player.dx=${player.dx.toFixed(2)}`);
                 }
                 player.x += player.dx * dt;
