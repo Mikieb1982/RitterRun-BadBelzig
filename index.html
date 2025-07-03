@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Bug Fix)</title>
+    <title>RitterRun Enhanced - Gameplay Power-up Update</title>
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -196,11 +196,13 @@
             const SCREEN_SHAKE_DURATION = 200; const SCREEN_SHAKE_MAGNITUDE = 5;
             const PARTICLE_COUNT = 10; const PARTICLE_LIFESPAN = 500; const PARTICLE_SPEED = 0.05;
             const BAT_SPAWN_CHANCE = 0.1; const BAT_FLY_HEIGHT_MIN_PERCENT = 0.3; const BAT_FLY_HEIGHT_MAX_PERCENT = 0.5;
+            const BAT_OSC_AMPLITUDE_FACTOR = 0.05; const BAT_OSC_FREQUENCY = 1.5; // NEW: Bat oscillation params
+            const SHIELD_SPAWN_CHANCE = 0.05; const SHIELD_WIDTH_PERCENT = 0.04; const SHIELD_HEIGHT_PERCENT = 0.04; // NEW: Shield params
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
-            let player = { x: 0, y: 0, width: 0, height: 0, dx: 0, dy: 0, gravity: 0, jumpPower: 0, grounded: true, justLanded: false };
-            let obstacles = []; let coins = []; let particles = [];
+            let player = { x: 0, y: 0, width: 0, height: 0, dx: 0, dy: 0, gravity: 0, jumpPower: 0, grounded: true, justLanded: false, isShielded: false }; // Added isShielded
+            let obstacles = []; let coins = []; let particles = []; let powerUps = []; // Added powerUps array
             let currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR; let obstacleSpeed = 0; let playerMaxDx = 0; let playerAccel = 0;
             let nextSpeedIncreaseScore = SPEED_INCREASE_INTERVAL_SCORE;
             let bg1X = 0; let bg2X = 0; let bg3X = 0;
@@ -221,6 +223,7 @@
                 family: { img: new Image(), loaded: false, src: 'assets/family.png' },
                 coin: { img: new Image(), loaded: false, src: 'assets/coin.png' },
                 bat: { img: new Image(), loaded: false, src: 'assets/bat.png' },
+                shield: { img: new Image(), loaded: false, src: 'assets/shield.png' }, // NEW
                 background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
                 background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
                 background3: { img: new Image(), loaded: false, src: 'assets/background3.png' },
@@ -246,27 +249,8 @@
             const poiData = [ { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile.", assetKey: 'therme' }, { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage.", assetKey: 'freibad' }, { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern.", assetKey: 'kulturzentrum' }, { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet.", assetKey: 'bahnhof' }, { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt.", assetKey: 'post' }, { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation.", assetKey: 'rathaus' }, { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region.", assetKey: 'burg' } ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) {
-                console.log(`Asset loaded: ${assetKey}`);
-                assets[assetKey].loaded = true;
-                assetsLoadedCount++;
-                if (assetsLoadedCount === totalAssets) {
-                    console.log("All asset loading attempts finished.");
-                    allAssetsLoaded = true;
-                    if (currentGameState === GameState.LOADING) { initGame(); }
-                }
-            }
-            function assetLoadError(assetKey, event) {
-                const relativePath = assets[assetKey].src;
-                failedAssets.push(relativePath);
-                console.error(`Failed to load asset: ${relativePath}. Check repository file structure.`);
-                assetsLoadedCount++;
-                if (assetsLoadedCount === totalAssets) {
-                    console.warn("Finished attempting to load all assets, but one or more failed. See errors above.");
-                    allAssetsLoaded = true;
-                    if (currentGameState === GameState.LOADING) { initGame(); }
-                }
-            }
+            function assetLoaded(assetKey) { console.log(`Asset loaded: ${assetKey}`); assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.log("All asset loading attempts finished."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
+            function assetLoadError(assetKey, event) { const relativePath = assets[assetKey].src; failedAssets.push(relativePath); console.error(`Failed to load asset: ${relativePath}. Check repository file structure.`); assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.warn("Finished attempting to load all assets, but one or more failed. See errors above."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
             function loadAssets() { console.log("Starting asset loading..."); currentGameState = GameState.LOADING; for (const key in assets) { if (Object.prototype.hasOwnProperty.call(assets, key) && assets[key].img) { assets[key].img.src = assets[key].src; assets[key].img.onload = () => assetLoaded(key); assets[key].img.onerror = (e) => assetLoadError(key, e); } } }
 
             // --- High Score Handling ---
@@ -278,7 +262,8 @@
 
             // --- Reset Game Variables ---
             function resetGame() {
-                score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = []; coins = []; particles = [];
+                score = 0; playerLives = LIVES_START_COUNT; playerInvincibleUntil = 0; obstacles = []; coins = []; particles = []; powerUps = [];
+                player.isShielded = false;
                 groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT; collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
                 currentObstacleSpeedFactor = OBSTACLE_SPEED_FACTOR;
                 obstacleSpeed = canvasWidth * currentObstacleSpeedFactor;
@@ -319,20 +304,25 @@
             function updateObstaclesAndCoins(dt, currentTime) {
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
-                    const isSpawningCoin = Math.random() < COIN_SPAWN_CHANCE && assets.coin.loaded;
-                    const isSpawningBat = Math.random() < BAT_SPAWN_CHANCE && assets.bat.loaded && !isSpawningCoin;
+                    const spawnRoll = Math.random();
+                    const isSpawningCoin = spawnRoll < COIN_SPAWN_CHANCE && assets.coin.loaded;
+                    const isSpawningShield = spawnRoll < COIN_SPAWN_CHANCE + SHIELD_SPAWN_CHANCE && assets.shield.loaded;
+                    const isSpawningBat = Math.random() < BAT_SPAWN_CHANCE && assets.bat.loaded;
 
                     if (isSpawningCoin) {
                         const objWidth = canvasWidth * COIN_WIDTH_PERCENT; const objHeight = canvasHeight * COIN_HEIGHT_PERCENT;
                         newObjectData = { isCoin: true, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight - (Math.random() * player.height * 1.5), width: objWidth, height: objHeight, assetKey: 'coin' };
                         coins.push(newObjectData);
+                    } else if (isSpawningShield) {
+                        const objWidth = canvasWidth * SHIELD_WIDTH_PERCENT; const objHeight = canvasHeight * SHIELD_HEIGHT_PERCENT;
+                        newObjectData = { isPowerUp: true, type: 'shield', x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight - (Math.random() * player.height), width: objWidth, height: objHeight, assetKey: 'shield' };
+                        powerUps.push(newObjectData);
                     } else if (isSpawningBat) {
                         const objWidth = canvasWidth * OBSTACLE_BAT_WIDTH_PERCENT;
                         const objHeight = canvasHeight * OBSTACLE_BAT_HEIGHT_PERCENT;
-                        const batY = Math.random() * (canvasHeight * (BAT_FLY_HEIGHT_MAX_PERCENT - BAT_FLY_HEIGHT_MIN_PERCENT)) + (canvasHeight * BAT_FLY_HEIGHT_MIN_PERCENT);
-                        newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: batY - objHeight, width: objWidth, height: objHeight, assetKey: 'bat', isKnocked: false };
+                        const batBaseY = Math.random() * (canvasHeight * (BAT_FLY_HEIGHT_MAX_PERCENT - BAT_FLY_HEIGHT_MIN_PERCENT)) + (canvasHeight * BAT_FLY_HEIGHT_MIN_PERCENT);
+                        newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, baseY: batBaseY, y: batBaseY, width: objWidth, height: objHeight, assetKey: 'bat', isKnocked: false, oscillationPhase: Math.random() * Math.PI * 2 };
                         obstacles.push(newObjectData);
-                        console.log(`DEBUG: Spawning Bat at Y: ${batY.toFixed(0)}`);
                     } else {
                         const anyPoiAssetLoaded = poiData.some(poi => assets[poi.assetKey]?.loaded);
                         const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
@@ -344,10 +334,9 @@
                             if (assets[poi.assetKey] && assets[poi.assetKey].loaded) {
                                 const objWidth = canvasWidth * poiSignDimensions.widthPercent; const objHeight = canvasHeight * poiSignDimensions.heightPercent;
                                 newObjectData = { isPOI: true, poiId: poi.id, passed: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: poi.assetKey };
-                                console.log(`DEBUG: Spawning POI (ID: ${poi.id}, Asset: ${poi.assetKey})`);
                                 nextPoiIndex++;
                                 obstacles.push(newObjectData);
-                            } else { console.warn(`Skipping POI spawn for ID ${poi.id} because asset '${poi.assetKey}' is not loaded.`); }
+                            }
                         } else {
                             if (regularObstacleTypes.length > 0) { const typeIndex = Math.floor(Math.random() * regularObstacleTypes.length); const type = regularObstacleTypes[typeIndex]; if (assets[type.assetKey] && assets[type.assetKey].loaded) { const objWidth = canvasWidth * type.widthPercent; const objHeight = canvasHeight * type.heightPercent; newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight, width: objWidth, height: objHeight, assetKey: type.assetKey, isKnocked: false }; if (type.assetKey === 'tractor') { newObjectData.isOscillating = true; newObjectData.oscillationPhase = Math.random() * Math.PI * 2; } obstacles.push(newObjectData); } }
                         }
@@ -363,25 +352,52 @@
                     else {
                         if (obj.baseX === undefined) obj.baseX = obj.x;
                         obj.baseX -= currentMovement;
-                        if (obj.assetKey === 'tractor') { obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; const amplitudePx = canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR; const xOffset = amplitudePx * Math.sin(obj.oscillationPhase); obj.x = obj.baseX + xOffset; }
+                        if (obj.assetKey === 'tractor') { obj.oscillationPhase += TRACTOR_OSC_FREQUENCY * 2 * Math.PI * dt; obj.x = obj.baseX + (canvasWidth * TRACTOR_OSC_AMPLITUDE_FACTOR * Math.sin(obj.oscillationPhase)); }
+                        else if (obj.assetKey === 'bat') { obj.oscillationPhase += BAT_OSC_FREQUENCY * 2 * Math.PI * dt; obj.y = obj.baseY + (canvasHeight * BAT_OSC_AMPLITUDE_FACTOR * Math.sin(obj.oscillationPhase)); obj.x = obj.baseX; }
                         else { obj.x = obj.baseX; }
                     }
                     if (obj.isPOI && !obj.passed) { const triggerPoint = obj.x; const playerRightEdge = player.x + player.width; if (playerRightEdge > triggerPoint) { console.log(`>>> POI TRIGGERED! ID: ${obj.poiId}`); obj.passed = true; if (obj.poiId === FINAL_POI_ID) { console.log(">>> GAME WON! Reached Burg Eisenhardt!"); playSound('win'); currentGameState = GameState.GAME_OVER; saveHighScore(); const titleElement = gameOverScreen.querySelector('h2'); if(titleElement) { titleElement.textContent = "Burg Eisenhardt Reached! / Burg Eisenhardt erreicht!"; titleElement.style.color = 'var(--bb-yellow)'; } finalScoreSpan.textContent = score; gameOverHighScoreSpan.textContent = highScore; gameOverScreen.classList.remove('hidden'); scoreDisplay.classList.add('hidden'); livesDisplay.classList.add('hidden'); knightImageEl.style.display = 'none'; if (poiOverlay.classList.contains('visible')) { closePoiOverlay(); } } else { console.log(">>> Calling displayPOIInfo for regular POI."); displayPOIInfo(obj.poiId); score += 50; currentScoreSpan.textContent = score; playSound('poi'); } } }
                     if (obj.x + obj.width < -100 || obj.y > canvasHeight + obj.height + 50) { obstacles.splice(i, 1); }
                  }
                  for (let i = coins.length - 1; i >= 0; i--) { const coin = coins[i]; coin.x -= currentMovement; if (coin.x + coin.width < -100) { coins.splice(i, 1); } }
+                 for (let i = powerUps.length - 1; i >= 0; i--) { const pUp = powerUps[i]; pUp.x -= currentMovement; if (pUp.x + pUp.width < -100) { powerUps.splice(i, 1); } }
             }
             function checkCollisions() {
                 const now = performance.now();
-                if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; }
                 const playerRect = { x: player.x + (player.width * 0.1), y: player.y + (player.height * 0.1), width: player.width * 0.8, height: player.height * 0.8, bottom: player.y + player.height, right: player.x + player.width };
+
+                // Power-up Collisions
+                for (let i = powerUps.length - 1; i >= 0; i--) {
+                    const pUp = powerUps[i];
+                    const pUpRect = { x: pUp.x, y: pUp.y, width: pUp.width, height: pUp.height };
+                    if (playerRect.x < pUpRect.x + pUpRect.width && playerRect.right > pUpRect.x && playerRect.y < pUpRect.y + pUpRect.height && playerRect.bottom > pUpRect.y) {
+                        if (pUp.type === 'shield') {
+                            player.isShielded = true;
+                            playSound('powerup');
+                            powerUps.splice(i, 1);
+                        }
+                    }
+                }
+
+                if (now < playerInvincibleUntil) { return { type: CollisionType.NONE }; }
+
+                // Obstacle Collisions
                 for (const obstacle of obstacles) {
                     if (obstacle.isPOI || obstacle.isKnocked) { continue; }
                     const obstacleRect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height, top: obstacle.y, right: obstacle.x + obstacle.width };
                     if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) {
+                        if (player.isShielded) {
+                            player.isShielded = false;
+                            playerInvincibleUntil = now + INVINCIBILITY_DURATION_MS;
+                            playSound('shield_break');
+                            createShieldBreakParticles();
+                            obstacle.isKnocked = true; // Knock obstacle away
+                            return { type: CollisionType.NONE }; // Shield absorbed the hit
+                        }
+
                         const isFalling = player.dy >= 0;
                         const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
-                        if (isFalling && landedOnTop && obstacle.assetKey !== 'bat') { // Bats can't be jumped on
+                        if (isFalling && landedOnTop && obstacle.assetKey !== 'bat') {
                             console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle };
                         }
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
@@ -389,9 +405,11 @@
                         return { type: CollisionType.SIDE };
                     }
                 }
+
+                // Coin Collisions
                 for (let i = coins.length - 1; i >= 0; i--) {
                     const coin = coins[i]; const coinRect = { x: coin.x, y: coin.y, width: coin.width, height: coin.height };
-                    if (playerRect.x < coinRect.x + coinRect.width && playerRect.right > coinRect.x && playerRect.y < coinRect.y + coinRect.height && playerRect.bottom > coinRect.y) { score += COIN_SCORE_VALUE; currentScoreSpan.textContent = score; playSound('coin'); coins.splice(i, 1); console.log("Coin collected!"); }
+                    if (playerRect.x < coinRect.x + coinRect.width && playerRect.right > coinRect.x && playerRect.y < coinRect.y + coinRect.height && playerRect.bottom > coinRect.y) { score += COIN_SCORE_VALUE; currentScoreSpan.textContent = score; playSound('coin'); coins.splice(i, 1); }
                 }
                 return { type: CollisionType.NONE };
             }
@@ -436,10 +454,35 @@
                     }
                 }
             }
-            function drawObstacles() { for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); console.warn("Attempted to draw obstacle/POI but asset not loaded:", obj.assetKey); } } }
+            function drawObstacles() { for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); } } }
             function drawCoins() { for (const coin of coins) { if (assets.coin.loaded) { ctx.drawImage(assets.coin.img, coin.x, coin.y, coin.width, coin.height); } else { ctx.fillStyle = 'gold'; ctx.fillRect(coin.x, coin.y, coin.width, coin.height); } } }
+            function drawPowerUps() { for (const pUp of powerUps) { if (assets[pUp.assetKey] && assets[pUp.assetKey].loaded) { ctx.drawImage(assets[pUp.assetKey].img, pUp.x, pUp.y, pUp.width, pUp.height); } else { ctx.fillStyle = 'purple'; ctx.fillRect(pUp.x, pUp.y, pUp.width, pUp.height); } } }
             function drawParticles() { for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx * (canvasWidth * 0.001); p.y += p.vy * (canvasHeight * 0.001); p.alpha -= 0.02; if (p.alpha <= 0) { particles.splice(i, 1); continue; } ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0; }
-            function createLandingParticles() { if (!player.justLanded) return; player.justLanded = false; for (let i = 0; i < PARTICLE_COUNT; i++) { particles.push({ x: player.x + player.width / 2, y: player.y + player.height - 5, vx: (Math.random() - 0.5) * PARTICLE_SPEED, vy: (Math.random() - 0.2) * PARTICLE_SPEED, size: Math.random() * 3 + 1, color: 'rgba(150, 150, 150, 0.7)', alpha: 1 }); } }
+            function createLandingParticles() { if (!player.justLanded) return; player.justLanded = false; for (let i = 0; i < PARTICLE_COUNT; i++) { particles.push({ x: player.x + player.width / 2, y: player.y + player.height, vx: (Math.random() - 0.5) * PARTICLE_SPEED, vy: (Math.random() - 0.2) * PARTICLE_SPEED, size: Math.random() * 3 + 1, color: 'rgba(150, 150, 150, 0.7)', alpha: 1 }); } }
+            function createShieldBreakParticles() {
+                const centerX = player.x + player.width / 2;
+                const centerY = player.y + player.height / 2;
+                for (let i = 0; i < PARTICLE_COUNT * 2; i++) {
+                    particles.push({
+                        x: centerX, y: centerY,
+                        vx: (Math.random() - 0.5) * PARTICLE_SPEED * 3,
+                        vy: (Math.random() - 0.5) * PARTICLE_SPEED * 3,
+                        size: Math.random() * 4 + 2,
+                        color: 'rgba(100, 200, 255, 0.9)',
+                        alpha: 1
+                    });
+                }
+            }
+            function drawPlayerShield() {
+                if (!player.isShielded) return;
+                ctx.save();
+                ctx.globalAlpha = 0.3 + Math.sin(performance.now() / 200) * 0.1; // Pulsing effect
+                ctx.fillStyle = '#6495ED'; // Cornflower blue
+                ctx.beginPath();
+                ctx.arc(player.x + player.width / 2, player.y + player.height / 2, Math.max(player.width, player.height) * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
             function updateKnightVisuals() { const now = performance.now(); if (knightImageEl.src !== assets.knight.src) { if (assets.knight.loaded) { knightImageEl.src = assets.knight.src; console.log("Set knight visual state to: knight (gif)"); } } let currentOpacity = 1; if (now < playerInvincibleUntil) { if (Math.floor(now / 100) % 2 !== 0) { currentOpacity = 0.4; } } knightImageEl.style.opacity = currentOpacity; knightImageEl.style.left = `${player.x}px`; knightImageEl.style.top = `${player.y}px`; knightImageEl.style.width = `${player.width}px`; knightImageEl.style.height = `${player.height}px`; if (currentGameState === GameState.PLAYING || currentGameState === GameState.GAME_OVER || currentGameState === GameState.MENU) { if (knightImageEl.style.display === 'none') { knightImageEl.style.display = 'block'; } } else { knightImageEl.style.display = 'none'; } }
 
             function displayPOIInfo(poiId) { console.log(">>> Entered displayPOIInfo. Pausing game."); const poi = poiData.find(p => p.id === poiId); if (!poi) { console.warn(`POI data not found for ID: ${poiId}`); return; } isPaused = true; poiNameEl.textContent = poi.name; const infoParts = poi.info.split('|').map(s => s.trim()); const formattedInfo = infoParts.join('<br><br>'); poiInfoTextEl.innerHTML = formattedInfo; poiOverlay.classList.add('visible'); console.log(">>> Added 'visible' class to poiOverlay. displayPOIInfo finished."); }
@@ -462,7 +505,7 @@
                 if (screenShakeActive && performance.now() < screenShakeEndTime) { const dx = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2; const dy = (Math.random() - 0.5) * SCREEN_SHAKE_MAGNITUDE * 2; ctx.translate(dx, dy); }
                 else { screenShakeActive = false; }
 
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(dt); drawObstacles(); drawCoins(); drawParticles(); updateKnightVisuals();
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight); drawBackground(dt); drawObstacles(); drawCoins(); drawPowerUps(); updateKnightVisuals(); drawPlayerShield(); drawParticles();
                 ctx.restore();
 
                 if (currentGameState === GameState.LOADING) { ctx.fillStyle = 'white'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.fillText('Loading Assets...', canvasWidth / 2, canvasHeight / 2); }
