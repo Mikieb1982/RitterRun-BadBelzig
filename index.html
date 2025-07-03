@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>RitterRun Enhanced - Bad Belzig (Joystick Debugging)</title>
+    <title>RitterRun Enhanced - Bad Belzig (Bug Fix)</title>
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -80,6 +80,8 @@
         .ui-button:hover { background-color: #ddd; box-shadow: 3px 3px 5px rgba(0,0,0,0.4); }
         .ui-button:active { background-color: #ccc; transform: translate(1px, 1px); box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
         .instructions { margin-top: 25px; font-size: 0.9em !important; color: #ccc; line-height: 1.5; }
+        #assetErrorMessage { color: #ff8a8a; font-weight: bold; margin-top: 20px; display: none; background-color: rgba(40,0,0,0.7); padding: 10px; border-radius: 5px; }
+        #failedAssetList { list-style-type: none; padding-left: 0; font-family: monospace; font-size: 0.9em; }
 
         #scoreDisplay, #livesDisplay { position: absolute; top: 15px; font-size: 1.6em; font-family: var(--font-sans); color: var(--bb-white); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); z-index: 20; }
         #scoreDisplay { left: 15px; }
@@ -119,7 +121,7 @@
         <canvas id="gameCanvas"></canvas>
         <img id="knightImage" src="assets/knight.gif" alt="Knight" style="display: none;">
         <div id="poiInfoOverlay" class="poi-overlay"><h3 id="poiName">POI Name</h3><p id="poiInfoText">POI information will appear here.</p><button id="closePoiButton">Close</button></div>
-        <div id="startScreen" class="ui-screen"><h1>RitterRun</h1><p>Explore Bad Belzig!</p><p>High Score: <span id="startHighScore">0</span></p><button id="startButton" class="ui-button">Start Game</button><p class="instructions">Use Arrow Keys or Joystick to Move<br>Press SPACE, Click Screen, or Tap JUMP to Jump<br>Press Enter or Click/Tap POI to Close Info<br>P to Pause</p></div>
+        <div id="startScreen" class="ui-screen"><h1>RitterRun</h1><p>Explore Bad Belzig!</p><p>High Score: <span id="startHighScore">0</span></p><button id="startButton" class="ui-button">Start Game</button><p class="instructions">Use Arrow Keys or Joystick to Move<br>Press SPACE, Click Screen, or Tap JUMP to Jump<br>Press Enter or Click/Tap POI to Close Info<br>P to Pause</p><div id="assetErrorMessage">Error: Could not load game images.<br>Please check your file structure. The following files are missing:<ul id="failedAssetList"></ul></div></div>
         <div id="gameOverScreen" class="ui-screen hidden"><h2>Game Over!</h2><p>Score/Punkte: <span id="finalScore">0</span></p><p>High Score: <span id="gameOverHighScore">0</span></p><button id="restartButton" class="ui-button">Restart</button></div>
         <div id="scoreDisplay" class="hidden">Score/Punkte: <span id="currentScore">0</span></div>
         <div id="livesDisplay" class="hidden">Lives/Leben: <span id="currentLives">5</span></div>
@@ -160,6 +162,7 @@
             const orientationMessage = document.getElementById('orientationMessage');
             const pauseButton = document.getElementById('pauseButton');
             const pausedMessage = document.getElementById('pausedMessage');
+            const assetErrorMessage = document.getElementById('assetErrorMessage');
 
             // --- Canvas and Context ---
             let ctx; let canvasWidth; let canvasHeight;
@@ -167,7 +170,7 @@
             // --- Essential Element Check ---
             if (!canvas || !canvas.getContext || !gameContainer) { alert("Fatal Error: Canvas not found!"); return; }
             ctx = canvas.getContext('2d');
-            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl, joystickContainer, joystickBase, joystickKnob, jumpButton, orientationMessage, pauseButton, pausedMessage };
+            const requiredElements = { startScreen, gameOverScreen, startButton, restartButton, scoreDisplay, currentScoreSpan, finalScoreSpan, startHighScoreSpan, gameOverHighScoreSpan, poiOverlay, poiNameEl, poiInfoTextEl, closePoiButton, livesDisplay, currentLivesSpan, knightImageEl, joystickContainer, joystickBase, joystickKnob, jumpButton, orientationMessage, pauseButton, pausedMessage, assetErrorMessage };
             for (const key in requiredElements) { if (!requiredElements[key]) { console.error(`Fatal Error: UI element '${key}' not found!`); alert(`Fatal Error: UI element missing (${key})!`); return; } }
 
             // --- Game States ---
@@ -178,7 +181,11 @@
             const CollisionType = Object.freeze({ NONE: 0, TOP: 1, SIDE: 2 });
 
             // --- Game Constants ---
-            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90; const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176; const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226; const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
+            const LIVES_START_COUNT = 5; const INVINCIBILITY_DURATION_MS = 1000; const GROUND_HEIGHT_PERCENT = 0.075; const PLAYER_INITIAL_X_PERCENT = 0.075; const PLAYER_WIDTH_PERCENT_DESKTOP = 0.10; const PLAYER_HEIGHT_PERCENT_DESKTOP = 0.20; const PLAYER_WIDTH_PERCENT_MOBILE = 0.14; const PLAYER_HEIGHT_PERCENT_MOBILE = 0.28; const PLAYER_GRAVITY_FACTOR = 1300; const PLAYER_JUMP_FACTOR = -40; const PLAYER_BOUNCE_POWER_MULTIPLIER = 0.8; const PLAYER_ACCEL_FACTOR = 1.0; const PLAYER_MAX_DX_FACTOR = 0.375; const PLAYER_FRICTION = 0.90;
+            const OBSTACLE_STONE_WIDTH_PERCENT = 0.088; const OBSTACLE_STONE_HEIGHT_PERCENT = 0.176;
+            const OBSTACLE_TRACTOR_WIDTH_PERCENT = 0.176; const OBSTACLE_TRACTOR_HEIGHT_PERCENT = 0.226;
+            const OBSTACLE_FAMILY_WIDTH_PERCENT = 0.088; const OBSTACLE_FAMILY_HEIGHT_PERCENT = 0.176;
+            const OBSTACLE_BAT_WIDTH_PERCENT = 0.07; const OBSTACLE_BAT_HEIGHT_PERCENT = 0.05;
             const POI_SIGN_WIDTH_PERCENT = 0.226; const POI_SIGN_HEIGHT_PERCENT = 0.55;
             const OBSTACLE_SPEED_FACTOR = 0.375; const SPEED_INCREASE_INTERVAL_SCORE = 400; const OBSTACLE_SPEED_INCREASE_FACTOR = 0.01; const OBSTACLE_SPEED_MAX_FACTOR = 0.75; const BACKGROUND_SWITCH_SCORE_INTERVAL = 1000; const POI_SPAWN_CHANCE = 0.15; const OBSTACLE_BASE_SPAWN_TIME_MS = 1800; const OBSTACLE_MIN_SPAWN_TIME_MS = 800; const COLLISION_LANDING_TOLERANCE_FACTOR = 0.045; const MOBILE_BREAKPOINT_WIDTH = 850;
             const BG1_SCROLL_FACTOR = 0.05; const BG2_SCROLL_FACTOR = 0.1; const BG3_SCROLL_FACTOR = 0.15;
@@ -188,6 +195,7 @@
             const COIN_WIDTH_PERCENT = 0.03; const COIN_HEIGHT_PERCENT = 0.03; const COIN_SCORE_VALUE = 10; const COIN_SPAWN_CHANCE = 0.1;
             const SCREEN_SHAKE_DURATION = 200; const SCREEN_SHAKE_MAGNITUDE = 5;
             const PARTICLE_COUNT = 10; const PARTICLE_LIFESPAN = 500; const PARTICLE_SPEED = 0.05;
+            const BAT_SPAWN_CHANCE = 0.1; const BAT_FLY_HEIGHT_MIN_PERCENT = 0.3; const BAT_FLY_HEIGHT_MAX_PERCENT = 0.5;
 
             // --- Game Variables ---
             let score = 0; let highScore = 0; let playerLives = LIVES_START_COUNT; let playerInvincibleUntil = 0;
@@ -201,21 +209,64 @@
             let isTransitioningBackground = false; let transitionStartTime = 0; let previousBackgroundSequenceIndex = 0;
             let joystickActive = false; let joystickStartX = 0; let joystickStartY = 0; let joystickBaseRect = null; let joystickRadius = 0;
             let screenShakeActive = false; let screenShakeEndTime = 0;
+            let backgroundSequenceIndex = 0;
+            let nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
+            let failedAssets = [];
 
             // --- Graphics Assets ---
-            const assets = { knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' }, stone: { img: new Image(), loaded: false, src: 'assets/stone.png' }, tractor: { img: new Image(), loaded: false, src: 'assets/tractor.gif' }, family: { img: new Image(), loaded: false, src: 'assets/family.png' }, coin: { img: new Image(), loaded: false, src: 'assets/coin.png' }, background1: { img: new Image(), loaded: false, src: 'assets/background1.png' }, background2: { img: new Image(), loaded: false, src: 'assets/background2.png' }, background3: { img: new Image(), loaded: false, src: 'assets/background3.png' }, therme: { img: new Image(), loaded: false, src: 'assets/therme.png' }, freibad: { img: new Image(), loaded: false, src: 'assets/freibad.png' }, kulturzentrum: { img: new Image(), loaded: false, src: 'assets/kulturzentrum.png' }, bahnhof: { img: new Image(), loaded: false, src: 'assets/bahnhof.png' }, post: { img: new Image(), loaded: false, src: 'assets/post.png' }, rathaus: { img: new Image(), loaded: false, src: 'assets/rathaus.png' }, burg: { img: new Image(), loaded: false, src: 'assets/burg.png' } };
+            const assets = {
+                knight: { img: new Image(), loaded: false, src: 'assets/knight.gif' },
+                stone: { img: new Image(), loaded: false, src: 'assets/stone.png' },
+                tractor: { img: new Image(), loaded: false, src: 'assets/tractor.gif' },
+                family: { img: new Image(), loaded: false, src: 'assets/family.png' },
+                coin: { img: new Image(), loaded: false, src: 'assets/coin.png' },
+                bat: { img: new Image(), loaded: false, src: 'assets/bat.png' },
+                background1: { img: new Image(), loaded: false, src: 'assets/background1.png' },
+                background2: { img: new Image(), loaded: false, src: 'assets/background2.png' },
+                background3: { img: new Image(), loaded: false, src: 'assets/background3.png' },
+                therme: { img: new Image(), loaded: false, src: 'assets/therme.png' },
+                freibad: { img: new Image(), loaded: false, src: 'assets/freibad.png' },
+                kulturzentrum: { img: new Image(), loaded: false, src: 'assets/kulturzentrum.png' },
+                bahnhof: { img: new Image(), loaded: false, src: 'assets/bahnhof.png' },
+                post: { img: new Image(), loaded: false, src: 'assets/post.png' },
+                rathaus: { img: new Image(), loaded: false, src: 'assets/rathaus.png' },
+                burg: { img: new Image(), loaded: false, src: 'assets/burg.png' }
+            };
             let assetsLoadedCount = 0; let totalAssets = Object.keys(assets).length; let allAssetsLoaded = false;
 
             // --- Obstacle/POI Definitions ---
-            const regularObstacleTypes = [ { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT }, { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT }, { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT } ];
+            const regularObstacleTypes = [
+                { assetKey: 'stone', widthPercent: OBSTACLE_STONE_WIDTH_PERCENT, heightPercent: OBSTACLE_STONE_HEIGHT_PERCENT },
+                { assetKey: 'tractor', widthPercent: OBSTACLE_TRACTOR_WIDTH_PERCENT, heightPercent: OBSTACLE_TRACTOR_HEIGHT_PERCENT },
+                { assetKey: 'family', widthPercent: OBSTACLE_FAMILY_WIDTH_PERCENT, heightPercent: OBSTACLE_FAMILY_HEIGHT_PERCENT }
+            ];
             const poiSignDimensions = { widthPercent: POI_SIGN_WIDTH_PERCENT, heightPercent: POI_SIGN_HEIGHT_PERCENT };
 
             // --- POI Data Structure ---
             const poiData = [ { id: 1, name: "SteinTherme", info: "Known for its unique thermal saltwater pools and health benefits. | Bekannt für ihre einzigartigen Thermalsolebecken und Gesundheitsvorteile.", assetKey: 'therme' }, { id: 2, name: "Freibad", info: "The popular outdoor swimming pool, perfect for summer days. | Das beliebte Freibad, perfekt für Sommertage.", assetKey: 'freibad' }, { id: 3, name: "Kulturzentrum & Bibliothek", info: "A cultural hub with its distinctive red-brick facade and arched windows. | Ein kultureller Mittelpunkt mit markanter roter Backsteinfassade und Bogenfenstern.", assetKey: 'kulturzentrum' }, { id: 4, name: "Fläming Bahnhof", info: "The local train station connecting Bad Belzig to the region. | Der lokale Bahnhof, der Bad Belzig mit der Region verbindet.", assetKey: 'bahnhof' }, { id: 5, name: "Postmeilensäule", info: "A historic post mile marker showing distances on old postal routes. | Ein historischer Postmeilenstein, der Entfernungen auf alten Postrouten anzeigt.", assetKey: 'post' }, { id: 6, name: "Rathaus & Tourist-Information", info: "The town hall, center of local government and visitor information. | Rathaus, Zentrum der Kommunalverwaltung und Besucherinformation.", assetKey: 'rathaus' }, { id: 7, name: "Burg Eisenhardt", info: "Well-preserved medieval castle, vital to the region's history and defense. | Gut erhaltene mittelalterliche Burg, entscheidend für die Geschichte und Verteidigung der Region.", assetKey: 'burg' } ];
 
             // --- Asset Loading Functions ---
-            function assetLoaded(assetKey) { console.log(`Asset loaded: ${assetKey}`); assets[assetKey].loaded = true; assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.log("All assets loaded."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
-            function assetLoadError(assetKey, event) { console.error(`Failed to load asset: ${assets[assetKey].src}. Check path and file existence. Event:`, event); alert(`Error loading image: ${assets[assetKey].src}\nGame might not display correctly.`); assetsLoadedCount++; if (assetsLoadedCount === totalAssets) { console.warn("Finished loading assets, but some failed."); allAssetsLoaded = true; if (currentGameState === GameState.LOADING) { initGame(); } } }
+            function assetLoaded(assetKey) {
+                console.log(`Asset loaded: ${assetKey}`);
+                assets[assetKey].loaded = true;
+                assetsLoadedCount++;
+                if (assetsLoadedCount === totalAssets) {
+                    console.log("All asset loading attempts finished.");
+                    allAssetsLoaded = true;
+                    if (currentGameState === GameState.LOADING) { initGame(); }
+                }
+            }
+            function assetLoadError(assetKey, event) {
+                const relativePath = assets[assetKey].src;
+                failedAssets.push(relativePath);
+                console.error(`Failed to load asset: ${relativePath}. Check repository file structure.`);
+                assetsLoadedCount++;
+                if (assetsLoadedCount === totalAssets) {
+                    console.warn("Finished attempting to load all assets, but one or more failed. See errors above.");
+                    allAssetsLoaded = true;
+                    if (currentGameState === GameState.LOADING) { initGame(); }
+                }
+            }
             function loadAssets() { console.log("Starting asset loading..."); currentGameState = GameState.LOADING; for (const key in assets) { if (Object.prototype.hasOwnProperty.call(assets, key) && assets[key].img) { assets[key].img.src = assets[key].src; assets[key].img.onload = () => assetLoaded(key); assets[key].img.onerror = (e) => assetLoadError(key, e); } } }
 
             // --- High Score Handling ---
@@ -244,6 +295,8 @@
                 screenShakeActive = false; screenShakeEndTime = 0;
                 pausedMessage.style.display = 'none';
                 if(pauseButton) pauseButton.textContent = "Pause";
+                backgroundSequenceIndex = 0;
+                nextBackgroundSwitchScore = BACKGROUND_SWITCH_SCORE_INTERVAL;
                 console.log(`Game Reset - Obstacle Speed Factor: ${currentObstacleSpeedFactor.toFixed(3)}`);
             }
 
@@ -254,9 +307,7 @@
                 else if (isPressingRight) { player.dx += playerAccel * dt; }
                 else { player.dx *= PLAYER_FRICTION; if (Math.abs(player.dx) < 1) { player.dx = 0; } }
                 player.dx = Math.max(-playerMaxDx, Math.min(playerMaxDx, player.dx));
-                if (player.dx !== oldDx) { // Log only if dx changed due to joystick/keys
-                    console.log(`UpdatePlayer: Horizontal movement - isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}, player.dx=${player.dx.toFixed(2)}`);
-                }
+                if (player.dx !== oldDx) { console.log(`UpdatePlayer: Horizontal movement - isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}, player.dx=${player.dx.toFixed(2)}`); }
                 player.x += player.dx * dt;
                 if (player.x < 0) { player.x = 0; player.dx = 0; }
                 if (player.x + player.width > canvasWidth) { player.x = canvasWidth - player.width; player.dx = 0; }
@@ -269,11 +320,19 @@
                  if (currentTime >= nextObstacleSpawnTime) {
                     let newObjectData = null;
                     const isSpawningCoin = Math.random() < COIN_SPAWN_CHANCE && assets.coin.loaded;
+                    const isSpawningBat = Math.random() < BAT_SPAWN_CHANCE && assets.bat.loaded && !isSpawningCoin;
 
                     if (isSpawningCoin) {
                         const objWidth = canvasWidth * COIN_WIDTH_PERCENT; const objHeight = canvasHeight * COIN_HEIGHT_PERCENT;
                         newObjectData = { isCoin: true, x: canvasWidth, baseX: canvasWidth, y: canvasHeight - groundHeightPx - objHeight - (Math.random() * player.height * 1.5), width: objWidth, height: objHeight, assetKey: 'coin' };
                         coins.push(newObjectData);
+                    } else if (isSpawningBat) {
+                        const objWidth = canvasWidth * OBSTACLE_BAT_WIDTH_PERCENT;
+                        const objHeight = canvasHeight * OBSTACLE_BAT_HEIGHT_PERCENT;
+                        const batY = Math.random() * (canvasHeight * (BAT_FLY_HEIGHT_MAX_PERCENT - BAT_FLY_HEIGHT_MIN_PERCENT)) + (canvasHeight * BAT_FLY_HEIGHT_MIN_PERCENT);
+                        newObjectData = { isPOI: false, x: canvasWidth, baseX: canvasWidth, y: batY - objHeight, width: objWidth, height: objHeight, assetKey: 'bat', isKnocked: false };
+                        obstacles.push(newObjectData);
+                        console.log(`DEBUG: Spawning Bat at Y: ${batY.toFixed(0)}`);
                     } else {
                         const anyPoiAssetLoaded = poiData.some(poi => assets[poi.assetKey]?.loaded);
                         const willSpawnPOI = Math.random() < POI_SPAWN_CHANCE;
@@ -322,7 +381,9 @@
                     if (playerRect.x < obstacleRect.right && playerRect.right > obstacleRect.x && playerRect.y < obstacleRect.y + obstacleRect.height && playerRect.bottom > obstacleRect.top) {
                         const isFalling = player.dy >= 0;
                         const landedOnTop = playerRect.bottom >= obstacleRect.top && playerRect.bottom <= obstacleRect.top + collisionLandingTolerancePx;
-                        if (isFalling && landedOnTop) { console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle }; }
+                        if (isFalling && landedOnTop && obstacle.assetKey !== 'bat') { // Bats can't be jumped on
+                            console.log(`Collision: TOP on ${obstacle.assetKey}`); return { type: CollisionType.TOP, obstacle: obstacle };
+                        }
                         console.warn(`Collision: SIDE with ${obstacle.assetKey}`);
                         screenShakeActive = true; screenShakeEndTime = now + SCREEN_SHAKE_DURATION;
                         return { type: CollisionType.SIDE };
@@ -341,7 +402,40 @@
             }
 
             // --- Draw Functions ---
-            function drawBackground(dt) { const now = performance.now(); const bg1Movement = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt; const bg2Movement = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt; const bg3Movement = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt; bg1X -= bg1Movement; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; } bg2X -= bg2Movement; if (bg2X <= -canvasWidth) { bg2X += canvasWidth; } bg3X -= bg3Movement; if (bg3X <= -canvasWidth) { bg3X += canvasWidth; } ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight); if (assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); } if (assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); } const groundGradient = ctx.createLinearGradient(0, canvasHeight - groundHeightPx, 0, canvasHeight); groundGradient.addColorStop(0, '#5a8a36'); groundGradient.addColorStop(0.3, '#446d20'); groundGradient.addColorStop(1, '#6b4423'); ctx.fillStyle = groundGradient; ctx.fillRect(0, canvasHeight - groundHeightPx, canvasWidth, groundHeightPx); }
+            function drawBackground(dt) {
+                const now = performance.now();
+                const bg1Movement = isPaused ? 0 : obstacleSpeed * BG3_SCROLL_FACTOR * dt;
+                const bg2Movement = isPaused ? 0 : obstacleSpeed * BG2_SCROLL_FACTOR * dt;
+                const bg3Movement = isPaused ? 0 : obstacleSpeed * BG1_SCROLL_FACTOR * dt;
+
+                bg1X -= bg1Movement; if (bg1X <= -canvasWidth) { bg1X += canvasWidth; }
+                bg2X -= bg2Movement; if (bg2X <= -canvasWidth) { bg2X += canvasWidth; }
+                bg3X -= bg3Movement; if (bg3X <= -canvasWidth) { bg3X += canvasWidth; }
+
+                ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                if (assets.background3.loaded) { ctx.drawImage(assets.background3.img, bg3X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background3.img, bg3X + canvasWidth, 0, canvasWidth, canvasHeight); }
+                if (assets.background2.loaded) { ctx.drawImage(assets.background2.img, bg2X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background2.img, bg2X + canvasWidth, 0, canvasWidth, canvasHeight); }
+                if (assets.background1.loaded) { ctx.drawImage(assets.background1.img, bg1X, 0, canvasWidth, canvasHeight); ctx.drawImage(assets.background1.img, bg1X + canvasWidth, 0, canvasWidth, canvasHeight); }
+
+                // Draw textured ground
+                const groundDarkColor = '#446d20';
+                const groundLightColor = '#5a8a36';
+                const stripeHeight = 10;
+                for (let y = canvasHeight - groundHeightPx; y < canvasHeight; y += stripeHeight) {
+                    ctx.fillStyle = (Math.floor(y / stripeHeight) % 2 === 0) ? groundDarkColor : groundLightColor;
+                    ctx.fillRect(0, y, canvasWidth, Math.min(stripeHeight, canvasHeight - y));
+                    if (Math.random() < 0.1) {
+                        ctx.fillStyle = 'rgba(0,50,0,0.3)';
+                        ctx.beginPath();
+                        ctx.moveTo(Math.random() * canvasWidth, y + stripeHeight);
+                        ctx.lineTo(Math.random() * canvasWidth, y);
+                        ctx.lineTo(Math.random() * canvasWidth, y + stripeHeight);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
             function drawObstacles() { for (const obj of obstacles) { if (assets[obj.assetKey] && assets[obj.assetKey].loaded) { ctx.drawImage(assets[obj.assetKey].img, obj.x, obj.y, obj.width, obj.height); } else { ctx.fillStyle = obj.isPOI ? 'blue' : 'red'; ctx.fillRect(obj.x, obj.y, obj.width, obj.height); console.warn("Attempted to draw obstacle/POI but asset not loaded:", obj.assetKey); } } }
             function drawCoins() { for (const coin of coins) { if (assets.coin.loaded) { ctx.drawImage(assets.coin.img, coin.x, coin.y, coin.width, coin.height); } else { ctx.fillStyle = 'gold'; ctx.fillRect(coin.x, coin.y, coin.width, coin.height); } } }
             function drawParticles() { for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx * (canvasWidth * 0.001); p.y += p.vy * (canvasHeight * 0.001); p.alpha -= 0.02; if (p.alpha <= 0) { particles.splice(i, 1); continue; } ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1.0; }
@@ -352,6 +446,7 @@
             function closePoiOverlay() { console.log(">>> Entered closePoiOverlay. Removing visible class, resuming game."); poiOverlay.classList.remove('visible'); isPaused = false; lastTime = performance.now(); console.log(">>> Closed POI Overlay. Game RESUMED."); }
 
             function gameLoop(timestamp) {
+                if (!lastTime) { lastTime = timestamp; }
                 const dt = (timestamp - lastTime) / 1000 || 0;
                 if (!isPaused && currentGameState !== GameState.PAUSED) { lastTime = timestamp; }
 
@@ -378,7 +473,7 @@
             }
 
             function togglePause() { if (currentGameState === GameState.PLAYING) { currentGameState = GameState.PAUSED; isPaused = true; pauseButton.textContent = "Resume"; pausedMessage.style.display = 'flex'; console.log("Game Paused"); } else if (currentGameState === GameState.PAUSED) { currentGameState = GameState.PLAYING; isPaused = false; pauseButton.textContent = "Pause"; pausedMessage.style.display = 'none'; lastTime = performance.now(); console.log("Game Resumed"); } }
-            function startGame() { console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; updateKnightVisuals(); playSound('start'); lastTime = performance.now(); if(pauseButton) pauseButton.style.display = 'block'; }
+            function startGame() { console.log("Attempting startGame(). Current state:", currentGameState, "Assets loaded?", allAssetsLoaded); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) { console.log("startGame() aborted."); return; } if (!assets.knight.loaded) { alert("Cannot start: Essential knight image is missing. Please check file paths."); return; } console.log("Executing startGame()..."); resetGame(); currentGameState = GameState.PLAYING; startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden'); scoreDisplay.classList.remove('hidden'); livesDisplay.classList.remove('hidden'); knightImageEl.style.display = 'block'; knightImageEl.style.opacity = '1'; updateKnightVisuals(); playSound('start'); lastTime = performance.now(); if(pauseButton) pauseButton.style.display = 'block'; }
             function restartGame() { console.log("Attempting restartGame(). Current state:", currentGameState); if (currentGameState === GameState.PLAYING || !allAssetsLoaded) return; console.log("Executing restartGame()..."); startGame(); }
             function handleJumpInput() { console.log("handleJumpInput called. State:", currentGameState, "Paused:", isPaused, "Grounded:", player.grounded); if (currentGameState === GameState.PLAYING && !isPaused && player.grounded) { player.dy = player.jumpPower; player.grounded = false; playSound('jump'); } }
 
@@ -387,9 +482,8 @@
             function handleKeyUp(e) { switch (e.key) { case 'ArrowLeft': isPressingLeft = false; break; case 'ArrowRight': isPressingRight = false; break; } }
             function handleMouseClick(e) { if (e.target === closePoiButton || e.target === startButton || e.target === restartButton || joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { return; } console.log("Mouse click detected. State:", currentGameState, "Target:", e.target.id); if (!allAssetsLoaded) return; if (isPaused && poiOverlay.classList.contains('visible')) { console.log("Mouse click ignored: POI overlay is visible."); return; } switch (currentGameState) { case GameState.PLAYING: handleJumpInput(); break; case GameState.MENU: startGame(); break; case GameState.GAME_OVER: restartGame(); break; } }
             function handleScreenTouch(e) { e.preventDefault(); if (!allAssetsLoaded) return; if (joystickContainer.contains(e.target) || jumpButton.contains(e.target) || pauseButton.contains(e.target)) { console.log("Touch ignored on gameContainer: Handled by specific control."); return; } switch (currentGameState) { case GameState.PLAYING: if (!isPaused) { handleJumpInput(); } break; case GameState.MENU: if (e.target === startButton || e.target === canvas || e.target === gameContainer) { startGame(); } break; case GameState.GAME_OVER: if (e.target === restartButton || e.target === canvas || e.target === gameContainer) { restartGame(); } break; } }
-            // --- MODIFIED: Joystick Handlers with Logging ---
             function handleJoystickStart(e) {
-                console.log("Joystick START detected"); // DEBUG
+                console.log("Joystick START detected");
                 if (currentGameState !== GameState.PLAYING || isPaused) return;
                 e.preventDefault();
                 joystickBaseRect = joystickBase.getBoundingClientRect();
@@ -398,10 +492,9 @@
                 const touch = e.touches[0];
                 joystickStartX = touch.clientX;
                 joystickStartY = touch.clientY;
-                console.log(`Joystick START at X: ${joystickStartX.toFixed(0)}, Y: ${joystickStartY.toFixed(0)}`); // DEBUG
+                console.log(`Joystick START at X: ${joystickStartX.toFixed(0)}, Y: ${joystickStartY.toFixed(0)}`);
             }
             function handleJoystickMove(e) {
-                // console.log("Joystick MOVE detected (raw)"); // DEBUG - Very spammy
                 if (!joystickActive || currentGameState !== GameState.PLAYING || isPaused) return;
                 e.preventDefault();
                 const touch = e.touches[0];
@@ -424,21 +517,20 @@
                 else { isPressingLeft = false; isPressingRight = false; }
 
                 if (oldPressingLeft !== isPressingLeft || oldPressingRight !== isPressingRight) {
-                    console.log(`Joystick MOVE: deltaX=${deltaX.toFixed(1)}, isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}`); // DEBUG
+                    console.log(`Joystick MOVE: deltaX=${deltaX.toFixed(1)}, isPressingLeft=${isPressingLeft}, isPressingRight=${isPressingRight}`);
                 }
             }
             function handleJoystickEnd(e) {
-                console.log("Joystick END detected"); // DEBUG
+                console.log("Joystick END detected");
                 if (!joystickActive) return;
                 e.preventDefault();
                 joystickKnob.style.transform = 'translate(-50%, -50%)';
                 joystickActive = false;
                 isPressingLeft = false;
                 isPressingRight = false;
-                console.log("Joystick END processed, flags reset."); // DEBUG
+                console.log("Joystick END processed, flags reset.");
             }
 
-             // --- resizeCanvas simplified ---
              function resizeCanvas() {
                  const containerWidth = gameContainer.clientWidth;
                  const containerHeight = gameContainer.clientHeight;
@@ -452,7 +544,7 @@
                         console.log("Recalculating dynamic values on resize...");
                         groundHeightPx = canvasHeight * GROUND_HEIGHT_PERCENT;
                         collisionLandingTolerancePx = canvasHeight * COLLISION_LANDING_TOLERANCE_FACTOR;
-                        obstacleSpeed = canvasWidth * currentObstacleSpeedFactor; // Use current factor
+                        obstacleSpeed = canvasWidth * currentObstacleSpeedFactor;
                         playerMaxDx = canvasWidth * PLAYER_MAX_DX_FACTOR;
                         playerAccel = canvasWidth * PLAYER_ACCEL_FACTOR;
                         player.gravity = canvasHeight / PLAYER_GRAVITY_FACTOR;
@@ -470,10 +562,25 @@
                 if (gameInitialized || !allAssetsLoaded) return;
                 console.log("Initializing Game...");
                 gameInitialized = true;
-                 if (!assets.knight.loaded) { console.error("Essential knight asset failed to load!"); alert("Error: Knight image failed to load. Game cannot start."); return; }
+
+                if (failedAssets.length > 0) {
+                    assetErrorMessage.style.display = 'block';
+                    const failedAssetList = document.getElementById('failedAssetList');
+                    failedAssetList.innerHTML = ''; // Clear previous errors
+                    failedAssets.forEach(assetPath => {
+                        const li = document.createElement('li');
+                        li.textContent = assetPath;
+                        failedAssetList.appendChild(li);
+                    });
+                }
+
+                 if (!assets.knight.loaded) {
+                     console.error("Essential knight asset failed to load! Game cannot start properly.");
+                     return;
+                 }
 
                 loadHighScore();
-                resizeCanvas(); // Initial resize
+                resizeCanvas();
 
                 startScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('hidden');
@@ -482,23 +589,21 @@
                 poiOverlay.classList.remove('visible');
                 knightImageEl.style.display = 'none';
 
-                 // Remove potentially old listeners first
                  startButton.removeEventListener('click', startGame); restartButton.removeEventListener('click', restartGame); document.removeEventListener('keydown', handleKeyDown); document.removeEventListener('keyup', handleKeyUp); gameContainer.removeEventListener('touchstart', handleScreenTouch); gameContainer.removeEventListener('click', handleMouseClick); window.removeEventListener('resize', resizeCanvas);
                  closePoiButton.removeEventListener('click', closePoiOverlay); poiOverlay.removeEventListener('touchstart', closePoiOverlay); joystickContainer.removeEventListener('touchstart', handleJoystickStart); joystickContainer.removeEventListener('touchmove', handleJoystickMove); joystickContainer.removeEventListener('touchend', handleJoystickEnd); joystickContainer.removeEventListener('touchcancel', handleJoystickEnd); jumpButton.removeEventListener('touchstart', handleJumpInput);
                  pauseButton.removeEventListener('click', togglePause);
 
-                 // Add listeners
                  console.log("Attaching listeners..."); startButton.addEventListener('click', startGame); restartButton.addEventListener('click', restartGame); document.addEventListener('keydown', handleKeyDown); document.addEventListener('keyup', handleKeyUp); gameContainer.addEventListener('touchstart', handleScreenTouch, { passive: false }); gameContainer.addEventListener('click', handleMouseClick); window.addEventListener('resize', resizeCanvas);
-                 closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false }); joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false }); joystickContainer.addEventListener('touchcancel', handleJoystickEnd, { passive: false }); jumpButton.addEventListener('touchstart', handleJumpInput, { passive: false });
+                 closePoiButton.addEventListener('click', closePoiOverlay); poiOverlay.addEventListener('touchstart', closePoiOverlay, { passive: false }); joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false }); joystickContainer.removeEventListener('touchcancel', handleJoystickEnd); jumpButton.addEventListener('touchstart', handleJumpInput, { passive: false });
                  pauseButton.addEventListener('click', togglePause);
                  console.log("Event listeners attached.");
 
-                 currentGameState = GameState.MENU; console.log("Set gameState to MENU"); lastTime = performance.now(); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
+                 currentGameState = GameState.MENU; console.log("Set gameState to MENU"); requestAnimationFrame(gameLoop); console.log("Initial game loop requested.");
             }
 
             // --- Start Asset Loading ---
             document.addEventListener('DOMContentLoaded', () => { console.log("DOM Ready. Starting asset load."); loadAssets(); });
- 
+
         })(); // End of IIFE
     </script>
 </body>
